@@ -16,6 +16,8 @@ const COOKIE_NAME =
 export async function POST() {
   const cookieStore = await cookies();
   cookieStore.delete(COOKIE_NAME);
+  // Clear session_hint so the next login is not treated as session expiry
+  cookieStore.delete('session_hint');
 
   return NextResponse.json({ message: 'Logged out successfully' }, { status: 200 });
 }

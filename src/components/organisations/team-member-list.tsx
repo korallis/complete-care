@@ -123,8 +123,11 @@ export function TeamMemberList({
           const isOwner = member.role === 'owner';
           const canChangeRole =
             canManage && !isOwner && !(isCurrentUser && currentUserRole === 'owner');
-          const canRemove =
-            canManage && !isOwner;
+          // Regular remove: only for non-owners. For owner's own row, show a special "Leave" button.
+          const canRemove = canManage && !isOwner;
+          // Show a "Leave" button for the current user if they're the owner.
+          // Clicking it will trigger the server-side "transfer ownership first" error.
+          const showLeaveButton = isCurrentUser && isOwner;
 
           return (
             <li
@@ -180,7 +183,7 @@ export function TeamMemberList({
                 )}
               </div>
 
-              {/* Remove button */}
+              {/* Remove button (for non-owners) */}
               {canRemove && (
                 <Button
                   type="button"
@@ -204,6 +207,21 @@ export function TeamMemberList({
                   >
                     <path d="M3 6h18M19 6l-1 14H6L5 6M10 11v6M14 11v6M9 6V4h6v2" />
                   </svg>
+                </Button>
+              )}
+              {/* Leave button for current user when they're the owner (self-removal of owner) */}
+              {showLeaveButton && (
+                <Button
+                  type="button"
+                  variant="ghost"
+                  size="sm"
+                  onClick={() => handleRemoveMember(member.membershipId)}
+                  disabled={isPending}
+                  aria-label="Leave organisation"
+                  className="flex-shrink-0 text-xs text-[oklch(0.55_0_0)] hover:text-red-600 hover:bg-red-50 h-8 px-2"
+                  title="You must transfer ownership before leaving this organisation"
+                >
+                  Leave
                 </Button>
               )}
             </li>

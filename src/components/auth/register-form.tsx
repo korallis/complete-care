@@ -43,19 +43,13 @@ export function RegisterForm() {
 
     const json = await response.json();
 
-    if (response.status === 409) {
-      setServerError(
-        'An account with this email already exists. Try signing in instead.',
-      );
-      return;
-    }
-
     if (!response.ok) {
       if (json.errors) {
         // Display the first validation error
         const firstError = Object.values(json.errors)[0];
         setServerError(firstError as string);
       } else {
+        // Use the server's message (which is intentionally generic for 409 to prevent enumeration)
         setServerError(json.error ?? 'Registration failed. Please try again.');
       }
       return;
@@ -187,7 +181,9 @@ export function RegisterForm() {
             )}
           </button>
         </div>
-        {errors.password ? (
+        {/* Always show the strength indicator so all unmet requirements are visible */}
+        <PasswordStrengthIndicator password={passwordValue} />
+        {errors.password && (
           <p
             id="password-error"
             className="text-xs text-destructive"
@@ -195,8 +191,6 @@ export function RegisterForm() {
           >
             {errors.password.message}
           </p>
-        ) : (
-          <PasswordStrengthIndicator password={passwordValue} />
         )}
       </div>
 

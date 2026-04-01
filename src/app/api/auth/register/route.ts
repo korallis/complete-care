@@ -59,9 +59,13 @@ export async function POST(request: NextRequest) {
     .limit(1);
 
   if (existingUser) {
-    // Return 409 but with a generic message to avoid enumeration
+    // Return 409 with a generic message that does NOT reveal whether the
+    // email is registered (prevents account enumeration attacks).
     return NextResponse.json(
-      { error: 'An account with this email already exists' },
+      {
+        error:
+          'We could not complete your registration. Please check your details or sign in if you already have an account.',
+      },
       { status: 409 },
     );
   }

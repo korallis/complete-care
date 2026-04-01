@@ -33,11 +33,14 @@ export type { Role, Action, Resource } from './permissions';
 export { getNavItems, NAV_ITEMS_BY_ROLE } from './nav-items';
 export type { NavItem, NavSection } from './nav-items';
 
-// Re-export requirePermission, getCurrentRole, and UnauthorizedError from the
+// Re-export requirePermission, getCurrentRole, and error classes from the
 // server-only module. These are split out because they import from @/lib/db
 // which should only run in Node.js (not Edge runtime).
 export {
   requirePermission,
   getCurrentRole,
   UnauthorizedError,
+  UnauthenticatedError,
 } from './server';
+
+

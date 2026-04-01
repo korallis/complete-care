@@ -91,6 +91,20 @@ export async function POST(request: NextRequest) {
 
   if (!user || !user.passwordHash || !passwordValid) {
     await recordFailedAttempt(normalizedEmail, attemptRecord ?? null);
+    // Fix: Check if this failed attempt just triggered the lockout.
+    // Return 429 immediately on the 5th failed attempt (not the 6th).
+    const newAttemptCount = (attemptRecord?.attempts ?? 0) + 1;
+    if (shouldLockAccount(newAttemptCount)) {
+      const lockedUntilTime = new Date(Date.now() + LOCKOUT_DURATION_MS);
+      const minutesRemaining = 15;
+      return NextResponse.json(
+        {
+          error: `Account temporarily locked due to too many failed login attempts. Try again in ${minutesRemaining} minutes or reset your password.`,
+          lockedUntil: lockedUntilTime.toISOString(),
+        },
+        { status: 429 },
+      );
+    }
     return NextResponse.json(
       { error: 'Invalid email or password' },
       { status: 401 },
@@ -157,6 +171,17 @@ export async function POST(request: NextRequest) {
     sameSite: 'lax',
     path: '/',
     maxAge: SESSION_MAX_AGE,
+  });
+
+  // Set long-lived session_hint cookie so middleware can detect session expiry.
+  // This cookie outlives the inactivity timeout, allowing the login page to
+  // show "your session expired" vs "please log in for the first time."
+  cookieStore.set('session_hint', '1', {
+    httpOnly: true,
+    secure: process.env.NODE_ENV === 'production',
+    sameSite: 'lax',
+    path: '/',
+    maxAge: 7 * 24 * 60 * 60, // 7 days
   });
 
   return NextResponse.json(

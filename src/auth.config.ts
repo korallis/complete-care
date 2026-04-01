@@ -29,6 +29,7 @@ const authRoutes = [
 const authenticatedOnlyRoutes = [
   '/onboarding',
   '/invitations',
+  '/new-organisation',
 ];
 
 /** Prefix for API auth routes — always accessible */
@@ -37,13 +38,21 @@ const apiAuthPrefix = '/api/auth';
 /** Default redirect after successful login */
 const DEFAULT_LOGIN_REDIRECT = '/dashboard';
 
+/**
+ * Session inactivity timeout in seconds.
+ * Configurable via SESSION_INACTIVITY_TIMEOUT env var (default: 30 minutes).
+ */
+export const SESSION_INACTIVITY_TIMEOUT =
+  parseInt(process.env.SESSION_INACTIVITY_TIMEOUT ?? String(30 * 60), 10);
+
 export const authConfig = {
   pages: {
     signIn: '/login',
     error: '/login',
   },
   callbacks: {
-    authorized({ auth, request: { nextUrl } }) {
+    authorized({ auth, request }) {
+      const { nextUrl } = request;
       const isLoggedIn = !!auth?.user;
       // Read emailVerified from the session user (mapped by jwt/session callbacks)
       const isEmailVerified =
@@ -53,6 +62,21 @@ export const authConfig = {
 
       // Always allow API auth routes (Auth.js internals + custom auth routes)
       if (pathname.startsWith(apiAuthPrefix)) return true;
+
+      // -------------------------------------------------------------------
+      // Non-auth API routes: return 401 JSON for unauthenticated/invalid JWT.
+      // This ensures tampered JWTs and missing tokens get 401 (not 302 redirect).
+      // RBAC checks (403) are handled inside each route handler via requirePermission().
+      // -------------------------------------------------------------------
+      if (pathname.startsWith('/api/')) {
+        if (!isLoggedIn) {
+          return new Response(
+            JSON.stringify({ error: 'Authentication required' }),
+            { status: 401, headers: { 'Content-Type': 'application/json' } },
+          );
+        }
+        return true;
+      }
 
       // Always allow public routes
       if (publicRoutes.includes(pathname)) return true;
@@ -71,7 +95,7 @@ export const authConfig = {
       }
 
       // Authenticated-only routes — require login but don't redirect back if already logged in
-      // (e.g., /onboarding, /invitations/accept)
+      // (e.g., /onboarding, /invitations/accept, /new-organisation)
       if (
         authenticatedOnlyRoutes.some((route) => pathname.startsWith(route))
       ) {
@@ -87,8 +111,14 @@ export const authConfig = {
       // Dashboard and other protected routes
       if (!isLoggedIn) {
         const callbackUrl = encodeURIComponent(pathname + nextUrl.search);
+
+        // Detect session expiry: if the user has a session_hint cookie but no
+        // valid JWT, their session likely expired due to inactivity.
+        const sessionHint = request.cookies.get('session_hint');
+        const reason = sessionHint ? '&reason=session_expired' : '';
+
         return Response.redirect(
-          new URL(`/login?callbackUrl=${callbackUrl}`, nextUrl),
+          new URL(`/login?callbackUrl=${callbackUrl}${reason}`, nextUrl),
         );
       }
 
@@ -123,6 +153,11 @@ export const authConfig = {
   // Session strategy is JWT (no adapter needed)
   session: {
     strategy: 'jwt',
-    maxAge: 30 * 24 * 60 * 60, // 30 days
+    // Inactivity timeout: session expires after this many seconds of inactivity.
+    // With updateAge: 0, the session cookie is refreshed on every request,
+    // implementing rolling sessions. If idle for SESSION_INACTIVITY_TIMEOUT seconds,
+    // the cookie expires and the user is redirected to login.
+    maxAge: SESSION_INACTIVITY_TIMEOUT,
+    updateAge: 0, // Refresh JWT on every request (rolling sessions)
   },
 } satisfies NextAuthConfig;

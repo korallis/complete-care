@@ -1,5 +1,6 @@
 import type { Metadata } from 'next';
 import { notFound, redirect } from 'next/navigation';
+import Link from 'next/link';
 import { auth } from '@/auth';
 import { getOrgSettings } from '@/features/organisations/actions';
 import { OrgSettingsForm } from '@/components/organisations/org-settings-form';
@@ -56,14 +57,21 @@ export default async function OrgSettingsPage({ params }: OrgSettingsPageProps) 
           />
         </div>
 
-        {/* Team link */}
-        <div className="mt-4">
+        {/* Quick links */}
+        <div className="mt-4 flex items-center gap-6">
           <a
             href={`/${orgSlug}/settings/team`}
             className="text-sm text-[oklch(0.35_0.06_160)] hover:text-[oklch(0.25_0.05_160)] font-medium transition-colors"
           >
-            ← Manage team members
+            Manage team members
           </a>
+          <span className="text-[oklch(0.75_0_0)]">·</span>
+          <Link
+            href={`/${orgSlug}/settings/security`}
+            className="text-sm text-[oklch(0.35_0.06_160)] hover:text-[oklch(0.25_0.05_160)] font-medium transition-colors"
+          >
+            Security &amp; password
+          </Link>
         </div>
       </div>
     </div>

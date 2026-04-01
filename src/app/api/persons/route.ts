@@ -16,7 +16,7 @@ import { and, eq, ilike, isNull } from 'drizzle-orm';
 import { db } from '@/lib/db';
 import { persons } from '@/lib/db/schema';
 import { TenantIsolationError } from '@/lib/tenant';
-import { requirePermission, UnauthorizedError } from '@/lib/rbac';
+import { requirePermission, UnauthorizedError, UnauthenticatedError } from '@/lib/rbac';
 
 export async function GET(request: Request) {
   try {
@@ -64,6 +64,9 @@ export async function GET(request: Request) {
       meta: { page, limit, total: rows.length },
     });
   } catch (error) {
+    if (error instanceof UnauthenticatedError) {
+      return NextResponse.json({ error: error.message }, { status: 401 });
+    }
     if (error instanceof UnauthorizedError || error instanceof TenantIsolationError) {
       return NextResponse.json(
         { error: error.message },

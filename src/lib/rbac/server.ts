@@ -13,30 +13,10 @@ import { auth } from '@/auth';
 import { db } from '@/lib/db';
 import { memberships } from '@/lib/db/schema';
 import { hasPermission, type Action, type Resource, type Role } from './permissions';
+import { UnauthenticatedError, UnauthorizedError } from './errors';
 
-// ---------------------------------------------------------------------------
-// Custom error
-// ---------------------------------------------------------------------------
-
-/**
- * Thrown by requirePermission() when the authenticated user lacks the
- * required permission for an action on a resource.
- */
-export class UnauthorizedError extends Error {
-  readonly action?: Action;
-  readonly resource?: Resource;
-
-  constructor(
-    message: string = 'Insufficient permissions',
-    action?: Action,
-    resource?: Resource,
-  ) {
-    super(message);
-    this.name = 'UnauthorizedError';
-    this.action = action;
-    this.resource = resource;
-  }
-}
+// Re-export for convenience
+export { UnauthenticatedError, UnauthorizedError };
 
 // ---------------------------------------------------------------------------
 // DB helpers
@@ -109,7 +89,7 @@ export async function requirePermission(
   const session = await auth();
 
   if (!session?.user?.id) {
-    throw new UnauthorizedError('Not authenticated');
+    throw new UnauthenticatedError('Authentication required');
   }
 
   const { id: userId } = session.user;
@@ -119,7 +99,7 @@ export async function requirePermission(
   const activeOrgId = (session.user as { activeOrgId?: string }).activeOrgId;
 
   if (!activeOrgId) {
-    throw new UnauthorizedError('No organisation context');
+    throw new UnauthenticatedError('No organisation context');
   }
 
   // Always query DB for the live role — never trust the JWT alone.

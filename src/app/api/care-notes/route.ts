@@ -1,62 +1,76 @@
 /**
- * GET /api/care-plans — List care plans scoped to the active organisation.
+ * GET /api/care-notes — List care notes scoped to the active organisation.
  *
  * Tenant isolation: always filters by the user's activeOrgId.
- * Returns only care plans belonging to persons in the authenticated user's org.
+ * Returns only care notes belonging to persons in the authenticated user's org.
  *
  * Query params:
  *   - personId: filter by specific person (must belong to active org)
- *   - status:   'draft' | 'active' | 'reviewed' | 'archived'
+ *   - noteType: 'daily' | 'handover' | 'incident' | 'safeguarding' | 'medical'
  *   - page:     page number (default: 1)
  *   - limit:    items per page (default: 25, max: 100)
  */
 
 import { NextResponse } from 'next/server';
-import { and, eq, isNull } from 'drizzle-orm';
+import { and, eq, desc } from 'drizzle-orm';
 import { db } from '@/lib/db';
-import { carePlans } from '@/lib/db/schema';
+import { careNotes, persons } from '@/lib/db/schema';
 import { TenantIsolationError } from '@/lib/tenant';
 import { requirePermission, UnauthorizedError, UnauthenticatedError } from '@/lib/rbac';
 
 export async function GET(request: Request) {
   try {
-    const { orgId } = await requirePermission('read', 'care_plans');
+    const { orgId } = await requirePermission('read', 'notes');
 
     const { searchParams } = new URL(request.url);
     const personId = searchParams.get('personId');
-    const status = searchParams.get('status');
+    const noteType = searchParams.get('noteType');
     const page = Math.max(1, parseInt(searchParams.get('page') ?? '1', 10));
     const limit = Math.min(100, Math.max(1, parseInt(searchParams.get('limit') ?? '25', 10)));
     const offset = (page - 1) * limit;
 
     const conditions = [
       // TENANT ISOLATION: always scope to the active org
-      eq(carePlans.organisationId, orgId),
-      // Exclude soft-deleted records
-      isNull(carePlans.deletedAt),
+      eq(careNotes.organisationId, orgId),
     ];
 
     if (personId) {
-      conditions.push(eq(carePlans.personId, personId));
+      // Validate the person belongs to the active org (prevent cross-org enumeration)
+      const [personCheck] = await db
+        .select({ id: persons.id })
+        .from(persons)
+        .where(
+          and(
+            eq(persons.id, personId),
+            eq(persons.organisationId, orgId),
+          ),
+        )
+        .limit(1);
+
+      if (!personCheck) {
+        return NextResponse.json({ error: 'Person not found' }, { status: 404 });
+      }
+
+      conditions.push(eq(careNotes.personId, personId));
     }
 
-    if (status) {
-      conditions.push(eq(carePlans.status, status));
+    if (noteType) {
+      conditions.push(eq(careNotes.noteType, noteType));
     }
 
     const rows = await db
       .select({
-        id: carePlans.id,
-        personId: carePlans.personId,
-        title: carePlans.title,
-        status: carePlans.status,
-        version: carePlans.version,
-        nextReviewDate: carePlans.nextReviewDate,
-        createdAt: carePlans.createdAt,
-        updatedAt: carePlans.updatedAt,
+        id: careNotes.id,
+        personId: careNotes.personId,
+        authorId: careNotes.authorId,
+        noteType: careNotes.noteType,
+        content: careNotes.content,
+        shiftPeriod: careNotes.shiftPeriod,
+        createdAt: careNotes.createdAt,
       })
-      .from(carePlans)
+      .from(careNotes)
       .where(and(...conditions))
+      .orderBy(desc(careNotes.createdAt))
       .limit(limit)
       .offset(offset);
 
@@ -74,7 +88,7 @@ export async function GET(request: Request) {
         { status: error instanceof TenantIsolationError ? 404 : 403 },
       );
     }
-    console.error('GET /api/care-plans error:', error);
+    console.error('GET /api/care-notes error:', error);
     return NextResponse.json({ error: 'Internal server error' }, { status: 500 });
   }
 }
