@@ -1,16 +1,30 @@
 import type { Metadata } from 'next';
 import { auth } from '@/auth';
 import { LogoutButton } from '@/components/auth/logout-button';
+import { WelcomeBanner } from '@/components/dashboard/welcome-banner';
 
 export const metadata: Metadata = {
   title: 'Dashboard',
 };
 
-export default async function DashboardPage() {
+export default async function DashboardPage({
+  searchParams,
+}: {
+  searchParams: Promise<{ welcome?: string }>;
+}) {
   const session = await auth();
+  const params = await searchParams;
+  const isNewUser = params.welcome === 'true';
 
   return (
     <div className="p-6 space-y-6">
+      {/* Welcome banner for newly onboarded users */}
+      {isNewUser && (
+        <WelcomeBanner
+          userName={session?.user?.name ?? undefined}
+        />
+      )}
+
       {/* Welcome header */}
       <div className="space-y-1">
         <h1 className="text-2xl font-semibold text-[oklch(0.18_0.02_160)]">
@@ -53,7 +67,8 @@ export default async function DashboardPage() {
       {/* Placeholder notice */}
       <div className="rounded-xl border border-[oklch(0.91_0.005_160)] bg-white p-6 text-center">
         <p className="text-sm text-[oklch(0.55_0_0)]">
-          Dashboard widgets will be populated as features are added in upcoming milestones.
+          Dashboard widgets will be populated as features are added in upcoming
+          milestones.
         </p>
         <div className="mt-4">
           <LogoutButton />

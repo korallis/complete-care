@@ -197,6 +197,180 @@ export async function createOrganisation(
 }
 
 // ---------------------------------------------------------------------------
+// Action: createOrganisationWithInvites
+// ---------------------------------------------------------------------------
+
+const createOrgWithInvitesSchema = z.object({
+  name: z
+    .string()
+    .min(1, 'Organisation name is required')
+    .max(100, 'Organisation name must be 100 characters or fewer'),
+  slug: z
+    .string()
+    .min(1, 'Slug is required')
+    .max(63, 'Slug must be 63 characters or fewer')
+    .regex(
+      /^[a-z0-9-]+$/,
+      'Slug may only contain lowercase letters, numbers, and hyphens',
+    ),
+  domains: z
+    .array(
+      z.enum(['domiciliary', 'supported_living', 'childrens_residential']),
+    )
+    .min(1, 'At least one care domain must be selected'),
+  invites: z
+    .array(
+      z.object({
+        email: z.string().email('Invalid email address'),
+        role: z.enum(['admin', 'manager', 'senior_carer', 'carer', 'viewer']),
+      }),
+    )
+    .optional()
+    .default([]),
+});
+
+/**
+ * Creates a new organisation with the owner membership, then sends team invitations.
+ * Used as the final step of the onboarding wizard.
+ * Does NOT require requirePermission() since the org is being created in this call.
+ */
+export async function createOrganisationWithInvites(data: {
+  name: string;
+  slug: string;
+  domains: string[];
+  invites: Array<{ email: string; role: string }>;
+}): Promise<ActionResult<{ orgId: string; orgSlug: string }>> {
+  const session = await auth();
+  if (!session?.user?.id) {
+    return { success: false, error: 'Not authenticated' };
+  }
+
+  const userId = session.user.id;
+
+  const parsed = createOrgWithInvitesSchema.safeParse(data);
+  if (!parsed.success) {
+    const firstError = parsed.error.errors[0];
+    return {
+      success: false,
+      error: firstError.message,
+      field: firstError.path[0] as string,
+    };
+  }
+
+  const { name, slug, domains, invites } = parsed.data;
+
+  // Check slug uniqueness
+  const [existing] = await db
+    .select({ id: organisations.id })
+    .from(organisations)
+    .where(eq(organisations.slug, slug))
+    .limit(1);
+
+  if (existing) {
+    return {
+      success: false,
+      error: 'This slug is already taken. Please choose another.',
+      field: 'slug',
+    };
+  }
+
+  // Create the organisation
+  const [newOrg] = await db
+    .insert(organisations)
+    .values({
+      name,
+      slug,
+      domains,
+      plan: 'free',
+    })
+    .returning({ id: organisations.id, slug: organisations.slug });
+
+  if (!newOrg) {
+    return { success: false, error: 'Failed to create organisation' };
+  }
+
+  // Create owner membership
+  await db.insert(memberships).values({
+    userId,
+    organisationId: newOrg.id,
+    role: 'owner',
+    status: 'active',
+  });
+
+  // Audit log for org creation
+  await db.insert(auditLogs).values({
+    userId,
+    organisationId: newOrg.id,
+    action: 'create',
+    entityType: 'organisation',
+    entityId: newOrg.id,
+    changes: { after: { name, slug, domains } },
+  });
+
+  // Send team invitations (best-effort — failures don't abort org creation)
+  if (invites.length > 0) {
+    // Fetch inviter name for email
+    const [inviter] = await db
+      .select({ name: users.name })
+      .from(users)
+      .where(eq(users.id, userId))
+      .limit(1);
+
+    // De-duplicate by email (case-insensitive)
+    const uniqueInvites = Array.from(
+      new Map(invites.map((i) => [i.email.toLowerCase(), i])).values(),
+    );
+
+    for (const invite of uniqueInvites) {
+      try {
+        const token = generateToken(32);
+        const [newInvitation] = await db
+          .insert(invitations)
+          .values({
+            organisationId: newOrg.id,
+            email: invite.email.toLowerCase(),
+            role: invite.role,
+            token,
+            status: INVITATION_STATUS.PENDING,
+            invitedBy: userId,
+            expiresAt: invitationExpiry(),
+          })
+          .returning({ id: invitations.id });
+
+        if (newInvitation) {
+          await sendInvitationEmail(invite.email.toLowerCase(), {
+            token,
+            orgName: name,
+            inviterName: inviter?.name ?? 'Your organisation administrator',
+            role: invite.role,
+          });
+
+          await db.insert(auditLogs).values({
+            userId,
+            organisationId: newOrg.id,
+            action: 'invite',
+            entityType: 'invitation',
+            entityId: newInvitation.id,
+            changes: { after: { email: invite.email, role: invite.role } },
+          });
+        }
+      } catch (err) {
+        // Log error but don't fail the whole onboarding flow
+        console.error(
+          `[onboarding] Failed to send invitation to ${invite.email}:`,
+          err,
+        );
+      }
+    }
+  }
+
+  revalidatePath('/dashboard');
+  revalidatePath('/onboarding');
+
+  return { success: true, data: { orgId: newOrg.id, orgSlug: newOrg.slug } };
+}
+
+// ---------------------------------------------------------------------------
 // Action: generateOrgSlug (utility, not a mutation)
 // ---------------------------------------------------------------------------
 
