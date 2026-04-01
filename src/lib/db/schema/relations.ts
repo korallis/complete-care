@@ -19,6 +19,9 @@ import { notifications } from './notifications';
 import { riskAssessments } from './risk-assessments';
 import { incidents } from './incidents';
 import { medications, medicationAdministrations } from './medications';
+import { prnProtocols, prnAdministrations } from './prn-protocols';
+import { fluidEntries, mealEntries, mustAssessments } from './clinical-monitoring';
+import { dbsChecks } from './dbs-checks';
 
 export const organisationsRelations = relations(organisations, ({ many }) => ({
   memberships: many(memberships),
@@ -36,6 +39,12 @@ export const organisationsRelations = relations(organisations, ({ many }) => ({
   incidents: many(incidents),
   medications: many(medications),
   medicationAdministrations: many(medicationAdministrations),
+  prnProtocols: many(prnProtocols),
+  prnAdministrations: many(prnAdministrations),
+  fluidEntries: many(fluidEntries),
+  mealEntries: many(mealEntries),
+  mustAssessments: many(mustAssessments),
+  dbsChecks: many(dbsChecks),
 }));
 
 export const usersRelations = relations(users, ({ many }) => ({
@@ -117,9 +126,13 @@ export const personsRelations = relations(persons, ({ one, many }) => ({
   incidents: many(incidents),
   medications: many(medications),
   medicationAdministrations: many(medicationAdministrations),
+  prnAdministrations: many(prnAdministrations),
+  fluidEntries: many(fluidEntries),
+  mealEntries: many(mealEntries),
+  mustAssessments: many(mustAssessments),
 }));
 
-export const staffProfilesRelations = relations(staffProfiles, ({ one }) => ({
+export const staffProfilesRelations = relations(staffProfiles, ({ one, many }) => ({
   organisation: one(organisations, {
     fields: [staffProfiles.organisationId],
     references: [organisations.id],
@@ -128,6 +141,7 @@ export const staffProfilesRelations = relations(staffProfiles, ({ one }) => ({
     fields: [staffProfiles.userId],
     references: [users.id],
   }),
+  dbsChecks: many(dbsChecks),
 }));
 
 export const carePlansRelations = relations(carePlans, ({ one, many }) => ({
@@ -250,6 +264,8 @@ export const medicationsRelations = relations(medications, ({ one, many }) => ({
     references: [persons.id],
   }),
   administrations: many(medicationAdministrations),
+  prnProtocols: many(prnProtocols),
+  prnAdministrations: many(prnAdministrations),
 }));
 
 export const medicationAdministrationsRelations = relations(
@@ -273,3 +289,109 @@ export const medicationAdministrationsRelations = relations(
     }),
   }),
 );
+
+// ---------------------------------------------------------------------------
+// PRN Protocol / Administration relations
+// ---------------------------------------------------------------------------
+
+export const prnProtocolsRelations = relations(prnProtocols, ({ one, many }) => ({
+  organisation: one(organisations, {
+    fields: [prnProtocols.organisationId],
+    references: [organisations.id],
+  }),
+  medication: one(medications, {
+    fields: [prnProtocols.medicationId],
+    references: [medications.id],
+  }),
+  administrations: many(prnAdministrations),
+}));
+
+export const prnAdministrationsRelations = relations(
+  prnAdministrations,
+  ({ one }) => ({
+    organisation: one(organisations, {
+      fields: [prnAdministrations.organisationId],
+      references: [organisations.id],
+    }),
+    prnProtocol: one(prnProtocols, {
+      fields: [prnAdministrations.prnProtocolId],
+      references: [prnProtocols.id],
+    }),
+    medication: one(medications, {
+      fields: [prnAdministrations.medicationId],
+      references: [medications.id],
+    }),
+    person: one(persons, {
+      fields: [prnAdministrations.personId],
+      references: [persons.id],
+    }),
+    administeredBy: one(users, {
+      fields: [prnAdministrations.administeredById],
+      references: [users.id],
+    }),
+  }),
+);
+
+// ---------------------------------------------------------------------------
+// Clinical Monitoring relations (fluid, meal, MUST)
+// ---------------------------------------------------------------------------
+
+export const fluidEntriesRelations = relations(fluidEntries, ({ one }) => ({
+  organisation: one(organisations, {
+    fields: [fluidEntries.organisationId],
+    references: [organisations.id],
+  }),
+  person: one(persons, {
+    fields: [fluidEntries.personId],
+    references: [persons.id],
+  }),
+  recordedBy: one(users, {
+    fields: [fluidEntries.recordedById],
+    references: [users.id],
+  }),
+}));
+
+export const mealEntriesRelations = relations(mealEntries, ({ one }) => ({
+  organisation: one(organisations, {
+    fields: [mealEntries.organisationId],
+    references: [organisations.id],
+  }),
+  person: one(persons, {
+    fields: [mealEntries.personId],
+    references: [persons.id],
+  }),
+  recordedBy: one(users, {
+    fields: [mealEntries.recordedById],
+    references: [users.id],
+  }),
+}));
+
+export const mustAssessmentsRelations = relations(mustAssessments, ({ one }) => ({
+  organisation: one(organisations, {
+    fields: [mustAssessments.organisationId],
+    references: [organisations.id],
+  }),
+  person: one(persons, {
+    fields: [mustAssessments.personId],
+    references: [persons.id],
+  }),
+  assessedBy: one(users, {
+    fields: [mustAssessments.assessedById],
+    references: [users.id],
+  }),
+}));
+
+// ---------------------------------------------------------------------------
+// DBS Check relations
+// ---------------------------------------------------------------------------
+
+export const dbsChecksRelations = relations(dbsChecks, ({ one }) => ({
+  organisation: one(organisations, {
+    fields: [dbsChecks.organisationId],
+    references: [organisations.id],
+  }),
+  staffProfile: one(staffProfiles, {
+    fields: [dbsChecks.staffProfileId],
+    references: [staffProfiles.id],
+  }),
+}));

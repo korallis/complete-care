@@ -23,5 +23,8 @@ export * from './notifications';
 export * from './risk-assessments';
 export * from './incidents';
 export * from './medications';
+export * from './prn-protocols';
+export * from './clinical-monitoring';
+export * from './dbs-checks';
 
 export * from './relations';
