@@ -24,6 +24,7 @@ export function RegisterForm() {
     register,
     handleSubmit,
     watch,
+    setValue,
     formState: { errors, isSubmitting },
   } = useForm<RegistrationInput>({
     resolver: zodResolver(registrationSchema),
@@ -242,6 +243,61 @@ export function RegisterForm() {
 
       <Separator className="my-1" />
 
+      {/* Terms acceptance */}
+      <div className="space-y-1.5">
+        <div className="flex items-start gap-3">
+          <input
+            id="acceptTerms"
+            type="checkbox"
+            className="mt-0.5 h-4 w-4 shrink-0 cursor-pointer rounded border border-input accent-[oklch(0.22_0.04_160)]"
+            aria-invalid={!!errors.acceptTerms}
+            aria-describedby={errors.acceptTerms ? 'acceptTerms-error' : undefined}
+            onChange={(e) => {
+              setValue('acceptTerms', e.target.checked ? true : (false as unknown as true), {
+                shouldValidate: true,
+              });
+            }}
+            checked={watch('acceptTerms') === true}
+          />
+          <label
+            htmlFor="acceptTerms"
+            className="text-xs text-muted-foreground leading-relaxed cursor-pointer select-none"
+          >
+            I agree to the{' '}
+            <Link
+              href="/terms"
+              target="_blank"
+              rel="noopener noreferrer"
+              className="font-medium text-foreground hover:underline"
+              onClick={(e) => e.stopPropagation()}
+            >
+              Terms of Service
+            </Link>{' '}
+            and{' '}
+            <Link
+              href="/privacy"
+              target="_blank"
+              rel="noopener noreferrer"
+              className="font-medium text-foreground hover:underline"
+              onClick={(e) => e.stopPropagation()}
+            >
+              Privacy Policy
+            </Link>
+            . I understand that Complete Care processes personal data as described
+            in the Privacy Policy.
+          </label>
+        </div>
+        {errors.acceptTerms && (
+          <p
+            id="acceptTerms-error"
+            className="text-xs text-destructive"
+            role="alert"
+          >
+            {errors.acceptTerms.message}
+          </p>
+        )}
+      </div>
+
       <Button
         type="submit"
         className="w-full bg-[oklch(0.22_0.04_160)] hover:bg-[oklch(0.28_0.05_160)] text-white"
@@ -256,18 +312,6 @@ export function RegisterForm() {
           'Create account'
         )}
       </Button>
-
-      <p className="text-xs text-center text-muted-foreground">
-        By creating an account, you agree to our{' '}
-        <Link href="/terms" className="underline hover:text-foreground">
-          Terms of Service
-        </Link>{' '}
-        and{' '}
-        <Link href="/privacy" className="underline hover:text-foreground">
-          Privacy Policy
-        </Link>
-        .
-      </p>
 
       <p className="text-center text-sm text-muted-foreground pt-1">
         Already have an account?{' '}

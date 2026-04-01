@@ -65,9 +65,10 @@ describe('registrationSchema', () => {
     name: 'Jane Doe',
     password: 'Secure1!',
     confirmPassword: 'Secure1!',
+    acceptTerms: true as const,
   };
 
-  it('accepts valid registration data', () => {
+  it('accepts valid registration data with terms accepted', () => {
     const result = registrationSchema.safeParse(validPayload);
     expect(result.success).toBe(true);
   });
@@ -111,6 +112,30 @@ describe('registrationSchema', () => {
       confirmPassword: '123456',
     });
     expect(result.success).toBe(false);
+  });
+
+  it('rejects when acceptTerms is missing', () => {
+    // eslint-disable-next-line @typescript-eslint/no-unused-vars
+    const { acceptTerms: _omitted, ...payloadWithoutTerms } = validPayload;
+    const result = registrationSchema.safeParse(payloadWithoutTerms);
+    expect(result.success).toBe(false);
+    const termsError = result.error?.issues.find(
+      (i) => i.path.includes('acceptTerms'),
+    );
+    expect(termsError).toBeDefined();
+  });
+
+  it('rejects when acceptTerms is false', () => {
+    const result = registrationSchema.safeParse({
+      ...validPayload,
+      acceptTerms: false,
+    });
+    expect(result.success).toBe(false);
+    const termsError = result.error?.issues.find(
+      (i) => i.path.includes('acceptTerms'),
+    );
+    expect(termsError).toBeDefined();
+    expect(termsError?.message).toMatch(/terms/i);
   });
 });
 

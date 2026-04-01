@@ -33,6 +33,11 @@ export const registrationSchema = z
       .refine((v) => v.trim().length > 0, 'Name cannot be only whitespace'),
     password: passwordSchema,
     confirmPassword: z.string().min(1, 'Please confirm your password'),
+    acceptTerms: z.literal(true, {
+      errorMap: () => ({
+        message: 'You must accept the Terms of Service and Privacy Policy to continue',
+      }),
+    }),
   })
   .refine((data) => data.password === data.confirmPassword, {
     message: 'Passwords do not match',

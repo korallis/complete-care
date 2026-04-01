@@ -1,5 +1,6 @@
 import { MarketingNav } from '@/components/marketing/nav';
 import { MarketingFooter } from '@/components/marketing/footer';
+import { CookieConsentBanner } from '@/components/marketing/cookie-consent-banner';
 
 export default function MarketingLayout({
   children,
@@ -11,6 +12,7 @@ export default function MarketingLayout({
       <MarketingNav />
       <div className="flex-1">{children}</div>
       <MarketingFooter />
+      <CookieConsentBanner />
     </div>
   );
 }
