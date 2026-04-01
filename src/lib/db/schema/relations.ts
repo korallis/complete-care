@@ -18,6 +18,7 @@ import { documents, bodyMapEntries } from './documents';
 import { notifications } from './notifications';
 import { riskAssessments } from './risk-assessments';
 import { incidents } from './incidents';
+import { medications, medicationAdministrations } from './medications';
 
 export const organisationsRelations = relations(organisations, ({ many }) => ({
   memberships: many(memberships),
@@ -33,6 +34,8 @@ export const organisationsRelations = relations(organisations, ({ many }) => ({
   riskAssessments: many(riskAssessments),
   bodyMapEntries: many(bodyMapEntries),
   incidents: many(incidents),
+  medications: many(medications),
+  medicationAdministrations: many(medicationAdministrations),
 }));
 
 export const usersRelations = relations(users, ({ many }) => ({
@@ -112,6 +115,8 @@ export const personsRelations = relations(persons, ({ one, many }) => ({
   riskAssessments: many(riskAssessments),
   bodyMapEntries: many(bodyMapEntries),
   incidents: many(incidents),
+  medications: many(medications),
+  medicationAdministrations: many(medicationAdministrations),
 }));
 
 export const staffProfilesRelations = relations(staffProfiles, ({ one }) => ({
@@ -230,3 +235,41 @@ export const incidentsRelations = relations(incidents, ({ one }) => ({
     references: [users.id],
   }),
 }));
+
+// ---------------------------------------------------------------------------
+// Medication / EMAR relations
+// ---------------------------------------------------------------------------
+
+export const medicationsRelations = relations(medications, ({ one, many }) => ({
+  organisation: one(organisations, {
+    fields: [medications.organisationId],
+    references: [organisations.id],
+  }),
+  person: one(persons, {
+    fields: [medications.personId],
+    references: [persons.id],
+  }),
+  administrations: many(medicationAdministrations),
+}));
+
+export const medicationAdministrationsRelations = relations(
+  medicationAdministrations,
+  ({ one }) => ({
+    organisation: one(organisations, {
+      fields: [medicationAdministrations.organisationId],
+      references: [organisations.id],
+    }),
+    person: one(persons, {
+      fields: [medicationAdministrations.personId],
+      references: [persons.id],
+    }),
+    medication: one(medications, {
+      fields: [medicationAdministrations.medicationId],
+      references: [medications.id],
+    }),
+    administeredBy: one(users, {
+      fields: [medicationAdministrations.administeredById],
+      references: [users.id],
+    }),
+  }),
+);

@@ -22,5 +22,6 @@ export * from './documents';
 export * from './notifications';
 export * from './risk-assessments';
 export * from './incidents';
+export * from './medications';
 
 export * from './relations';
