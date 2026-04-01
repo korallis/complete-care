@@ -1,0 +1,112 @@
+{
+  "groupId": "auth-login-session",
+  "testedAt": "2026-04-01T09:29:48Z",
+  "toolsUsed": [
+    "agent-browser",
+    "shared-dev-server-log"
+  ],
+  "assertions": [
+    {
+      "id": "VAL-AUTH-004",
+      "status": "fail",
+      "reason": "POST /api/auth/login returned 200 and set authjs.session-token, but the user was redirected to /onboarding instead of /dashboard after sign-in.",
+      "evidence": [
+        "foundation/auth-login-session/onboarding-annotated.png",
+        "network:POST /api/auth/login -> 200; GET /dashboard -> 307; GET /onboarding -> 200",
+        "cookies:authjs.session-token present",
+        "console-errors:none"
+      ]
+    },
+    {
+      "id": "VAL-AUTH-005",
+      "status": "pass",
+      "reason": "Using the registered email with an incorrect password showed the generic 'Invalid email or password' message and returned 401.",
+      "evidence": [
+        "foundation/auth-login-session/VAL-AUTH-005-invalid-password.png",
+        "network:POST /api/auth/login -> 401",
+        "response-body:Invalid email or password",
+        "console-errors:none"
+      ]
+    },
+    {
+      "id": "VAL-AUTH-006",
+      "status": "pass",
+      "reason": "Using authsess-missing-20260401@example.test returned the same generic 'Invalid email or password' response and 401, preventing user enumeration.",
+      "evidence": [
+        "foundation/auth-login-session/VAL-AUTH-006-missing-user.png",
+        "network:POST /api/auth/login -> 401",
+        "response-body:Invalid email or password",
+        "console-errors:none"
+      ]
+    },
+    {
+      "id": "VAL-AUTH-007",
+      "status": "fail",
+      "reason": "The first five consecutive bad-password submissions for authsess-20260401@example.test all returned 401 with the generic error. The lockout message and 429 appeared only on the following attempt, so lockout was enforced one request late.",
+      "evidence": [
+        "foundation/auth-login-session/VAL-AUTH-007-no-lockout-after-five-attempts.png",
+        "foundation/auth-login-session/VAL-AUTH-007-lockout-on-next-attempt.png",
+        "network:POST /api/auth/login -> 401 x6, then 429 on the next attempt",
+        "response-body:Account temporarily locked due to too many failed login attempts. Try again in 14 minutes or reset your password.",
+        "console-errors:none"
+      ]
+    },
+    {
+      "id": "VAL-AUTH-008",
+      "status": "blocked",
+      "reason": "After login, the app redirects to /onboarding and onboarding completion fails with POST /onboarding -> 500 (column \"ip_address\" of relation \"audit_logs\" does not exist). That prevents reaching the dashboard/logout button, so logout and back-navigation could not be validated through the real UI.",
+      "evidence": [
+        "foundation/auth-login-session/onboarding-after-skip-annotated.png",
+        "network:POST /onboarding -> 500",
+        "console-errors:column \"ip_address\" of relation \"audit_logs\" does not exist"
+      ]
+    },
+    {
+      "id": "VAL-AUTH-014",
+      "status": "pass",
+      "reason": "While authenticated, reloading the protected /onboarding page kept the user on the same page and the session cookie remained present; no 401s were observed during the reload flow.",
+      "evidence": [
+        "foundation/auth-login-session/VAL-AUTH-014-onboarding-after-reload.png",
+        "network:GET /onboarding -> 200; GET /api/auth/session -> 200",
+        "cookies:authjs.session-token present",
+        "console-errors:none"
+      ]
+    },
+    {
+      "id": "VAL-AUTH-015",
+      "status": "fail",
+      "reason": "After 65 seconds of inactivity, reloading the protected page kept the user authenticated on /onboarding and no session-expired message appeared. The session cookie expiry was 2026-05-01T09:20:49.053859Z (~30 days), so there is no visible inactivity-timeout path.",
+      "evidence": [
+        "foundation/auth-login-session/VAL-AUTH-015-after-idle-reload.png",
+        "url:http://localhost:3200/onboarding after 65s idle reload",
+        "cookies:authjs.session-token expires=2026-05-01T09:20:49.053859Z",
+        "console-errors:none"
+      ]
+    }
+  ],
+  "frictions": [
+    {
+      "description": "Because authenticated users are redirected away from /login, I had to clear only the browser session's cookies/localStorage after the authenticated checks to continue the negative login tests in the same required browser session.",
+      "resolved": true,
+      "resolution": "Used agent-browser cookies/storage clear on the isolated session only.",
+      "affectedAssertions": [
+        "VAL-AUTH-005",
+        "VAL-AUTH-006",
+        "VAL-AUTH-007"
+      ]
+    }
+  ],
+  "blockers": [
+    {
+      "description": "Organisation onboarding crashes on POST /onboarding with database error `column \"ip_address\" of relation \"audit_logs\" does not exist`, preventing access to the dashboard/logout UI.",
+      "affectedAssertions": [
+        "VAL-AUTH-008"
+      ],
+      "quickFixAttempted": "Retried the onboarding step through the real UI once; it returned to step 1 and reproduced the same browser/server error."
+    }
+  ],
+  "notes": [
+    "Registered and verified authsess-20260401@example.test via the real UI and the shared dev-server email log before testing login/session assertions.",
+    "Session-persistence and inactivity checks were performed on the authenticated /onboarding page because the post-login flow does not land on /dashboard for a new account."
+  ]
+}

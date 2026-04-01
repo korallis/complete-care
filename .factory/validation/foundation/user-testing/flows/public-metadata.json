@@ -1,0 +1,53 @@
+{
+  "groupId": "public-metadata",
+  "testedAt": "2026-04-01T09:11:48.401936+00:00",
+  "toolsUsed": [
+    "agent-browser"
+  ],
+  "assertions": [
+    {
+      "id": "VAL-MARKET-013",
+      "status": "fail",
+      "reason": "Keyboard focus was visible, but the landing page failed basic accessibility checks because axe reported serious color-contrast failures and invalid aria-label usage on testimonial rating containers.",
+      "evidence": [
+        "foundation/public-metadata/VAL-MARKET-013-focused-element.png",
+        "Tab focus landed on 'Complete Care' with visible outline 'oklab(0.708 0 0 / 0.5) auto 1px' and outline-offset '1px'.",
+        "Landing page images: 0; missing alt text: 0; links/buttons without accessible name: 0.",
+        "axe wcag2a/wcag2aa audit: 0 critical, 2 serious violations (aria-prohibited-attr on 3 testimonial star-rating divs; color-contrast on 4 text elements)."
+      ]
+    },
+    {
+      "id": "VAL-MARKET-014",
+      "status": "fail",
+      "reason": "The page title, description, Open Graph tags, and canonical URL were present, but og:image resolved to http://localhost:3200/og-image.png, which is not a publicly shareable production URL.",
+      "evidence": [
+        "title=Complete Care — UK Care Management Platform | Complete Care",
+        "description=The only platform purpose-built for domiciliary care, supported living, and children's residential homes — with native Ofsted + CQC compliance and AI throughout.",
+        "og:title=Complete Care — UK Care Management Platform",
+        "og:description=Manage domiciliary care, supported living, and children's residential homes from a single unified platform with native CQC and Ofsted compliance.",
+        "og:image=http://localhost:3200/og-image.png",
+        "canonical=https://completecare.co.uk/"
+      ]
+    },
+    {
+      "id": "VAL-CROSS-023",
+      "status": "pass",
+      "reason": "The cookie consent banner displayed Accept all and Reject options on the landing and privacy pages, both legal pages were reachable from footer links, both consent actions persisted state, and registration blocked submission until terms were accepted.",
+      "evidence": [
+        "foundation/public-metadata/VAL-CROSS-023-cookie-banner.png",
+        "foundation/public-metadata/VAL-CROSS-023-privacy-policy.png",
+        "foundation/public-metadata/VAL-CROSS-023-registration-terms-required.png",
+        "Privacy page URL=http://localhost:3200/privacy; Terms page URL=http://localhost:3200/terms",
+        "Reject flow persisted localStorage.cc_consent='rejected' and hid the banner on subsequent public page loads.",
+        "Accept flow persisted localStorage.cc_consent='accepted'.",
+        "Registration page showed the inline error 'You must accept the Terms of Service and Privacy Policy to continue'; no /api/auth/register request was captured when submitting without acceptance."
+      ]
+    }
+  ],
+  "frictions": [],
+  "blockers": [],
+  "notes": [
+    "Console errors: none. Observed only React DevTools info messages and Next.js Fast Refresh logs.",
+    "Registration requests were temporarily aborted inside agent-browser while testing terms gating so no account or organisation was created."
+  ]
+}

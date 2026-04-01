@@ -1,0 +1,125 @@
+{
+  "groupId": "tenant-settings-management",
+  "assertions": [
+    {
+      "id": "VAL-TENANT-012",
+      "status": "fail",
+      "reason": "Owner settings form exposes only organisation name, slug, and care domains (no contact email or address fields). Saving the updated org name partially persists the name change, but the mutation crashes with NeonDbError: column \"ip_address\" of relation \"audit_logs\" does not exist, so the required settings flow does not complete successfully.",
+      "evidence": [
+        "foundation/tenant-settings-management/org-settings-owner-before-update.png",
+        "foundation/tenant-settings-management/org-settings-owner-save-result.png",
+        "Console error after save: NeonDbError: column \"ip_address\" of relation \"audit_logs\" does not exist"
+      ]
+    },
+    {
+      "id": "VAL-TENANT-013",
+      "status": "fail",
+      "reason": "Manager/non-owner restrictions are visible in the UI: settings fields are disabled and admin navigation links like Billing/Team are not shown. However, the expected direct API enforcement surface is missing: PUT /api/organisations/c90f09df-3996-426a-8392-59c4ff2bab7d returned 404 Not Found instead of 403 Forbidden.",
+      "evidence": [
+        "foundation/tenant-settings-management/manager-restricted-settings.png",
+        "curl PUT /api/organisations/c90f09df-3996-426a-8392-59c4ff2bab7d as manager -> 404 Not Found"
+      ]
+    },
+    {
+      "id": "VAL-TENANT-014",
+      "status": "fail",
+      "reason": "Changing Tenant Settings Carer from carer to senior_carer via the team UI persists the new role and the next session shows senior_carer navigation, but the role-change action itself crashes the page with the same audit_logs ip_address NeonDbError instead of completing cleanly.",
+      "evidence": [
+        "foundation/tenant-settings-management/team-page-before-role-change.png",
+        "foundation/tenant-settings-management/team-page-after-role-change-attempt.png",
+        "foundation/tenant-settings-management/senior-carer-dashboard-after-role-change.png",
+        "Database check after UI action: tenantsettings-carer-20260401@example.test role = senior_carer"
+      ]
+    },
+    {
+      "id": "VAL-TENANT-015",
+      "status": "fail",
+      "reason": "Removing Tenant Settings Manager from the team UI deletes the membership and the removed user's subsequent GET /api/persons request is denied with 403 Not a member of this organisation, but the removal action itself crashes to an error boundary because the audit_logs ip_address column is missing.",
+      "evidence": [
+        "foundation/tenant-settings-management/team-page-after-manager-removal-attempt.png",
+        "foundation/tenant-settings-management/team-page-manager-removed.png",
+        "curl GET /api/persons as removed manager -> 403 Forbidden {\"error\":\"Not a member of this organisation\"}"
+      ]
+    },
+    {
+      "id": "VAL-TENANT-016",
+      "status": "fail",
+      "reason": "The owner row has no self-remove button, so the UI prevents self-removal by omission, but the required explicit error message about transferring ownership first is never shown through the real user surface.",
+      "evidence": [
+        "foundation/tenant-settings-management/team-page-manager-removed.png",
+        "Owner row visible without any Remove control; only non-owner member has a remove button"
+      ]
+    },
+    {
+      "id": "VAL-TENANT-017",
+      "status": "fail",
+      "reason": "The org switcher renders both assigned organisations and switching updates the session's activeOrgId to Org B, and Org B settings render correctly. However, the switcher redirects to /tenantsettings-org-b-20260401/dashboard, which 404s, and the org-scoped persons and staff routes also 404, so the full UI context does not update as required.",
+      "evidence": [
+        "foundation/tenant-settings-management/org-switcher-open-multi-org.png",
+        "foundation/tenant-settings-management/org-b-dashboard-after-switch.png",
+        "foundation/tenant-settings-management/org-b-settings-after-switch.png",
+        "foundation/tenant-settings-management/org-b-persons-route.png",
+        "foundation/tenant-settings-management/org-b-staff-route.png",
+        "Session after switch: activeOrgId = 7e8d4995-edda-461c-8860-17c8a97e4dd8 (Org B)"
+      ]
+    },
+    {
+      "id": "VAL-TENANT-018",
+      "status": "fail",
+      "reason": "An existing single-org owner has no visible create-new-organisation control on the dashboard, and manual navigation to /onboarding redirects back to /dashboard. After a second org was seeded to continue testing, the switcher's Create new organisation link still returns to /dashboard instead of a working creation flow, so the end-to-end user flow does not succeed.",
+      "evidence": [
+        "foundation/tenant-settings-management/owner-dashboard-org-a-before-new-org.png",
+        "foundation/tenant-settings-management/new-org-existing-user-redirected.png",
+        "foundation/tenant-settings-management/org-switcher-open-multi-org.png",
+        "foundation/tenant-settings-management/create-new-org-link-result.png",
+        "foundation/tenant-settings-management/onboarding-submit-stuck.png"
+      ]
+    }
+  ],
+  "toolsUsed": [
+    "agent-browser",
+    "bun",
+    "curl"
+  ],
+  "frictions": [
+    {
+      "description": "A cookie consent banner blocked the first landing-page interactions until it was dismissed.",
+      "resolved": true,
+      "resolution": "Dismissed the cookie banner before beginning setup.",
+      "affectedAssertions": [
+        "VAL-TENANT-018"
+      ]
+    },
+    {
+      "description": "Verification links and session context could not be recovered purely from the shared dev-server log/browser flow because onboarding and later org/team mutations crashed after partial writes.",
+      "resolved": true,
+      "resolution": "Used the allowed direct DB workaround only for this validator namespace: seeded the assigned users/orgs/memberships/minimal data and generated session cookies for the same users to continue UI validation.",
+      "affectedAssertions": [
+        "VAL-TENANT-012",
+        "VAL-TENANT-013",
+        "VAL-TENANT-014",
+        "VAL-TENANT-015",
+        "VAL-TENANT-016",
+        "VAL-TENANT-017",
+        "VAL-TENANT-018"
+      ]
+    }
+  ],
+  "blockers": [
+    {
+      "description": "Pure UI setup and multiple tenant-management mutations are blocked by NeonDbError: column \"ip_address\" of relation \"audit_logs\" does not exist. The actions partially commit database changes before the UI crashes.",
+      "affectedAssertions": [
+        "VAL-TENANT-012",
+        "VAL-TENANT-014",
+        "VAL-TENANT-015",
+        "VAL-TENANT-018"
+      ],
+      "quickFixAttempted": "Retried onboarding, save, role-change, and remove flows; after repeated 500s, seeded only this group's orgs/memberships/minimal records directly in DB and re-established browser sessions to finish the assigned assertions."
+    }
+  ],
+  "notes": [
+    "Visible manager/non-owner restrictions were confirmed on the organisation settings page before the direct API check.",
+    "Removed-user access behavior was verified with a stale-org session token against GET /api/persons and returned 403 Forbidden.",
+    "All 7 assigned assertions were exercised; none fully satisfied the contract end to end."
+  ]
+}

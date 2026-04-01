@@ -1,0 +1,93 @@
+{
+  "groupId": "marketing-public",
+  "testedAt": "2026-04-01T09:10:35Z",
+  "toolsUsed": [
+    "agent-browser"
+  ],
+  "assertions": [
+    {
+      "id": "VAL-MARKET-001",
+      "status": "pass",
+      "reason": "The landing page loaded successfully in 565ms with the hero section, care-domain and feature highlights, testimonial/social-proof content, and primary CTA buttons visible. No console errors were observed.",
+      "evidence": [
+        "foundation/marketing-public/VAL-MARKET-001-landing-page-full.png",
+        "foundation/marketing-public/VAL-MARKET-001-landing-page-clean.png",
+        "performance:navigation-duration-ms=565",
+        "console-errors:none"
+      ]
+    },
+    {
+      "id": "VAL-MARKET-002",
+      "status": "pass",
+      "reason": "At a 375px-wide viewport, the landing page remained legible, the desktop navigation collapsed into a hamburger menu, and the page showed no horizontal overflow.",
+      "evidence": [
+        "foundation/marketing-public/VAL-MARKET-002-mobile-landing-page.png",
+        "foundation/marketing-public/VAL-MARKET-002-mobile-menu-open.png",
+        "dom-inspection:viewport=375x812,scrollWidth=375,no-horizontal-overflow=true"
+      ]
+    },
+    {
+      "id": "VAL-MARKET-003",
+      "status": "fail",
+      "reason": "The primary Get Started CTA correctly navigated to /register, but the Book a Demo CTA did not open a public demo-booking flow. It redirected to /login?callbackUrl=%2Fdemo instead.",
+      "evidence": [
+        "foundation/marketing-public/VAL-MARKET-003-registration-page-after-get-started.png",
+        "foundation/marketing-public/VAL-MARKET-003-demo-destination.png",
+        "network:GET /demo?_rsc=... -> /login?callbackUrl=%2Fdemo"
+      ]
+    },
+    {
+      "id": "VAL-MARKET-004",
+      "status": "pass",
+      "reason": "The pricing page loaded successfully and displayed Free, Professional, and Enterprise tiers with names, prices/descriptions, feature summaries, and a CTA per tier. No console errors were observed.",
+      "evidence": [
+        "foundation/marketing-public/VAL-MARKET-004-pricing-page-all-tiers.png",
+        "console-errors:none"
+      ]
+    },
+    {
+      "id": "VAL-MARKET-005",
+      "status": "pass",
+      "reason": "The pricing page included a detailed comparison table grouped across Care Management, EMAR & Clinical, Staff Management, Compliance, AI Features, and Platform, which is sufficient for plan comparison.",
+      "evidence": [
+        "foundation/marketing-public/VAL-MARKET-005-feature-comparison-table.png"
+      ]
+    },
+    {
+      "id": "VAL-MARKET-006",
+      "status": "pass",
+      "reason": "The monthly/annual billing toggle updated prices immediately. The annual state displayed a Save 20% badge and discounted annual-equivalent pricing (for example, Professional at £119/mo billed annually).",
+      "evidence": [
+        "foundation/marketing-public/VAL-MARKET-006-monthly-prices.png",
+        "foundation/marketing-public/VAL-MARKET-006-annual-prices-with-savings.png",
+        "dom-inspection:annual-toggle-updated-text-includes=Save 20%,£119"
+      ]
+    },
+    {
+      "id": "VAL-MARKET-007",
+      "status": "pass",
+      "reason": "Clicking the Professional tier CTA preserved the selected plan context on the registration page via the URL parameter /register?plan=professional.",
+      "evidence": [
+        "foundation/marketing-public/VAL-MARKET-007-registration-with-professional-plan.png",
+        "url:http://localhost:3200/register?plan=professional"
+      ]
+    }
+  ],
+  "frictions": [
+    {
+      "description": "A cookie-consent banner appears on first load and partially covers the landing page until dismissed.",
+      "resolved": true,
+      "resolution": "Rejected cookies before capturing clean landing-page evidence.",
+      "affectedAssertions": [
+        "VAL-MARKET-001",
+        "VAL-MARKET-002",
+        "VAL-MARKET-003"
+      ]
+    }
+  ],
+  "blockers": [],
+  "notes": [
+    "Validated only the public marketing surface at http://localhost:3200 with browser-only testing.",
+    "VAL-MARKET-007 preserved plan context in the URL only; the registration form itself did not visibly display the selected plan."
+  ]
+}

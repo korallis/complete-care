@@ -1,0 +1,47 @@
+{
+  "groupId": "auth-google-oauth",
+  "testedAt": "2026-04-01T09:16:55.335634Z",
+  "isolation": {
+    "appUrl": "http://localhost:3200",
+    "surface": "public auth surface only"
+  },
+  "toolsUsed": [
+    "agent-browser"
+  ],
+  "assertions": [
+    {
+      "id": "VAL-AUTH-012",
+      "status": "fail",
+      "reason": "Clicking the real 'Sign in with Google' button on /login did not start a usable Google consent/authentication flow. The browser landed on Google\u2019s OAuth error page showing 'Access blocked: Authorization Error' and 'Missing required parameter: client_id', so no new-user account creation, Google identity linking, callback redirect, onboarding redirect, or session creation could occur.",
+      "evidence": [
+        "Screenshot: foundation/auth-google-oauth/VAL-AUTH-012-login-page.png (login page shows the real 'Sign in with Google' button)",
+        "Screenshot: foundation/auth-google-oauth/VAL-AUTH-012-google-provider-page.png (after clicking, browser lands on https://accounts.google.com/signin/oauth/error?...)",
+        "Screenshot: foundation/auth-google-oauth/VAL-AUTH-012-google-error-details.png (Google error details show 'Access blocked: Authorization Error' and 'Missing required parameter: client_id')",
+        "Console errors: none observed in agent-browser after the attempt",
+        "Cookies after the attempt: authjs.csrf-token, authjs.callback-url, and authjs.pkce.code_verifier present; no authenticated session token cookie observed",
+        "Expected auth callback evidence was absent: no successful GET /api/auth/callback/google -> 302 or onboarding redirect was reached because the provider request failed before authentication"
+      ]
+    },
+    {
+      "id": "VAL-AUTH-013",
+      "status": "fail",
+      "reason": "Repeating the real Google sign-in initiation for the existing-user path produced the same Google OAuth error page before any Google account chooser or consent step. Because the provider request failed with 'Missing required parameter: client_id', the app could not authenticate an existing user, link a Google identity, redirect to the dashboard, or create a logged-in session.",
+      "evidence": [
+        "Screenshot: foundation/auth-google-oauth/VAL-AUTH-013-login-page.png (login page shows the real 'Sign in with Google' button before the second attempt)",
+        "Screenshot: foundation/auth-google-oauth/VAL-AUTH-013-google-error-page.png (second attempt lands on https://accounts.google.com/signin/oauth/error?...)",
+        "Screenshot: foundation/auth-google-oauth/VAL-AUTH-012-google-error-details.png (shared error-details evidence: Google reports 'Missing required parameter: client_id')",
+        "Console errors: none observed in agent-browser after the second attempt",
+        "Cookies after the attempt: authjs.csrf-token, authjs.callback-url, and authjs.pkce.code_verifier present; no authenticated session token cookie observed",
+        "Expected auth callback evidence was absent: no successful GET /api/auth/callback/google -> 302 or dashboard redirect was reached because the provider request failed before authentication"
+      ]
+    }
+  ],
+  "frictions": [],
+  "blockers": [],
+  "notes": [
+    "The non-interactive environment did not become the limiting factor because the flow failed before any Google account selection or consent UI appeared.",
+    "Observed landing URL after clicking the Google button: https://accounts.google.com/signin/oauth/error?authError=********************************************************************************dHBzOi8vZGV2ZWxvcGVycy5nb29nbGUuY29tL2lkZW50aXR5L3Byb3RvY29scy9vYXV0aDIgkAM%3D&flowName=GeneralOAuthLite&client_id&ffgf=1&dsh=S-1106725138:1775034925984859",
+    "A second attempt for the existing-user path landed on the same Google OAuth error page with a different dsh value but the same missing client_id failure.",
+    "No authenticated Complete Care session was established during either attempt."
+  ]
+}

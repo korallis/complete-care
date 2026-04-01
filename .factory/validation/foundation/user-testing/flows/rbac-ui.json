@@ -1,0 +1,124 @@
+{
+  "groupId": "rbac-ui",
+  "testedAt": "2026-04-01T09:46:35.682243+00:00",
+  "isolation": {
+    "appUrl": "http://localhost:3200",
+    "emailNamespace": "rbacui-20260401-<role>@example.test",
+    "orgSlugs": [
+      "rbacui-org-a-20260401",
+      "rbacui-org-b-20260401"
+    ],
+    "seededEntities": [
+      "users",
+      "organisations",
+      "memberships",
+      "persons",
+      "notifications"
+    ]
+  },
+  "toolsUsed": [
+    "agent-browser",
+    "bun",
+    "shared dev-server log"
+  ],
+  "assertions": [
+    {
+      "id": "VAL-AUTH-016",
+      "status": "pass",
+      "reason": "With valid org-aware sessions, the dashboard rendered distinct role-specific navigation for all six roles. Owner uniquely showed Billing; admin removed Billing; manager removed the admin section; senior_carer exposed My Rota and Audit Log; carer exposed My Persons/Daily Tasks/My Schedule; viewer exposed a read-only Reports path.",
+      "evidence": [
+        "foundation/rbac-ui/VAL-AUTH-016-owner-dashboard.png",
+        "foundation/rbac-ui/VAL-AUTH-016-owner-dashboard-snapshot.txt",
+        "foundation/rbac-ui/VAL-AUTH-016-admin-dashboard.png",
+        "foundation/rbac-ui/VAL-AUTH-016-admin-dashboard-snapshot.txt",
+        "foundation/rbac-ui/VAL-AUTH-016-manager-dashboard.png",
+        "foundation/rbac-ui/VAL-AUTH-016-manager-dashboard-snapshot.txt",
+        "foundation/rbac-ui/VAL-AUTH-016-senior_carer-dashboard.png",
+        "foundation/rbac-ui/VAL-AUTH-016-senior_carer-dashboard-snapshot.txt",
+        "foundation/rbac-ui/VAL-AUTH-016-carer-dashboard.png",
+        "foundation/rbac-ui/VAL-AUTH-016-carer-dashboard-snapshot.txt",
+        "foundation/rbac-ui/VAL-AUTH-016-viewer-dashboard.png",
+        "foundation/rbac-ui/VAL-AUTH-016-viewer-dashboard-snapshot.txt"
+      ]
+    },
+    {
+      "id": "VAL-AUTH-017",
+      "status": "fail",
+      "reason": "Direct navigation to /rbacui-org-a-20260401/settings/billing as a carer did not return 403 or an Access Denied page. The app redirected to /login?callbackUrl=%2Frbacui-org-a-20260401%2Fsettings%2Fbilling instead.",
+      "evidence": [
+        "foundation/rbac-ui/VAL-AUTH-017-carer-billing-direct.png"
+      ]
+    },
+    {
+      "id": "VAL-AUTH-019",
+      "status": "pass",
+      "reason": "The multi-org user saw an organisation switcher containing both Org A and Org B, with Org A highlighted as the active organisation and per-org roles shown in the dropdown.",
+      "evidence": [
+        "foundation/rbac-ui/VAL-AUTH-019-multi-dashboard.png",
+        "foundation/rbac-ui/VAL-AUTH-019-org-switcher-open.png"
+      ]
+    },
+    {
+      "id": "VAL-AUTH-020",
+      "status": "fail",
+      "reason": "Selecting Org B from the switcher did not land on a working Org B dashboard. The UI navigated to /rbacui-org-b-20260401/dashboard, which returns a 404 page, so the required switched dashboard state never appeared through the real flow.",
+      "evidence": [
+        "foundation/rbac-ui/VAL-AUTH-019-org-switcher-open.png",
+        "foundation/rbac-ui/VAL-AUTH-020-switched-org-result.png"
+      ]
+    },
+    {
+      "id": "VAL-CROSS-008",
+      "status": "fail",
+      "reason": "The end-to-end escalation flow is not reliable through the real UI. Before refresh, the promoted user's existing session still rendered the Org A team page as a carer/read-only view. Owner promotion updated the membership row but the UI action threw a 500 because audit_logs expects a missing ip_address column. After attempting a session refresh via the org switcher, /api/auth/session still reported Org A role=carer with stale memberships instead of the promoted admin role.",
+      "evidence": [
+        "foundation/rbac-ui/VAL-CROSS-008-stale-session-team-page.png",
+        "foundation/rbac-ui/VAL-CROSS-008-owner-promoted-user.png",
+        "foundation/rbac-ui/VAL-CROSS-008-after-switch-to-orgB-dashboard.png",
+        "foundation/rbac-ui/VAL-CROSS-008-after-refresh-orgA-admin-dashboard.png",
+        "foundation/rbac-ui/VAL-CROSS-008-refreshed-team-page.png",
+        "foundation/rbac-ui/VAL-CROSS-008-session-after-refresh.json",
+        "foundation/rbac-ui/VAL-CROSS-008-dev-log-excerpt.txt"
+      ]
+    }
+  ],
+  "frictions": [
+    {
+      "description": "Credential sign-in for seeded organisation members redirected to /onboarding because the session lacked activeOrgId, so dashboard RBAC assertions could not be exercised from the login form alone.",
+      "resolved": true,
+      "resolution": "Seeded isolated org-aware session cookies for the assigned test users after creating only namespace-scoped users/orgs/memberships.",
+      "affectedAssertions": [
+        "VAL-AUTH-016",
+        "VAL-AUTH-017",
+        "VAL-AUTH-019",
+        "VAL-AUTH-020",
+        "VAL-CROSS-008"
+      ]
+    },
+    {
+      "description": "The organisation switcher button was not exposed in agent-browser's default interactive snapshot output.",
+      "resolved": true,
+      "resolution": "Opened it via the DOM selector button[aria-label^='Current organisation'] and then continued the real UI flow.",
+      "affectedAssertions": [
+        "VAL-AUTH-019",
+        "VAL-AUTH-020",
+        "VAL-CROSS-008"
+      ]
+    },
+    {
+      "description": "Changing a member role from the Team page triggers a server-side 500 after the membership update because audit_logs inserts target a missing ip_address column.",
+      "resolved": false,
+      "resolution": null,
+      "affectedAssertions": [
+        "VAL-CROSS-008"
+      ]
+    }
+  ],
+  "blockers": [],
+  "notes": [
+    "Observed browser console/page errors: none on the dashboard/switcher flows; the promotion flow failed at the server action layer and is captured in the shared dev-server log excerpt.",
+    "The switcher dropdown correctly displayed both organisations and their roles, but switching routes target missing /[orgSlug]/dashboard pages.",
+    "The saved session evidence file shows that the post-refresh session still reported Org A role=carer and stale memberships even after the user had been promoted in the database."
+  ],
+  "summary": "Tested 5 assertions: 2 passed (VAL-AUTH-016, VAL-AUTH-019) and 3 failed (VAL-AUTH-017, VAL-AUTH-020, VAL-CROSS-008)."
+}

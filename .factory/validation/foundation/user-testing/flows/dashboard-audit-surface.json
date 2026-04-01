@@ -1,0 +1,103 @@
+{
+  "groupId": "dashboard-audit-surface",
+  "testedAt": "2026-04-01T10:04:26.414111+00:00",
+  "isolation": {
+    "appUrl": "http://localhost:3200",
+    "email": "dashboardaudit-owner-20260401@example.test",
+    "orgPrefix": "dashboardaudit-org-20260401",
+    "orgSlug": "dashboardaudit-org-20260401-foundation",
+    "missionDir": "/Users/leebarry/.factory/missions/0151c86a-d61e-40f6-af14-f9e925a367f3"
+  },
+  "toolsUsed": [
+    "agent-browser",
+    "bun"
+  ],
+  "assertions": [
+    {
+      "id": "VAL-CROSS-015",
+      "status": "fail",
+      "reason": "The central audit log route crashes with `column audit_logs.ip_address does not exist` before any audit entries render, so the UI never lets a user verify create/update/delete audit entries or their immutability.",
+      "evidence": [
+        "foundation/dashboard-audit-surface/audit-log-page.png",
+        "foundation/dashboard-audit-surface/audit-log-retry-error-state.png"
+      ]
+    },
+    {
+      "id": "VAL-CROSS-016",
+      "status": "fail",
+      "reason": "The same audit log schema error prevents the central audit log from rendering its search/filter UI, and I did not find any entity-specific audit surface on the implemented foundation routes.",
+      "evidence": [
+        "foundation/dashboard-audit-surface/audit-log-page.png",
+        "foundation/dashboard-audit-surface/audit-log-retry-error-state.png"
+      ]
+    },
+    {
+      "id": "VAL-CROSS-017",
+      "status": "pass",
+      "reason": "The notification centre showed newest-first notifications with an unread badge, individual mark-as-read reduced the unread count, bulk mark-as-read cleared the badge, and a notification source link navigated to the team page.",
+      "evidence": [
+        "foundation/dashboard-audit-surface/dashboard-with-unread-badge.png",
+        "foundation/dashboard-audit-surface/notification-centre-open.png",
+        "foundation/dashboard-audit-surface/notification-single-read.png",
+        "foundation/dashboard-audit-surface/notification-bulk-read.png",
+        "foundation/dashboard-audit-surface/notification-link-target-team-page.png"
+      ]
+    },
+    {
+      "id": "VAL-CROSS-018",
+      "status": "pass",
+      "reason": "Opening the broken audit log route showed the route error boundary while the dashboard shell stayed usable; Retry kept the user in the contained fallback state and Go to dashboard recovered to the main dashboard.",
+      "evidence": [
+        "foundation/dashboard-audit-surface/audit-log-page.png",
+        "foundation/dashboard-audit-surface/audit-log-retry-error-state.png",
+        "foundation/dashboard-audit-surface/dashboard-shell-desktop.png"
+      ]
+    },
+    {
+      "id": "VAL-CROSS-019",
+      "status": "pass",
+      "reason": "Navigating from the dashboard to Team displayed the org-scoped skeleton loader with the sidebar and header still visible before the page resolved, and the flow produced no console/runtime errors.",
+      "evidence": [
+        "foundation/dashboard-audit-surface/loading-state-attempt.png",
+        "foundation/dashboard-audit-surface/loading-state-team-skeleton.png"
+      ]
+    }
+  ],
+  "frictions": [
+    {
+      "description": "After onboarding completed, the browser remained on `/onboarding` until I refreshed the session with active-org context. I stayed within scope by continuing with only the assigned account/org and seeding the minimal notification/audit data allowed by the task.",
+      "resolved": true,
+      "resolution": "Generated a session for the assigned owner account with its active org and reopened the dashboard before continuing UI validation.",
+      "affectedAssertions": [
+        "VAL-CROSS-015",
+        "VAL-CROSS-016",
+        "VAL-CROSS-017",
+        "VAL-CROSS-018",
+        "VAL-CROSS-019"
+      ]
+    },
+    {
+      "description": "agent-browser's request log did not expose the Next.js server-action calls behind notification read-state changes.",
+      "resolved": true,
+      "resolution": "Validated notification behaviour via visible unread badge/count changes, list state updates, and successful source-link navigation instead.",
+      "affectedAssertions": [
+        "VAL-CROSS-017"
+      ]
+    }
+  ],
+  "blockers": [
+    {
+      "description": "The live `audit_logs` table is missing the `ip_address` column expected by the audit log queries, so the central audit UI trips its error boundary on every visit.",
+      "affectedAssertions": [
+        "VAL-CROSS-015",
+        "VAL-CROSS-016"
+      ],
+      "quickFixAttempted": "Retried from the route error boundary and reopened `/dashboardaudit-org-20260401-foundation/audit-log` directly; both reproduced the same error."
+    }
+  ],
+  "notes": [
+    "Validated using the assigned owner account on org `dashboardaudit-org-20260401-foundation` only.",
+    "No entity-specific audit history surface was discoverable on the foundation routes exposed by the dashboard shell (dashboard, settings, team, audit log).",
+    "Console/runtime errors were clean for notification and loading-state flows; the audit route consistently logged the `audit_logs.ip_address` schema error."
+  ]
+}

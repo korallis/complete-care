@@ -1,0 +1,121 @@
+{
+  "groupId": "onboarding-core",
+  "testedAt": "2026-04-01T09:12:18.765424+00:00",
+  "isolation": {
+    "appUrl": "http://localhost:3200",
+    "primaryEmail": "onboard-core-20260401@example.test",
+    "inviteEmails": [
+      "onboard-core-invite-1@example.test",
+      "onboard-core-invite-2@example.test"
+    ],
+    "orgPrefix": "onboard-core-20260401"
+  },
+  "toolsUsed": [
+    "agent-browser",
+    "shared dev-server log"
+  ],
+  "assertions": [
+    {
+      "id": "VAL-MARKET-008",
+      "status": "fail",
+      "reason": "Step 1 allowed organisation name and slug entry, but no organisation type field was present even though the assertion requires name and type.",
+      "evidence": [
+        "evidence/foundation/onboarding-core/onboarding-step1-initial.png",
+        "evidence/foundation/onboarding-core/VAL-MARKET-008-step1-filled.png",
+        "Observed fields on step 1: Organisation name, URL slug, Continue."
+      ]
+    },
+    {
+      "id": "VAL-MARKET-009",
+      "status": "pass",
+      "reason": "Step 2 showed Domiciliary Care, Supported Living, and Children's Residential Homes with descriptions; selecting Children's Residential Homes advanced to step 3.",
+      "evidence": [
+        "evidence/foundation/onboarding-core/VAL-MARKET-009-step2-initial.png",
+        "evidence/foundation/onboarding-core/VAL-MARKET-009-step2-selected.png",
+        "No browser console errors were observed while moving from step 2 to step 3."
+      ]
+    },
+    {
+      "id": "VAL-MARKET-010",
+      "status": "fail",
+      "reason": "Step 3 supports multiple invite rows and shows a skip option, but both 'Send Invites & Finish' and 'Skip for now' end in a server-side 500 error instead of completing onboarding.",
+      "evidence": [
+        "evidence/foundation/onboarding-core/VAL-MARKET-010-step3-initial.png",
+        "evidence/foundation/onboarding-core/VAL-MARKET-010-step3-multiple-invitees.png",
+        "evidence/foundation/onboarding-core/VAL-MARKET-010-step3-filled-invites.png",
+        "evidence/foundation/onboarding-core/VAL-MARKET-010-step3-skip-visible.png",
+        "evidence/foundation/onboarding-core/VAL-MARKET-010-step3-skip-attempt-result.png",
+        "Network/console on completion attempts: POST /onboarding -> 500, browser error 'column \"ip_address\" of relation \"audit_logs\" does not exist'."
+      ]
+    },
+    {
+      "id": "VAL-MARKET-011",
+      "status": "fail",
+      "reason": "Completing onboarding never redirected to an organisation dashboard; completion attempts crashed with a server error and no welcome or guided dashboard state appeared.",
+      "evidence": [
+        "evidence/foundation/onboarding-core/VAL-MARKET-011-dashboard-after-completion.png",
+        "evidence/foundation/onboarding-core/VAL-MARKET-010-step3-skip-attempt-result.png",
+        "Observed result after submit: application error with 500 instead of dashboard redirect."
+      ]
+    },
+    {
+      "id": "VAL-MARKET-012",
+      "status": "pass",
+      "reason": "The onboarding stepper updated from Step 1 of 3 to Step 2 of 3 to Step 3 of 3 as the flow advanced.",
+      "evidence": [
+        "evidence/foundation/onboarding-core/onboarding-step1-initial.png",
+        "evidence/foundation/onboarding-core/VAL-MARKET-009-step2-initial.png",
+        "evidence/foundation/onboarding-core/VAL-MARKET-010-step3-initial.png"
+      ]
+    },
+    {
+      "id": "VAL-MARKET-015",
+      "status": "pass",
+      "reason": "Step 1 blocked Continue without an organisation name, and Step 2 blocked Continue until at least one care domain was selected.",
+      "evidence": [
+        "evidence/foundation/onboarding-core/VAL-MARKET-015-step1-validation.png",
+        "evidence/foundation/onboarding-core/VAL-MARKET-015-step2-validation.png",
+        "Step 1 messages observed: 'Organisation name is required' and 'Slug is required'; Step 2 message observed: 'Please select at least one care domain'."
+      ]
+    },
+    {
+      "id": "VAL-CROSS-001",
+      "status": "fail",
+      "reason": "Registration, email verification, and sign-in worked, but the first-visit flow could not reach a personalised dashboard because onboarding completion failed and /dashboard redirected back to /onboarding.",
+      "evidence": [
+        "evidence/foundation/onboarding-core/registration-success.png",
+        "evidence/foundation/onboarding-core/verify-email-result.png",
+        "evidence/foundation/onboarding-core/post-login.png",
+        "evidence/foundation/onboarding-core/VAL-CROSS-001-dashboard-redirects-to-onboarding.png",
+        "Shared dev-server log: verification email emitted for onboard-core-20260401@example.test, POST /api/auth/register -> 201, POST /api/auth/login succeeded, POST /onboarding -> 500."
+      ]
+    },
+    {
+      "id": "VAL-CROSS-011",
+      "status": "blocked",
+      "reason": "Domain-adapted dashboards for two completed organisations could not be compared because onboarding completion is currently broken by POST /onboarding failing with a missing audit_logs.ip_address column.",
+      "evidence": [
+        "evidence/foundation/onboarding-core/VAL-MARKET-010-step3-skip-attempt-result.png",
+        "evidence/foundation/onboarding-core/VAL-CROSS-001-dashboard-redirects-to-onboarding.png",
+        "Shared dev-server log lines show createOrganisationWithInvites failing at src/features/organisations/actions.ts:301."
+      ]
+    }
+  ],
+  "frictions": [],
+  "blockers": [
+    {
+      "description": "Onboarding completion is blocked by a database/schema mismatch: createOrganisationWithInvites writes to audit_logs.ip_address, but the column does not exist.",
+      "affectedAssertions": [
+        "VAL-MARKET-010",
+        "VAL-MARKET-011",
+        "VAL-CROSS-001",
+        "VAL-CROSS-011"
+      ],
+      "quickFixAttempted": "Retried completion via both 'Send Invites & Finish' and 'Skip for now'; both reproduced the same POST /onboarding 500."
+    }
+  ],
+  "notes": [
+    "Verification link was recovered from the shared dev-server log as instructed.",
+    "No invitation email log entries were emitted for onboard-core-invite-1@example.test or onboard-core-invite-2@example.test because organisation creation failed before completion."
+  ]
+}

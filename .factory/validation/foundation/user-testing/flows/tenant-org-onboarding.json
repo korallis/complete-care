@@ -1,0 +1,91 @@
+{
+  "groupId": "tenant-org-onboarding",
+  "testedAt": "2026-04-01T09:42:10.556622+00:00",
+  "isolation": {
+    "appUrl": "http://localhost:3200",
+    "accounts": [
+      "tenantorg-a-20260401@example.test",
+      "tenantorg-b-20260401@example.test"
+    ],
+    "orgPrefixes": [
+      "tenantorg-a-20260401",
+      "tenantorg-b-20260401"
+    ]
+  },
+  "toolsUsed": [
+    "agent-browser",
+    "shared dev-server log"
+  ],
+  "assertions": [
+    {
+      "id": "VAL-TENANT-001",
+      "status": "fail",
+      "reason": "Account A completed registration, verification, and sign-in, but finishing onboarding with org name 'tenantorg-a-20260401 children' and the Children's Residential domain crashed on submit. The browser stayed on /onboarding, showed an application error, and owner assignment could not be confirmed through the real UI.",
+      "evidence": [
+        "foundation/tenant-org-onboarding/VAL-TENANT-001-step1-valid-a.png",
+        "foundation/tenant-org-onboarding/VAL-TENANT-001-step3-before-submit-a.png",
+        "foundation/tenant-org-onboarding/VAL-TENANT-001-submit-result-a.png",
+        "foundation/tenant-org-onboarding/post-relogin-a.png",
+        "Browser errors after submit: column \"ip_address\" of relation \"audit_logs\" does not exist.",
+        "Shared dev-server log: POST /onboarding -> 500 with NeonDbError 'column \"ip_address\" of relation \"audit_logs\" does not exist' from createOrganisationWithInvites (src/features/organisations/actions.ts:301)."
+      ]
+    },
+    {
+      "id": "VAL-TENANT-002",
+      "status": "fail",
+      "reason": "The empty-name case showed inline validation, but the over-limit case did not. Attempting to enter a 111-character organisation name silently truncated the value and allowed the wizard to continue to step 2 instead of showing a maximum-length validation message.",
+      "evidence": [
+        "foundation/tenant-org-onboarding/VAL-TENANT-002-empty-name-validation.png",
+        "foundation/tenant-org-onboarding/VAL-TENANT-002-overlimit-attempt.png",
+        "Observed text after empty submit: 'Organisation name is required' and 'Slug is required'.",
+        "Observed over-limit behavior: attempted 111-character name starting with 'tenantorg-a-20260401-', field was truncated and the flow advanced to Step 2 with no max-length validation message.",
+        "Browser errors check for validation flow: none."
+      ]
+    },
+    {
+      "id": "VAL-TENANT-003",
+      "status": "blocked",
+      "reason": "The Children's Residential option was selectable in onboarding, but persistence into organisation settings and domain-specific terminology could not be validated because onboarding completion failed before any organisation settings/dashboard surface became reachable. Re-signing into account A returned the user to /onboarding instead of an organisation context.",
+      "evidence": [
+        "foundation/tenant-org-onboarding/VAL-TENANT-003-step2-children-option-a.png",
+        "foundation/tenant-org-onboarding/VAL-TENANT-003-step2-children-selected-a.png",
+        "foundation/tenant-org-onboarding/VAL-TENANT-001-submit-result-a.png",
+        "foundation/tenant-org-onboarding/post-relogin-a.png",
+        "Browser errors during selection flow: none; after submit: column \"ip_address\" of relation \"audit_logs\" does not exist.",
+        "Shared dev-server log: POST /onboarding -> 500, so the org-settings surface for the selected Children's Residential domain could not be reached."
+      ]
+    },
+    {
+      "id": "VAL-TENANT-004",
+      "status": "blocked",
+      "reason": "Account B successfully selected multiple care domains in the onboarding UI (Domiciliary Care and Supported Living), but the same onboarding completion failure prevented validation of persisted organisation settings or domain-specific features for both domains.",
+      "evidence": [
+        "foundation/tenant-org-onboarding/VAL-TENANT-004-step1-valid-b.png",
+        "foundation/tenant-org-onboarding/VAL-TENANT-004-step2-initial-b.png",
+        "foundation/tenant-org-onboarding/VAL-TENANT-004-step2-selected-b.png",
+        "foundation/tenant-org-onboarding/VAL-TENANT-004-step3-before-submit-b.png",
+        "foundation/tenant-org-onboarding/VAL-TENANT-004-submit-result-b.png",
+        "DOM/state check on selected step 2 controls: Domiciliary=true, Supported Living=true, Children's Residential=false.",
+        "Browser errors after submit: column \"ip_address\" of relation \"audit_logs\" does not exist.",
+        "Shared dev-server log: POST /onboarding -> 500 during the multi-domain completion attempt as well."
+      ]
+    }
+  ],
+  "frictions": [],
+  "blockers": [
+    {
+      "description": "Organisation onboarding completion is broken by a database/schema mismatch: createOrganisationWithInvites writes audit log data including ip_address, but the audit_logs table in the running environment does not have that column.",
+      "affectedAssertions": [
+        "VAL-TENANT-001",
+        "VAL-TENANT-003",
+        "VAL-TENANT-004"
+      ],
+      "quickFixAttempted": "Retried completion with two separate verified accounts (single-domain and multi-domain flows); each submission reproduced POST /onboarding -> 500 with the same NeonDbError."
+    }
+  ],
+  "notes": [
+    "Account A covered VAL-TENANT-001, VAL-TENANT-002, and VAL-TENANT-003; account B covered VAL-TENANT-004.",
+    "Verification links for both accounts were recovered from the shared dev-server log, per the flow-validator guidance.",
+    "No browser errors were observed during step 1 validation or step 2 domain selection; the browser error appeared only on onboarding completion submit."
+  ]
+}

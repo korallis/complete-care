@@ -1,0 +1,101 @@
+{
+  "groupId": "tenant-invitations",
+  "assertions": [
+    {
+      "id": "VAL-TENANT-005",
+      "status": "fail",
+      "reason": "Clicking Send invitation triggered a server-side application error instead of a clean success flow. The invitation email was logged and the invite persisted as pending after reload, but the real UI crashed on submit.",
+      "evidence": [
+        "screenshot: foundation/tenant-invitations/owner-team-page-orgA.png",
+        "screenshot: foundation/tenant-invitations/VAL-TENANT-005-after-invite-attempt.png",
+        "screenshot: foundation/tenant-invitations/VAL-TENANT-005-team-list-reloaded.png",
+        "dev-server log: POST /tenantinvite-20260401-owner/settings/team -> 500",
+        "dev-server log: invitation email emitted to tenantinvite-manager-20260401@example.test with subject 'You've been invited to join Tenant Invite Owner Org on Complete Care'",
+        "browser/server error: column \"ip_address\" of relation \"audit_logs\" does not exist"
+      ]
+    },
+    {
+      "id": "VAL-TENANT-006",
+      "status": "fail",
+      "reason": "The invited manager reached the correct invitation page, but clicking Accept invitation crashed with a 500 error and left the invitee on an application error page. The membership and accepted status were written in the database, yet the invitee never saw the invited organisation in their dashboard/session.",
+      "evidence": [
+        "screenshot: foundation/tenant-invitations/manager-dashboard-before-accept.png",
+        "screenshot: foundation/tenant-invitations/VAL-TENANT-006-invitation-page-before-accept.png",
+        "screenshot: foundation/tenant-invitations/VAL-TENANT-006-after-accept-attempt.png",
+        "screenshot: foundation/tenant-invitations/VAL-TENANT-006-owner-team-after-accept-reload.png",
+        "dev-server log: POST /invitations/accept?token=... -> 500",
+        "browser/server error: column \"ip_address\" of relation \"audit_logs\" does not exist",
+        "session observation: manager session stayed on Tenant Invite Manager Org only after the failed accept action"
+      ]
+    },
+    {
+      "id": "VAL-TENANT-007",
+      "status": "pass",
+      "reason": "Using a seeded expired invitation (allowed because expiry cannot be produced through the UI), opening the invitation link showed the expected expired message and guidance to contact the organisation admin for a new invitation.",
+      "evidence": [
+        "screenshot: foundation/tenant-invitations/VAL-TENANT-007-expired-invitation-page.png",
+        "browser text: 'This invitation link has expired. Invitations are valid for 7 days. Please ask your organisation admin to send a new invitation.'",
+        "dev-server log: GET /invitations/accept?token=... -> 200",
+        "browser errors: none"
+      ]
+    },
+    {
+      "id": "VAL-TENANT-008",
+      "status": "fail",
+      "reason": "Revoking a pending invitation from the team page triggered a 500 application error instead of a clean UI update. The invitation state did change to revoked and the invitation page then showed the revoked error, but the owner-facing revoke flow is broken.",
+      "evidence": [
+        "screenshot: foundation/tenant-invitations/VAL-TENANT-008-before-revoke.png",
+        "screenshot: foundation/tenant-invitations/VAL-TENANT-008-after-revoke-attempt-js.png",
+        "screenshot: foundation/tenant-invitations/VAL-TENANT-008-revoked-invitation-page.png",
+        "dev-server log: POST /tenantinvite-20260401-revoke/settings/team -> 500",
+        "browser text: 'This invitation has been revoked. Please ask your organisation admin to send a new invitation.'",
+        "database check: invitation status became revoked after the failed UI action"
+      ]
+    },
+    {
+      "id": "VAL-CROSS-013",
+      "status": "pass",
+      "reason": "With the manager already signed into Tenant Invite Manager Org, opening the invite for Tenant Invite Owner Org showed only the invited org, inviter, role, and signed-in invitee email. The invitation surface did not leak the manager's existing org context into the invite view.",
+      "evidence": [
+        "screenshot: foundation/tenant-invitations/manager-dashboard-before-accept.png",
+        "screenshot: foundation/tenant-invitations/VAL-TENANT-006-invitation-page-before-accept.png",
+        "session observation before invite: activeOrgId belonged to tenantinvite-20260401-manager",
+        "browser text on invite page: 'Tenant Invite Owner invited you to join Tenant Invite Owner Org \u00b7 Manager'"
+      ]
+    }
+  ],
+  "toolsUsed": [
+    "agent-browser",
+    "bun",
+    "shared dev-server log"
+  ],
+  "frictions": [
+    {
+      "description": "Onboarding-based org creation was blocked by a database/schema mismatch (`audit_logs.ip_address` missing), so I used the task-approved fallback and seeded only this group's org and membership records directly in the database.",
+      "resolved": true
+    },
+    {
+      "description": "The custom /api/auth/login route issues a session without org memberships/activeOrgId, which redirects valid org members to /onboarding. I used the browser to sign in through the Auth.js credentials callback so the real org-scoped UI could be exercised.",
+      "resolved": true
+    },
+    {
+      "description": "Direct dialog automation on the revoke confirmation was unreliable once the page entered an error state, so I confirmed the revoke result via the persisted invitation status and the invitation error page.",
+      "resolved": true
+    }
+  ],
+  "blockers": [
+    {
+      "description": "All invitation mutations that write audit logs are currently broken because the runtime schema expects `audit_logs.ip_address` but the database relation lacks that column.",
+      "affectedAssertions": [
+        "VAL-TENANT-005",
+        "VAL-TENANT-006",
+        "VAL-TENANT-008"
+      ]
+    }
+  ],
+  "notes": [
+    "Actual network behavior uses Next.js server-action POSTs to route URLs (`/tenantinvite-20260401-owner/settings/team`, `/tenantinvite-20260401-revoke/settings/team`, `/invitations/accept?token=...`) rather than the REST endpoints named in the validation contract.",
+    "Expired and revoked assertions were validated with invitation pages; the current team UI only surfaces pending invitations after reload.",
+    "Assertion scope stayed within the assigned emails, org slugs, tokens, and mission evidence directory."
+  ]
+}

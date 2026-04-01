@@ -37,9 +37,32 @@ Testing surface, required testing skills/tools, and resource cost classification
 - Seed data loaded for testing (test organisation, test users with different roles)
 - `.env.local` configured with all required variables
 
+## Runtime Observations
+
+- In development, verification, password reset, and invitation emails are **logged to the Next.js dev server console** when SMTP is not configured. Flow validators can read the shared dev-server log to recover real verification/reset/invitation URLs without adding any email mock service.
+- The app is healthy at `http://localhost:3200` with `.env.local` loaded.
+- The live database schema is currently missing `audit_logs.ip_address`. Any onboarding, invite, team-management, org-settings, or audit-log flow that writes/reads this column can 500 after partially committing data.
+- For org-scoped API validation, the custom `/api/auth/login` path is not sufficient to establish `activeOrgId`/role context. Use the real Auth.js credentials callback/browser login flow (or an equivalent session established through it) before running org-scoped API checks.
+
 ## Known Constraints
 
 - No Docker available — all services must run natively
 - Google Maps API requires valid key for EVV/mapping tests
 - Stripe webhook testing requires `stripe listen` CLI forwarding
 - AWS Bedrock requires valid credentials for AI feature testing
+- Google OAuth is currently misconfigured in this environment: the real provider flow fails immediately with `Missing required parameter: client_id`.
+
+## Flow Validator Guidance: agent-browser
+
+- Stay inside your assigned email namespace, org names, and browser session only.
+- Use unique emails and unique org slugs per validator group to avoid shared-state collisions.
+- If a flow needs an emailed link, read it from the shared dev-server log instead of inventing tokens.
+- Do not revoke, expire, or edit invitations, memberships, or organisations created by other validator groups.
+- Prefer UI-driven setup first; only use direct data setup when the assertion explicitly requires an expired or tampered credential case that cannot be produced through the UI alone.
+
+## Flow Validator Guidance: curl
+
+- Use only credentials, cookies, JWTs, org IDs, and record IDs created within your own validator group.
+- Capture auth/session artifacts from real app flows before sending API requests.
+- Keep destructive API calls scoped to the minimum needed to verify permission enforcement.
+- When testing tenant isolation, create dedicated Org A / Org B data for your own group and never reuse another group's entities.

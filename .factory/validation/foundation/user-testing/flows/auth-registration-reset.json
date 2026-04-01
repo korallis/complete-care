@@ -1,0 +1,105 @@
+{
+  "groupId": "auth-registration-reset",
+  "testedAt": "2026-04-01T09:25:04.222025Z",
+  "isolation": {
+    "appUrl": "http://localhost:3200",
+    "primaryEmail": "authreg-20260401@example.test",
+    "secondaryEmail": "authreg-existing-20260401@example.test",
+    "sharedDevServerLog": "/var/folders/2l/09h6l1dn73ld7l61_8gkr6r40000gn/T/droid-bg-1775034185529.out"
+  },
+  "toolsUsed": [
+    "agent-browser",
+    "shared dev-server log",
+    "bun"
+  ],
+  "assertions": [
+    {
+      "id": "VAL-AUTH-001",
+      "status": "fail",
+      "reason": "Registration created the account and emitted a verification email, but the UI stayed on /register with an 'Account created!' confirmation card instead of redirecting to the onboarding flow.",
+      "evidence": [
+        "foundation/auth-registration-reset/VAL-AUTH-001-registration-result.png",
+        "shared-log: To authreg-20260401@example.test, POST /api/auth/register -> 201",
+        "console-errors:none",
+        "url:http://localhost:3200/register"
+      ]
+    },
+    {
+      "id": "VAL-AUTH-002",
+      "status": "fail",
+      "reason": "Duplicate registration returned a specific enumeration-prone message \u2014 'An account with this email already exists. Try signing in instead.' \u2014 rather than a generic non-revealing response.",
+      "evidence": [
+        "foundation/auth-registration-reset/VAL-AUTH-002-register-duplicate-annotated.png",
+        "foundation/auth-registration-reset/VAL-AUTH-002-duplicate-email-result.png",
+        "shared-log: POST /api/auth/register -> 409",
+        "ui-alert:An account with this email already exists. Try signing in instead.",
+        "console-errors:none"
+      ]
+    },
+    {
+      "id": "VAL-AUTH-003",
+      "status": "fail",
+      "reason": "Submitting the weak password '123456' produced only the single client-side error 'Password must be at least 8 characters'; the validation surface did not specify the remaining uppercase/number/special-character requirements as the assertion requires.",
+      "evidence": [
+        "foundation/auth-registration-reset/VAL-AUTH-003-weak-password-validation.png",
+        "ui-text:Password must be at least 8 characters",
+        "console-errors:none"
+      ]
+    },
+    {
+      "id": "VAL-AUTH-009",
+      "status": "pass",
+      "reason": "Forgot-password for the registered account returned the generic confirmation 'If an account exists...' and emitted a real reset email in the shared dev-server log.",
+      "evidence": [
+        "foundation/auth-registration-reset/VAL-AUTH-009-forgot-password-annotated.png",
+        "foundation/auth-registration-reset/VAL-AUTH-009-forgot-password-result.png",
+        "shared-log: To authreg-20260401@example.test, Subject 'Reset your password \u2014 Complete Care', POST /api/auth/forgot-password -> 200",
+        "console-errors:none"
+      ]
+    },
+    {
+      "id": "VAL-AUTH-010",
+      "status": "fail",
+      "reason": "The valid reset token updated the password successfully \u2014 the old password was rejected and the new password logged in \u2014 but the app did not redirect to /login after reset; it stayed on the reset page with a success card and manual sign-in link.",
+      "evidence": [
+        "foundation/auth-registration-reset/VAL-AUTH-010-reset-password-form-annotated.png",
+        "foundation/auth-registration-reset/VAL-AUTH-010-reset-password-success.png",
+        "foundation/auth-registration-reset/VAL-AUTH-010-old-password-rejected.png",
+        "foundation/auth-registration-reset/VAL-AUTH-010-login-with-new-password.png",
+        "shared-log: POST /api/auth/reset-password -> 200, POST /api/auth/login -> 401 then 200, GET /dashboard -> 307, GET /onboarding -> 200",
+        "console-errors:none",
+        "url-after-reset:http://localhost:3200/reset-password?token=<token>"
+      ]
+    },
+    {
+      "id": "VAL-AUTH-011",
+      "status": "pass",
+      "reason": "After expiring only this group's fresh reset token at the data boundary, submitting the real reset form showed 'This reset link has expired. Please request a new one.' with a 'Request a new link' action, and the server returned 410.",
+      "evidence": [
+        "foundation/auth-registration-reset/VAL-AUTH-011-forgot-password-result.png",
+        "foundation/auth-registration-reset/VAL-AUTH-011-expired-token-result.png",
+        "shared-log: POST /api/auth/reset-password -> 410",
+        "scoped-db-update:password_reset_tokens.expires_at set to past for token e8796a53d4e55f62ef4d7151147d277e2f8ffea9fd386738bf3d1748ad076b7b",
+        "console-errors:none"
+      ]
+    },
+    {
+      "id": "VAL-AUTH-022",
+      "status": "fail",
+      "reason": "No real password-change UI was available while logged in. Signing in with the test account routed to /onboarding, which exposes no password fields or account settings, and navigating to /settings returned 404 instead of a password-change screen.",
+      "evidence": [
+        "foundation/auth-registration-reset/VAL-AUTH-022-onboarding-after-login.png",
+        "foundation/auth-registration-reset/VAL-AUTH-022-settings-route-missing.png",
+        "shared-log: POST /api/auth/login -> 200, GET /dashboard -> 307, GET /onboarding -> 200, GET /settings -> 404",
+        "console-errors:none"
+      ]
+    }
+  ],
+  "frictions": [],
+  "blockers": [],
+  "notes": [
+    "Recovered the verification and password-reset links from the shared dev-server log as instructed.",
+    "The verification link for authreg-20260401@example.test was used successfully before later repeat visits showed the expected 'already used' invalid-link state.",
+    "Tried the assigned secondary email authreg-existing-20260401@example.test to obtain an alternate existing account for VAL-AUTH-022; the UI stayed generic but no reset email was emitted to the shared log, so no alternate seeded account was available within scope."
+  ]
+}

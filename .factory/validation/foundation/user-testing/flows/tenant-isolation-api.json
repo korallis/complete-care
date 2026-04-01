@@ -1,0 +1,73 @@
+{
+  "groupId": "tenant-isolation-api",
+  "toolsUsed": ["curl", "bun"],
+  "assertions": [
+    {
+      "id": "VAL-TENANT-009",
+      "status": "pass",
+      "reason": "As Org A owner, GET /api/persons returned only the Org A fixture and direct access to the known Org B person ID returned 404.",
+      "evidence": [
+        "foundation/tenant-isolation-api/VAL-TENANT-009-org-a-persons-list.txt",
+        "foundation/tenant-isolation-api/VAL-TENANT-009-org-a-get-org-b-person.txt"
+      ]
+    },
+    {
+      "id": "VAL-TENANT-010",
+      "status": "pass",
+      "reason": "As Org A owner, GET /api/staff returned only the Org A staff fixture and direct access to the known Org B staff ID returned 404.",
+      "evidence": [
+        "foundation/tenant-isolation-api/VAL-TENANT-010-org-a-staff-list.txt",
+        "foundation/tenant-isolation-api/VAL-TENANT-010-org-a-get-org-b-staff.txt"
+      ]
+    },
+    {
+      "id": "VAL-TENANT-011",
+      "status": "pass",
+      "reason": "As Org A owner, GET /api/care-plans returned only the Org A plan fixture and direct access to the known Org B plan ID returned 404.",
+      "evidence": [
+        "foundation/tenant-isolation-api/VAL-TENANT-011-org-a-care-plans-list.txt",
+        "foundation/tenant-isolation-api/VAL-TENANT-011-org-a-get-org-b-plan.txt"
+      ]
+    },
+    {
+      "id": "VAL-CROSS-007",
+      "status": "fail",
+      "reason": "Org B list queries for persons and care plans showed only Org B data, but the required /api/care-notes route is missing and returned a framework 404 page instead of a tenant-scoped API response.",
+      "evidence": [
+        "foundation/tenant-isolation-api/VAL-CROSS-007-org-b-persons-list.txt",
+        "foundation/tenant-isolation-api/VAL-CROSS-007-org-b-care-plans-list.txt",
+        "foundation/tenant-isolation-api/VAL-CROSS-007-org-b-care-notes-list.txt"
+      ]
+    },
+    {
+      "id": "VAL-AUTH-018",
+      "status": "fail",
+      "reason": "The direct viewer bypass attempt against PUT /api/persons/:id returned 405 Method Not Allowed because no PUT handler exists, not the expected 403 permission denial.",
+      "evidence": [
+        "foundation/tenant-isolation-api/VAL-AUTH-018-viewer-put-person.txt"
+      ]
+    },
+    {
+      "id": "VAL-AUTH-021",
+      "status": "fail",
+      "reason": "A real viewer session token was modified from role=viewer to role=owner and then invalidated; the protected API did not return 401 and instead redirected to /login with 302 while clearing the session cookie.",
+      "evidence": [
+        "foundation/tenant-isolation-api/VAL-AUTH-021-valid-viewer-persons.txt",
+        "foundation/tenant-isolation-api/VAL-AUTH-021-tampered-token-details.json",
+        "foundation/tenant-isolation-api/VAL-AUTH-021-tampered-viewer-persons.txt"
+      ]
+    }
+  ],
+  "frictions": [
+    {
+      "description": "To obtain org-scoped API sessions, I had to use the Auth.js credentials callback flow directly; the user-testing guidance does not mention that the custom /api/auth/login path does not populate activeOrgId/role for API authorization.",
+      "resolved": true
+    }
+  ],
+  "blockers": [],
+  "notes": [
+    "All raw curl outputs and HTTP status codes are captured in the evidence files listed above.",
+    "Seeded isolation fixtures were limited to tenantiso-org-a-20260401 and tenantiso-org-b-20260401 using tenantiso-owner-a-20260401@example.test, tenantiso-owner-b-20260401@example.test, and tenantiso-viewer-20260401@example.test.",
+    "Fixture IDs used during validation: personA=c966eb22-462a-4506-83b4-ac68a103b621, personB=53efd235-2052-4900-bae7-46b3b010db5b, staffA=60598df9-1a98-4cef-9851-033874dfc6cb, staffB=0976f472-172e-4000-a182-5ae31fef5c83, planA=822fd1ab-3624-456b-b5b9-e74afec49464, planB=d809e91e-89d2-4f77-92be-5cb7055e4a96."
+  ]
+}
