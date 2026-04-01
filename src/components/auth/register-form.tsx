@@ -1,6 +1,7 @@
 'use client';
 
 import { useState } from 'react';
+import { useRouter } from 'next/navigation';
 import { useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import Link from 'next/link';
@@ -15,10 +16,10 @@ import { PasswordStrengthIndicator } from './password-strength';
 import { OAuthButton } from './oauth-button';
 
 export function RegisterForm() {
+  const router = useRouter();
   const [showPassword, setShowPassword] = useState(false);
   const [showConfirmPassword, setShowConfirmPassword] = useState(false);
   const [serverError, setServerError] = useState<string | null>(null);
-  const [isSuccess, setIsSuccess] = useState(false);
 
   const {
     register,
@@ -55,45 +56,9 @@ export function RegisterForm() {
       return;
     }
 
-    setIsSuccess(true);
+    // Registration successful — redirect to onboarding flow
+    router.push('/onboarding');
   };
-
-  if (isSuccess) {
-    return (
-      <div className="space-y-4 text-center py-4">
-        <div className="w-12 h-12 rounded-full bg-emerald-100 flex items-center justify-center mx-auto">
-          <svg
-            xmlns="http://www.w3.org/2000/svg"
-            viewBox="0 0 24 24"
-            fill="none"
-            stroke="currentColor"
-            strokeWidth="2"
-            strokeLinecap="round"
-            strokeLinejoin="round"
-            className="w-6 h-6 text-emerald-600"
-            aria-hidden="true"
-          >
-            <path d="M22 11.08V12a10 10 0 1 1-5.93-9.14" />
-            <polyline points="22 4 12 14.01 9 11.01" />
-          </svg>
-        </div>
-        <div>
-          <h2 className="text-base font-semibold text-foreground">
-            Account created!
-          </h2>
-          <p className="mt-1 text-sm text-muted-foreground">
-            Please check your email to verify your account before signing in.
-          </p>
-        </div>
-        <Link
-          href="/login"
-          className="inline-flex h-9 items-center justify-center rounded-md bg-[oklch(0.22_0.04_160)] px-6 text-sm font-medium text-white hover:bg-[oklch(0.28_0.05_160)] transition-colors"
-        >
-          Go to sign in
-        </Link>
-      </div>
-    );
-  }
 
   return (
     <div className="space-y-4">

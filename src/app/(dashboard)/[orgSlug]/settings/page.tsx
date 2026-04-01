@@ -3,7 +3,9 @@ import { notFound, redirect } from 'next/navigation';
 import Link from 'next/link';
 import { auth } from '@/auth';
 import { getOrgSettings } from '@/features/organisations/actions';
+import { getEntityAuditHistory } from '@/features/audit/actions';
 import { OrgSettingsForm } from '@/components/organisations/org-settings-form';
+import { AuditHistoryTab } from '@/components/audit/audit-history-tab';
 
 export const metadata: Metadata = {
   title: 'Organisation Settings — Complete Care',
@@ -33,6 +35,9 @@ export default async function OrgSettingsPage({ params }: OrgSettingsPageProps) 
 
   const canManage =
     session.user.role === 'owner' || session.user.role === 'admin';
+
+  // Fetch organisation-level audit history for the audit section
+  const orgAuditHistory = await getEntityAuditHistory('organisation', settings.id, 20);
 
   return (
     <div className="min-h-screen bg-[oklch(0.985_0.005_150)]">
@@ -72,6 +77,31 @@ export default async function OrgSettingsPage({ params }: OrgSettingsPageProps) 
           >
             Security &amp; password
           </Link>
+          <span className="text-[oklch(0.75_0_0)]">·</span>
+          <Link
+            href={`/${orgSlug}/audit-log`}
+            className="text-sm text-[oklch(0.35_0.06_160)] hover:text-[oklch(0.25_0.05_160)] font-medium transition-colors"
+          >
+            Full audit log →
+          </Link>
+        </div>
+
+        {/* Organisation audit history */}
+        <div className="mt-8">
+          <div className="flex items-center justify-between mb-3">
+            <h2 className="text-base font-semibold text-[oklch(0.18_0.03_160)]">
+              Organisation change history
+            </h2>
+            <Link
+              href={`/${orgSlug}/audit-log?entityType=organisation`}
+              className="text-xs text-[oklch(0.35_0.06_160)] hover:text-[oklch(0.25_0.05_160)] font-medium transition-colors"
+            >
+              View all →
+            </Link>
+          </div>
+          <div className="rounded-xl border border-[oklch(0.9_0.005_150)] bg-white shadow-sm overflow-hidden">
+            <AuditHistoryTab entries={orgAuditHistory} entityType="organisation" />
+          </div>
         </div>
       </div>
     </div>

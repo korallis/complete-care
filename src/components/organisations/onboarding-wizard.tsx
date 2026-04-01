@@ -281,10 +281,13 @@ export function OnboardingWizard({ userName }: OnboardingWizardProps) {
         return;
       }
 
-      // Refresh session so the JWT picks up the new org
-      await updateSession({});
-      // Redirect to the org-scoped dashboard with welcome message
+      // Switch the session's active org to the newly created one.
+      // Passing activeOrgId triggers the JWT callback to set this as the
+      // active organisation, ensuring the new org's data loads immediately.
+      const newOrgId = result.data?.orgId ?? '';
       const orgSlug = result.data?.orgSlug ?? '';
+      await updateSession({ activeOrgId: newOrgId });
+      // Redirect to the org-scoped dashboard with welcome message
       router.push(orgSlug ? `/${orgSlug}/dashboard?welcome=true` : '/dashboard?welcome=true');
       router.refresh();
     });

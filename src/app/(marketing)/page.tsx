@@ -595,10 +595,15 @@ export default function HomePage() {
             {TESTIMONIALS.map((testimonial) => (
               <figure
                 key={testimonial.name}
+                aria-label={`Testimonial from ${testimonial.name}, ${testimonial.title}`}
                 className="bg-[oklch(0.98_0.005_160)] rounded-2xl border border-[oklch(0.91_0.005_160)] p-8 flex flex-col"
               >
-                {/* Stars */}
-                <div className="flex gap-1 mb-4" aria-label={`${testimonial.stars} out of 5 stars`}>
+                {/* Stars — labelled as a group; individual icons hidden from screen readers */}
+                <div
+                  className="flex gap-1 mb-4"
+                  role="img"
+                  aria-label={`${testimonial.stars} out of 5 stars`}
+                >
                   {Array.from({ length: testimonial.stars }).map((_, i) => (
                     <Star
                       key={i}
@@ -623,7 +628,8 @@ export default function HomePage() {
                     <div className="text-sm font-semibold text-[oklch(0.22_0.04_160)]">
                       {testimonial.name}
                     </div>
-                    <div className="text-xs text-[oklch(0.55_0.01_160)]">
+                    {/* Darkened from 0.55 → 0.42 to meet WCAG AA 4.5:1 contrast on white */}
+                    <div className="text-xs text-[oklch(0.42_0.01_160)]">
                       {testimonial.title}
                     </div>
                   </div>

@@ -3,6 +3,8 @@ import Link from 'next/link';
 import { ArrowRight, Shield, Zap, Phone } from 'lucide-react';
 import { PricingContent } from '@/components/marketing/pricing-toggle';
 
+const APP_URL = process.env.NEXT_PUBLIC_APP_URL ?? 'https://completecare.co.uk';
+
 export const metadata: Metadata = {
   title: 'Pricing — Complete Care',
   description:
@@ -12,10 +14,10 @@ export const metadata: Metadata = {
     description:
       'Simple, transparent pricing for UK care management. No hidden fees, no per-seat surprises.',
     type: 'website',
-    url: 'https://completecare.co.uk/pricing',
+    url: `${APP_URL}/pricing`,
   },
   alternates: {
-    canonical: 'https://completecare.co.uk/pricing',
+    canonical: `${APP_URL}/pricing`,
   },
 };
 

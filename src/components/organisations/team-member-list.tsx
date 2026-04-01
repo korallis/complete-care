@@ -58,6 +58,7 @@ export function TeamMemberList({
   const [actionError, setActionError] = useState<string>('');
 
   const pendingInvitations = invitations.filter((i) => i.status === 'pending');
+  const revokedInvitations = invitations.filter((i) => i.status === 'revoked');
 
   function handleRoleChange(memberId: string, newRole: string) {
     setActionError('');
@@ -307,6 +308,65 @@ export function TeamMemberList({
                 </li>
               );
             })}
+          </ul>
+        </div>
+      )}
+
+      {/* Revoked invitations */}
+      {revokedInvitations.length > 0 && (
+        <div>
+          <div className="px-6 py-3 bg-[oklch(0.97_0.003_150)] border-t border-[oklch(0.93_0.005_150)]">
+            <h3 className="text-xs font-semibold text-[oklch(0.48_0_0)] uppercase tracking-wider">
+              Revoked invitations ({revokedInvitations.length})
+            </h3>
+          </div>
+          <ul
+            className="divide-y divide-[oklch(0.94_0.003_150)]"
+            role="list"
+            aria-label="Revoked invitations"
+          >
+            {revokedInvitations.map((invitation) => (
+              <li
+                key={invitation.id}
+                className="flex items-center gap-4 px-6 py-3.5 opacity-60"
+              >
+                {/* Avatar placeholder */}
+                <div className="w-9 h-9 rounded-full bg-[oklch(0.93_0.005_150)] flex items-center justify-center flex-shrink-0">
+                  <svg
+                    xmlns="http://www.w3.org/2000/svg"
+                    viewBox="0 0 24 24"
+                    fill="none"
+                    stroke="oklch(0.6 0 0)"
+                    strokeWidth="1.75"
+                    strokeLinecap="round"
+                    strokeLinejoin="round"
+                    className="w-4.5 h-4.5"
+                    aria-hidden="true"
+                  >
+                    <path d="M4 4h16c1.1 0 2 .9 2 2v12c0 1.1-.9 2-2 2H4c-1.1 0-2-.9-2-2V6c0-1.1.9-2 2-2z" />
+                    <polyline points="22,6 12,13 2,6" />
+                  </svg>
+                </div>
+
+                <div className="flex-1 min-w-0">
+                  <p className="text-sm font-medium text-[oklch(0.35_0.01_160)] truncate">
+                    {invitation.email}
+                  </p>
+                  <p className="text-xs text-[oklch(0.55_0_0)] mt-0.5">
+                    Invited by {invitation.inviterName}
+                  </p>
+                </div>
+
+                <div className="flex items-center gap-2 flex-shrink-0">
+                  <span className="text-xs font-medium text-[oklch(0.38_0.04_160)] bg-[oklch(0.95_0.01_160)] border border-[oklch(0.88_0.02_160)] rounded-full px-2.5 py-1">
+                    {ROLE_LABELS[invitation.role] ?? invitation.role}
+                  </span>
+                  <span className={`text-xs font-medium border rounded-full px-2.5 py-1 ${STATUS_COLORS.revoked}`}>
+                    Revoked
+                  </span>
+                </div>
+              </li>
+            ))}
           </ul>
         </div>
       )}

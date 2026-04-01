@@ -209,6 +209,46 @@ export const { handlers, auth, signIn, signOut } = NextAuth({
           token.activeOrgId = allMemberships[0].orgId;
           token.role = allMemberships[0].role;
         }
+      } else {
+        // -----------------------------------------------------------------------
+        // Default path — normal page load with session.updateAge: 0
+        //
+        // Auth.js is configured with updateAge: 0, so the JWT callback runs on
+        // every request. This gives us a chance to pick up role changes made by
+        // admins without requiring the affected user to log out and back in.
+        // -----------------------------------------------------------------------
+        const userId = token.id as string | undefined;
+        const activeOrgId = token.activeOrgId as string | undefined;
+        if (userId && activeOrgId) {
+          // Re-read current role from DB to pick up mid-session role changes.
+          // Uses the memberships table index on (userId, organisationId, status).
+          const [membership] = await db
+            .select({ role: memberships.role })
+            .from(memberships)
+            .where(
+              and(
+                eq(memberships.userId, userId),
+                eq(memberships.organisationId, activeOrgId),
+                eq(memberships.status, 'active'),
+              ),
+            )
+            .limit(1);
+
+          if (membership) {
+            token.role = membership.role as Role;
+          }
+
+          // Refresh the full memberships list to pick up org name changes
+          // (e.g. after updateOrgSettings) and new orgs created by this user.
+          const allMemberships = await getAllActiveMemberships(userId);
+          token.memberships = allMemberships;
+
+          // Sync orgName in memberships reflects any org name changes
+          const updatedMembership = allMemberships.find((m) => m.orgId === activeOrgId);
+          if (updatedMembership) {
+            token.role = updatedMembership.role as Role;
+          }
+        }
       }
 
       return token;

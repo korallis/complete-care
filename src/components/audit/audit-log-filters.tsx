@@ -27,10 +27,12 @@ const ACTION_OPTIONS = [
 interface AuditLogFiltersProps {
   /** List of entity types present in the org's audit log */
   entityTypes: string[];
+  /** List of org members for the user filter */
+  members?: Array<{ id: string; name: string }>;
   className?: string;
 }
 
-export function AuditLogFilters({ entityTypes, className }: AuditLogFiltersProps) {
+export function AuditLogFilters({ entityTypes, members = [], className }: AuditLogFiltersProps) {
   const router = useRouter();
   const pathname = usePathname();
   const searchParams = useSearchParams();
@@ -39,11 +41,12 @@ export function AuditLogFilters({ entityTypes, className }: AuditLogFiltersProps
   const currentSearch = searchParams.get('search') ?? '';
   const currentAction = searchParams.get('action') ?? '';
   const currentEntityType = searchParams.get('entityType') ?? '';
+  const currentUserId = searchParams.get('userId') ?? '';
   const currentDateFrom = searchParams.get('dateFrom') ?? '';
   const currentDateTo = searchParams.get('dateTo') ?? '';
 
   const hasFilters =
-    currentSearch || currentAction || currentEntityType || currentDateFrom || currentDateTo;
+    currentSearch || currentAction || currentEntityType || currentUserId || currentDateFrom || currentDateTo;
 
   const updateParam = useCallback(
     (key: string, value: string) => {
@@ -131,6 +134,28 @@ export function AuditLogFilters({ entityTypes, className }: AuditLogFiltersProps
             ))}
           </select>
         </div>
+
+        {/* User filter */}
+        {members.length > 0 && (
+          <div className="w-48">
+            <label htmlFor="audit-user" className="block text-xs font-medium text-[oklch(0.45_0_0)] mb-1.5">
+              User
+            </label>
+            <select
+              id="audit-user"
+              value={currentUserId}
+              onChange={(e) => updateParam('userId', e.target.value)}
+              className="w-full rounded-lg border border-[oklch(0.88_0.005_160)] bg-white py-2 px-3 text-sm text-[oklch(0.2_0_0)] focus:outline-none focus:ring-2 focus:ring-[oklch(0.35_0.06_160)/0.3] focus:border-[oklch(0.35_0.06_160)] transition-colors"
+            >
+              <option value="">All users</option>
+              {members.map((m) => (
+                <option key={m.id} value={m.id}>
+                  {m.name}
+                </option>
+              ))}
+            </select>
+          </div>
+        )}
 
         {/* Date from */}
         <div className="w-40">
@@ -221,6 +246,19 @@ export function AuditLogFilters({ entityTypes, className }: AuditLogFiltersProps
                 type="button"
                 onClick={() => updateParam('entityType', '')}
                 aria-label="Remove entity type filter"
+                className="hover:opacity-60 transition-opacity"
+              >
+                <X className="h-2.5 w-2.5" aria-hidden="true" />
+              </button>
+            </span>
+          )}
+          {currentUserId && (
+            <span className="inline-flex items-center gap-1 rounded-full bg-[oklch(0.22_0.04_160)/0.08] px-2.5 py-0.5 text-xs font-medium text-[oklch(0.22_0.04_160)]">
+              User: {members.find((m) => m.id === currentUserId)?.name ?? currentUserId}
+              <button
+                type="button"
+                onClick={() => updateParam('userId', '')}
+                aria-label="Remove user filter"
                 className="hover:opacity-60 transition-opacity"
               >
                 <X className="h-2.5 w-2.5" aria-hidden="true" />

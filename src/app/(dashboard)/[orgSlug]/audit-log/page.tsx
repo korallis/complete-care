@@ -8,6 +8,7 @@ import {
   getAuditEntityTypes,
   getAuditSummaryStats,
 } from '@/features/audit/actions';
+import { getOrgMembers } from '@/features/organisations/actions';
 import { AuditLogTable } from '@/components/audit/audit-log-table';
 import { AuditLogFilters } from '@/components/audit/audit-log-filters';
 import { AuditPagination } from '@/components/audit/audit-pagination';
@@ -92,10 +93,11 @@ export default async function AuditLogPage({
   const hasFilters = Object.values(filters).some(Boolean);
 
   // Parallel data fetching
-  const [auditPage, entityTypes, stats] = await Promise.all([
+  const [auditPage, entityTypes, stats, members] = await Promise.all([
     getAuditLogs({ page, filters }),
     getAuditEntityTypes(),
     getAuditSummaryStats(),
+    getOrgMembers(),
   ]);
 
   return (
@@ -153,7 +155,10 @@ export default async function AuditLogPage({
           {/* Filters */}
           <div className="px-4 py-4 border-b border-[oklch(0.93_0.005_160)] bg-[oklch(0.98_0.003_160)]">
             <Suspense>
-              <AuditLogFilters entityTypes={entityTypes} />
+              <AuditLogFilters
+                entityTypes={entityTypes}
+                members={members.map((m) => ({ id: m.userId, name: m.name }))}
+              />
             </Suspense>
           </div>
 
