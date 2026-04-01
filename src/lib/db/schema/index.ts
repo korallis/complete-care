@@ -1,12 +1,9 @@
-// Database schema definitions — using Drizzle ORM
-// Schema files will be added by feature workers (m1-database-setup and beyond)
-// This file aggregates all schema exports for use in drizzle.config.ts
+// Database schema — Drizzle ORM
+// One file per domain area. All exports aggregated here for drizzle.config.ts.
+// Relations are centralised in ./relations.ts to avoid circular imports.
 
-// Example structure (to be populated by subsequent feature workers):
-// export * from './organisations';
-// export * from './users';
-// export * from './memberships';
-// export * from './audit-logs';
-
-// Empty export to make this a valid TypeScript module
-export {};
+export * from './organisations';
+export * from './users';
+export * from './memberships';
+export * from './audit-logs';
+export * from './relations';
