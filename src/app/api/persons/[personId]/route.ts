@@ -9,25 +9,13 @@
 
 import { NextResponse } from 'next/server';
 import { and, eq, isNull } from 'drizzle-orm';
-import { z } from 'zod';
 import { db } from '@/lib/db';
-import { persons, auditLogs } from '@/lib/db/schema';
+import { persons } from '@/lib/db/schema';
 import { assertBelongsToOrg, TenantIsolationError } from '@/lib/tenant';
 import { requirePermission, UnauthorizedError, UnauthenticatedError } from '@/lib/rbac';
-
-// ---------------------------------------------------------------------------
-// Validation schema for person updates
-// ---------------------------------------------------------------------------
-
-const updatePersonSchema = z.object({
-  fullName: z.string().min(1, 'Full name is required').max(255).optional(),
-  dateOfBirth: z.string().optional().nullable(),
-  status: z.enum(['active', 'archived']).optional(),
-  type: z.enum(['resident', 'client', 'young_person']).optional(),
-  contactPhone: z.string().max(50).optional().nullable(),
-  contactEmail: z.string().email().max(255).optional().nullable(),
-  address: z.string().max(1000).optional().nullable(),
-});
+import { updatePersonSchema } from '@/features/persons/schema';
+import { auditLog } from '@/lib/audit';
+import type { EmergencyContact } from '@/lib/db/schema/persons';
 
 // ---------------------------------------------------------------------------
 // GET /api/persons/:personId
@@ -128,33 +116,54 @@ export async function PUT(
     // TENANT ISOLATION
     assertBelongsToOrg(existing.organisationId, orgId);
 
-    const updates = parsed.data;
-    const now = new Date();
+    const data = parsed.data;
+    const updates: Partial<typeof persons.$inferInsert> = {};
+
+    if (data.firstName !== undefined) updates.firstName = data.firstName;
+    if (data.lastName !== undefined) updates.lastName = data.lastName;
+    if (data.preferredName !== undefined) updates.preferredName = data.preferredName;
+    if (data.type !== undefined) updates.type = data.type;
+    if (data.status !== undefined) updates.status = data.status;
+    if (data.dateOfBirth !== undefined) updates.dateOfBirth = data.dateOfBirth;
+    if (data.gender !== undefined) updates.gender = data.gender;
+    if (data.ethnicity !== undefined) updates.ethnicity = data.ethnicity;
+    if (data.religion !== undefined) updates.religion = data.religion;
+    if (data.firstLanguage !== undefined) updates.firstLanguage = data.firstLanguage;
+    if (data.nhsNumber !== undefined) updates.nhsNumber = data.nhsNumber;
+    if (data.gpName !== undefined) updates.gpName = data.gpName;
+    if (data.gpPractice !== undefined) updates.gpPractice = data.gpPractice;
+    if (data.allergies !== undefined) updates.allergies = data.allergies;
+    if (data.medicalConditions !== undefined) updates.medicalConditions = data.medicalConditions;
+    if (data.contactPhone !== undefined) updates.contactPhone = data.contactPhone;
+    if (data.contactEmail !== undefined) updates.contactEmail = data.contactEmail;
+    if (data.address !== undefined) updates.address = data.address;
+    if (data.emergencyContacts !== undefined) updates.emergencyContacts = data.emergencyContacts as EmergencyContact[];
+    if (data.photoUrl !== undefined) updates.photoUrl = data.photoUrl;
+
+    // Recompute fullName if first/last name changed
+    const newFirst = data.firstName ?? existing.firstName;
+    const newLast = data.lastName ?? existing.lastName;
+    if (data.firstName !== undefined || data.lastName !== undefined) {
+      updates.fullName = `${newFirst ?? ''} ${newLast ?? ''}`.trim();
+    }
+
+    updates.updatedAt = new Date();
 
     // Apply updates
     const [updated] = await db
       .update(persons)
-      .set({
-        ...updates,
-        updatedAt: now,
-      })
+      .set(updates)
       .where(eq(persons.id, personId))
       .returning();
 
     // Audit log
-    await db.insert(auditLogs).values({
-      userId,
-      organisationId: orgId,
-      action: 'update',
-      entityType: 'person',
-      entityId: personId,
-      changes: {
-        before: Object.fromEntries(
-          Object.keys(updates).map((k) => [k, existing[k as keyof typeof existing]]),
-        ),
-        after: updates,
-      },
-    });
+    await auditLog(
+      'update',
+      'person',
+      personId,
+      { before: Object.fromEntries(Object.keys(updates).map((k) => [k, existing[k as keyof typeof existing]])), after: updates },
+      { userId, organisationId: orgId },
+    );
 
     return NextResponse.json({ data: updated });
   } catch (error) {
