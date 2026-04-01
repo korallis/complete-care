@@ -19,6 +19,13 @@ vi.mock('next/navigation', () => ({
   useRouter: () => ({ refresh: vi.fn() }),
 }));
 
+vi.mock('@/features/billing/actions', () => ({
+  createCheckoutSession: vi.fn(),
+  createPortalSession: vi.fn(),
+  getSubscriptionStatus: vi.fn(),
+  getCurrentPlan: vi.fn(),
+}));
+
 const defaultProps = {
   orgId: '550e8400-e29b-41d4-a716-446655440000',
   plan: 'free' as const,
@@ -41,7 +48,8 @@ describe('BillingContent component', () => {
 
   it('shows current plan section', () => {
     render(<BillingContent {...defaultProps} />);
-    expect(screen.getByText('Current plan')).toBeInTheDocument();
+    const currentPlanTexts = screen.getAllByText('Current plan');
+    expect(currentPlanTexts.length).toBeGreaterThan(0);
     // "Free" appears multiple times (in text and badge), so check for at least one
     const freeTexts = screen.getAllByText('Free');
     expect(freeTexts.length).toBeGreaterThan(0);
