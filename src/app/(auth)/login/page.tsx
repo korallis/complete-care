@@ -1,19 +1,31 @@
 import type { Metadata } from 'next';
+import { AuthCard } from '@/components/auth/auth-card';
+import { LoginForm } from '@/components/auth/login-form';
 
 export const metadata: Metadata = {
   title: 'Sign In',
+  description: 'Sign in to your Complete Care account',
 };
 
-export default function LoginPage() {
+type LoginPageProps = {
+  searchParams: Promise<{ callbackUrl?: string; message?: string }>;
+};
+
+export default async function LoginPage({ searchParams }: LoginPageProps) {
+  const params = await searchParams;
+  const { callbackUrl, message } = params;
+
   return (
-    <div className="w-full max-w-md space-y-6 rounded-lg border bg-card p-8 shadow-sm">
-      <div className="space-y-2 text-center">
-        <h1 className="text-2xl font-bold tracking-tight">Sign in</h1>
-        <p className="text-sm text-muted-foreground">
-          Enter your credentials to access your account
-        </p>
-      </div>
-      {/* Auth form will be implemented in m1-auth-credentials */}
-    </div>
+    <AuthCard
+      title="Welcome back"
+      description="Sign in to your Complete Care account"
+    >
+      {message === 'email_verified' && (
+        <div className="mb-4 rounded-lg border border-emerald-200 bg-emerald-50 px-4 py-3 text-sm text-emerald-800">
+          Email verified! You can now sign in.
+        </div>
+      )}
+      <LoginForm callbackUrl={callbackUrl} />
+    </AuthCard>
   );
 }

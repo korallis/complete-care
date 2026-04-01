@@ -7,6 +7,7 @@ import { organisations } from './organisations';
 import { users } from './users';
 import { memberships } from './memberships';
 import { auditLogs } from './audit-logs';
+import { emailVerificationTokens } from './email-verification-tokens';
 
 export const organisationsRelations = relations(organisations, ({ many }) => ({
   memberships: many(memberships),
@@ -16,6 +17,7 @@ export const organisationsRelations = relations(organisations, ({ many }) => ({
 export const usersRelations = relations(users, ({ many }) => ({
   memberships: many(memberships),
   auditLogs: many(auditLogs),
+  emailVerificationTokens: many(emailVerificationTokens),
 }));
 
 export const membershipsRelations = relations(memberships, ({ one }) => ({
@@ -39,3 +41,13 @@ export const auditLogsRelations = relations(auditLogs, ({ one }) => ({
     references: [organisations.id],
   }),
 }));
+
+export const emailVerificationTokensRelations = relations(
+  emailVerificationTokens,
+  ({ one }) => ({
+    user: one(users, {
+      fields: [emailVerificationTokens.userId],
+      references: [users.id],
+    }),
+  }),
+);
