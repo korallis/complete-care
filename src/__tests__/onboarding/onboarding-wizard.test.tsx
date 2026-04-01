@@ -125,6 +125,36 @@ describe('OnboardingWizard', () => {
       renderWizard();
       expect(screen.getByLabelText(/url slug/i)).toBeInTheDocument();
     });
+
+    it('shows the organisation type field', () => {
+      renderWizard();
+      expect(screen.getByLabelText(/organisation type/i)).toBeInTheDocument();
+    });
+
+    it('organisation type field has expected options', () => {
+      renderWizard();
+      const orgTypeSelect = screen.getByLabelText(/organisation type/i) as HTMLSelectElement;
+      const optionLabels = Array.from(orgTypeSelect.options).map((o) => o.text);
+      expect(optionLabels).toContain('Independent care provider');
+      expect(optionLabels).toContain('Care group / multiple locations');
+      expect(optionLabels).toContain('Charity / not-for-profit');
+    });
+
+    it('can advance to step 2 without selecting an org type (it is optional)', async () => {
+      renderWizard();
+      // Only fill required fields
+      fireEvent.change(screen.getByLabelText(/organisation name/i), {
+        target: { value: 'Sunrise Care' },
+      });
+      fireEvent.change(screen.getByLabelText(/url slug/i), {
+        target: { value: 'sunrise-care' },
+      });
+      await act(async () => {
+        fireEvent.click(screen.getByRole('button', { name: /continue/i }));
+      });
+      // Should advance to step 2
+      expect(screen.getByText(/which care services/i)).toBeInTheDocument();
+    });
   });
 
   // -------------------------------------------------------------------------
@@ -394,6 +424,49 @@ describe('OnboardingWizard', () => {
             name: 'Sunrise Care',
             slug: 'sunrise-care',
             domains: expect.arrayContaining(['domiciliary']),
+          }),
+        );
+      });
+    });
+
+    it('passes orgType to createOrganisationWithInvites when selected', async () => {
+      const { createOrganisationWithInvites } = await import(
+        '@/features/organisations/actions'
+      );
+
+      renderWizard();
+
+      fireEvent.change(screen.getByLabelText(/organisation name/i), {
+        target: { value: 'Sunrise Care' },
+      });
+      fireEvent.change(screen.getByLabelText(/url slug/i), {
+        target: { value: 'sunrise-care' },
+      });
+      // Select an org type
+      fireEvent.change(screen.getByLabelText(/organisation type/i), {
+        target: { value: 'care_group' },
+      });
+      await act(async () => {
+        fireEvent.click(screen.getByRole('button', { name: /continue/i }));
+      });
+
+      await act(async () => {
+        fireEvent.click(
+          screen.getByRole('checkbox', { name: /domiciliary care/i }),
+        );
+      });
+      await act(async () => {
+        fireEvent.click(screen.getByRole('button', { name: /continue/i }));
+      });
+
+      await act(async () => {
+        fireEvent.click(screen.getByRole('button', { name: /skip/i }));
+      });
+
+      await waitFor(() => {
+        expect(createOrganisationWithInvites).toHaveBeenCalledWith(
+          expect.objectContaining({
+            orgType: 'care_group',
           }),
         );
       });

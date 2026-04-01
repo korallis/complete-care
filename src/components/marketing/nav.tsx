@@ -19,7 +19,7 @@ export function MarketingNav() {
             className="w-8 h-8 rounded-xl bg-[oklch(0.22_0.04_160)] flex items-center justify-center"
             aria-hidden="true"
           >
-            <Heart className="w-4 h-4 text-white" />
+            <Heart className="w-4 h-4 text-white" aria-hidden="true" />
           </div>
           <span className="text-[15px] font-bold text-[oklch(0.15_0.03_160)] tracking-tight">
             Complete Care

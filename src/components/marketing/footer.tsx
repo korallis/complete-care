@@ -13,7 +13,7 @@ export function MarketingFooter() {
                 className="w-8 h-8 rounded-xl bg-[oklch(0.35_0.08_160)] flex items-center justify-center"
                 aria-hidden="true"
               >
-                <Heart className="w-4 h-4 text-white" />
+                <Heart className="w-4 h-4 text-white" aria-hidden="true" />
               </div>
               <span className="text-[15px] font-bold text-white tracking-tight">
                 Complete Care
@@ -38,8 +38,8 @@ export function MarketingFooter() {
               {[
                 { label: 'Features', href: '/#features' },
                 { label: 'Pricing', href: '/pricing' },
-                { label: 'Security', href: '/#security' },
-                { label: 'Compliance', href: '/#compliance' },
+                { label: 'Security', href: '/privacy' },
+                { label: 'Compliance', href: '/#compare' },
               ].map((link) => (
                 <li key={link.href}>
                   <Link
@@ -60,11 +60,11 @@ export function MarketingFooter() {
             </h3>
             <ul className="space-y-2.5">
               {[
-                { label: 'Domiciliary Care', href: '/#domiciliary' },
-                { label: 'Supported Living', href: '/#supported-living' },
-                { label: "Children's Homes", href: '/#childrens-homes' },
+                { label: 'Domiciliary Care', href: '/#features' },
+                { label: 'Supported Living', href: '/#features' },
+                { label: "Children's Homes", href: '/#features' },
               ].map((link) => (
-                <li key={link.href}>
+                <li key={link.label}>
                   <Link
                     href={link.href}
                     className="text-sm text-[oklch(0.62_0.01_160)] hover:text-white transition-colors"

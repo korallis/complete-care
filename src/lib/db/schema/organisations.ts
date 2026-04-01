@@ -13,6 +13,11 @@ export const organisations = pgTable('organisations', {
   slug: text('slug').notNull().unique(),
   /** Subscription tier: free | professional | enterprise */
   plan: text('plan').notNull().default('free'),
+  /**
+   * Organisation type — describes the provider structure.
+   * Values: independent_provider | care_group | nhs_statutory | local_authority | charity_nfp | other
+   */
+  orgType: text('org_type'),
   /** Which care domains are active for this org (domiciliary_care | supported_living | childrens_homes) */
   domains: text('domains').array().notNull().default([]),
   stripeCustomerId: text('stripe_customer_id'),

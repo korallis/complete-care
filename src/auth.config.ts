@@ -12,6 +12,7 @@ const publicRoutes = [
   '/pricing',
   '/privacy',
   '/terms',
+  '/demo',
 ];
 
 /** Auth routes — redirect to dashboard if already logged in */

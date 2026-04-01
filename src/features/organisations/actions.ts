@@ -49,6 +49,15 @@ function generateSlug(name: string): string {
     .substring(0, 63); // Postgres VARCHAR limit
 }
 
+const ORG_TYPE_VALUES = [
+  'independent_provider',
+  'care_group',
+  'nhs_statutory',
+  'local_authority',
+  'charity_nfp',
+  'other',
+] as const;
+
 const createOrganisationSchema = z.object({
   name: z
     .string()
@@ -62,6 +71,7 @@ const createOrganisationSchema = z.object({
       /^[a-z0-9-]+$/,
       'Slug may only contain lowercase letters, numbers, and hyphens',
     ),
+  orgType: z.enum(ORG_TYPE_VALUES).optional(),
   domains: z
     .array(
       z.enum(['domiciliary', 'supported_living', 'childrens_residential']),
@@ -111,7 +121,7 @@ const changeMemberRoleSchema = z.object({
  * Used in the onboarding flow for new users, and from "New Organisation" for existing users.
  */
 export async function createOrganisation(
-  formData: FormData | { name: string; slug: string; domains: string[] },
+  formData: FormData | { name: string; slug: string; orgType?: string; domains: string[] },
 ): Promise<ActionResult<{ orgId: string; orgSlug: string }>> {
   const session = await auth();
   if (!session?.user?.id) {
@@ -126,6 +136,7 @@ export async function createOrganisation(
       ? {
           name: formData.get('name') as string,
           slug: formData.get('slug') as string,
+          orgType: (formData.get('orgType') as string) || undefined,
           domains: (formData.getAll('domains') as string[]),
         }
       : formData;
@@ -140,7 +151,7 @@ export async function createOrganisation(
     };
   }
 
-  const { name, slug, domains } = parsed.data;
+  const { name, slug, orgType, domains } = parsed.data;
 
   // Check slug uniqueness
   const [existing] = await db
@@ -163,6 +174,7 @@ export async function createOrganisation(
     .values({
       name,
       slug,
+      orgType: orgType ?? null,
       domains,
       plan: 'free',
     })
@@ -187,7 +199,7 @@ export async function createOrganisation(
     action: 'create',
     entityType: 'organisation',
     entityId: newOrg.id,
-    changes: { after: { name, slug, domains } },
+    changes: { after: { name, slug, orgType, domains } },
   });
 
   revalidatePath('/dashboard');
@@ -213,6 +225,7 @@ const createOrgWithInvitesSchema = z.object({
       /^[a-z0-9-]+$/,
       'Slug may only contain lowercase letters, numbers, and hyphens',
     ),
+  orgType: z.enum(ORG_TYPE_VALUES).optional(),
   domains: z
     .array(
       z.enum(['domiciliary', 'supported_living', 'childrens_residential']),
@@ -237,6 +250,7 @@ const createOrgWithInvitesSchema = z.object({
 export async function createOrganisationWithInvites(data: {
   name: string;
   slug: string;
+  orgType?: string;
   domains: string[];
   invites: Array<{ email: string; role: string }>;
 }): Promise<ActionResult<{ orgId: string; orgSlug: string }>> {
@@ -257,7 +271,7 @@ export async function createOrganisationWithInvites(data: {
     };
   }
 
-  const { name, slug, domains, invites } = parsed.data;
+  const { name, slug, orgType, domains, invites } = parsed.data;
 
   // Check slug uniqueness
   const [existing] = await db
@@ -280,6 +294,7 @@ export async function createOrganisationWithInvites(data: {
     .values({
       name,
       slug,
+      orgType: orgType ?? null,
       domains,
       plan: 'free',
     })
@@ -304,7 +319,7 @@ export async function createOrganisationWithInvites(data: {
     action: 'create',
     entityType: 'organisation',
     entityId: newOrg.id,
-    changes: { after: { name, slug, domains } },
+    changes: { after: { name, slug, orgType, domains } },
   });
 
   // Send team invitations (best-effort — failures don't abort org creation)
@@ -1157,6 +1172,7 @@ export type OrgSettings = {
   id: string;
   name: string;
   slug: string;
+  orgType: string | null;
   domains: string[];
   plan: string;
 };
@@ -1173,6 +1189,7 @@ export async function getOrgSettings(): Promise<OrgSettings | null> {
       id: organisations.id,
       name: organisations.name,
       slug: organisations.slug,
+      orgType: organisations.orgType,
       domains: organisations.domains,
       plan: organisations.plan,
     })

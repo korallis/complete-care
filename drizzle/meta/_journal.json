@@ -43,6 +43,13 @@
       "when": 1775032589477,
       "tag": "0005_cooing_xorn",
       "breakpoints": true
+    },
+    {
+      "idx": 6,
+      "version": "7",
+      "when": 1775041114280,
+      "tag": "0006_petite_karma",
+      "breakpoints": true
     }
   ]
 }

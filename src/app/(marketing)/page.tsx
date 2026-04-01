@@ -17,6 +17,8 @@ import {
   TrendingUp,
 } from 'lucide-react';
 
+const APP_URL = process.env.NEXT_PUBLIC_APP_URL ?? 'https://completecare.co.uk';
+
 export const metadata: Metadata = {
   title: 'Complete Care — UK Care Management Platform',
   description:
@@ -26,10 +28,10 @@ export const metadata: Metadata = {
     description:
       'Manage domiciliary care, supported living, and children\'s residential homes from a single unified platform with native CQC and Ofsted compliance.',
     type: 'website',
-    url: 'https://completecare.co.uk',
+    url: APP_URL,
     images: [
       {
-        url: '/og-image.png',
+        url: `${APP_URL}/og-image.png`,
         width: 1200,
         height: 630,
         alt: 'Complete Care — UK Care Management Platform',
@@ -40,10 +42,10 @@ export const metadata: Metadata = {
     card: 'summary_large_image',
     title: 'Complete Care — UK Care Management Platform',
     description: 'The only platform purpose-built for all 3 UK care domains with native Ofsted + CQC compliance.',
-    images: ['/og-image.png'],
+    images: [`${APP_URL}/og-image.png`],
   },
   alternates: {
-    canonical: 'https://completecare.co.uk',
+    canonical: APP_URL,
   },
 };
 
@@ -329,7 +331,7 @@ export default function HomePage() {
                 truly understands care
               </span>
             </h1>
-            <p className="mt-6 text-lg sm:text-xl text-white/70 max-w-2xl mx-auto leading-relaxed">
+            <p className="mt-6 text-lg sm:text-xl text-white/85 max-w-2xl mx-auto leading-relaxed">
               Complete Care unifies domiciliary care, supported living, and
               children&apos;s residential homes — with native CQC and Ofsted compliance
               built in from day one.
@@ -353,7 +355,7 @@ export default function HomePage() {
             </Link>
           </div>
 
-          <p className="mt-4 text-center text-xs text-white/40">
+          <p className="mt-4 text-center text-xs text-white/70">
             Free plan available. No credit card required.
           </p>
 
@@ -367,7 +369,7 @@ export default function HomePage() {
                 <div className="text-3xl font-bold text-white tracking-tight">
                   {stat.value}
                 </div>
-                <div className="mt-1 text-xs text-white/55 leading-snug">
+                <div className="mt-1 text-xs text-white/75 leading-snug">
                   {stat.label}
                 </div>
               </div>
@@ -656,7 +658,7 @@ export default function HomePage() {
           <h2 className="text-3xl sm:text-4xl font-bold text-white tracking-tight">
             Ready to transform your care management?
           </h2>
-          <p className="mt-5 text-base text-white/65 leading-relaxed">
+          <p className="mt-5 text-base text-white/80 leading-relaxed">
             Join care providers across England using Complete Care to deliver
             better care, pass inspections with confidence, and reduce admin burden.
           </p>
@@ -675,7 +677,7 @@ export default function HomePage() {
               Book a demo
             </Link>
           </div>
-          <p className="mt-5 text-xs text-white/35">
+          <p className="mt-5 text-xs text-white/70">
             Free plan includes 1 service, unlimited staff. No credit card required.
           </p>
         </div>

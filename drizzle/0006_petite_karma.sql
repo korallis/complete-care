@@ -1,0 +1,1 @@
+ALTER TABLE "organisations" ADD COLUMN "org_type" text;

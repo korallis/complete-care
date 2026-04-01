@@ -30,6 +30,16 @@ import {
 type Step = 1 | 2 | 3;
 const TOTAL_STEPS = 3;
 
+const ORG_TYPES = [
+  { value: '', label: 'Select organisation type' },
+  { value: 'independent_provider', label: 'Independent care provider' },
+  { value: 'care_group', label: 'Care group / multiple locations' },
+  { value: 'nhs_statutory', label: 'NHS / statutory provider' },
+  { value: 'local_authority', label: 'Local authority' },
+  { value: 'charity_nfp', label: 'Charity / not-for-profit' },
+  { value: 'other', label: 'Other' },
+] as const;
+
 const CARE_DOMAINS = [
   {
     id: 'domiciliary',
@@ -136,6 +146,7 @@ export function OnboardingWizard({ userName }: OnboardingWizardProps) {
   const [orgName, setOrgName] = useState('');
   const [slug, setSlug] = useState('');
   const [slugEdited, setSlugEdited] = useState(false);
+  const [orgType, setOrgType] = useState('');
 
   // ── Step 2: Care domains ────────────────────────────────────────────────
   const [selectedDomains, setSelectedDomains] = useState<DomainId[]>([]);
@@ -150,6 +161,7 @@ export function OnboardingWizard({ userName }: OnboardingWizardProps) {
   const [fieldError, setFieldError] = useState<{
     name?: string;
     slug?: string;
+    orgType?: string;
     domains?: string;
     invites?: string;
   }>({});
@@ -248,6 +260,7 @@ export function OnboardingWizard({ userName }: OnboardingWizardProps) {
       const result = await createOrganisationWithInvites({
         name: orgName,
         slug,
+        orgType: orgType || undefined,
         domains: selectedDomains,
         invites,
       });
@@ -414,6 +427,41 @@ export function OnboardingWizard({ userName }: OnboardingWizardProps) {
                   role="alert"
                 >
                   {fieldError.name}
+                </p>
+              )}
+            </div>
+
+            <div className="space-y-2">
+              <Label
+                htmlFor="org-type"
+                className="text-sm font-medium text-[oklch(0.25_0.03_160)]"
+              >
+                Organisation type{' '}
+                <span className="text-[oklch(0.55_0_0)] font-normal">(optional)</span>
+              </Label>
+              <select
+                id="org-type"
+                value={orgType}
+                onChange={(e) => {
+                  setOrgType(e.target.value);
+                  setFieldError((prev) => ({ ...prev, orgType: undefined }));
+                }}
+                aria-describedby={fieldError.orgType ? 'org-type-error' : 'org-type-hint'}
+                className="w-full h-11 rounded-md border border-input bg-background px-3 py-2 text-sm ring-offset-background focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 text-[oklch(0.25_0.03_160)]"
+              >
+                {ORG_TYPES.map((opt) => (
+                  <option key={opt.value} value={opt.value} disabled={opt.value === ''}>
+                    {opt.label}
+                  </option>
+                ))}
+              </select>
+              {fieldError.orgType ? (
+                <p id="org-type-error" className="text-xs text-red-600" role="alert">
+                  {fieldError.orgType}
+                </p>
+              ) : (
+                <p id="org-type-hint" className="text-xs text-[oklch(0.55_0_0)]">
+                  Helps us tailor your experience and compliance tooling.
                 </p>
               )}
             </div>
