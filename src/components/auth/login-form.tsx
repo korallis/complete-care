@@ -9,7 +9,9 @@ import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Alert, AlertDescription } from '@/components/ui/alert';
+import { Separator } from '@/components/ui/separator';
 import { loginSchema, type LoginInput } from '@/lib/auth/validation';
+import { OAuthButton } from './oauth-button';
 
 type LoginFormProps = {
   callbackUrl?: string;
@@ -51,6 +53,22 @@ export function LoginForm({ callbackUrl }: LoginFormProps) {
   };
 
   return (
+    <div className="space-y-4">
+      {/* Google OAuth */}
+      <OAuthButton
+        label="Sign in with Google"
+        callbackUrl={callbackUrl ?? '/dashboard'}
+      />
+
+      {/* Divider */}
+      <div className="relative flex items-center gap-3">
+        <Separator className="flex-1" />
+        <span className="text-xs text-muted-foreground shrink-0 select-none">
+          or sign in with email
+        </span>
+        <Separator className="flex-1" />
+      </div>
+
     <form onSubmit={handleSubmit(onSubmit)} noValidate className="space-y-4">
       {serverError && (
         <Alert variant="destructive">
@@ -152,5 +170,6 @@ export function LoginForm({ callbackUrl }: LoginFormProps) {
         </Link>
       </p>
     </form>
+    </div>
   );
 }

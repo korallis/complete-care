@@ -1,17 +1,20 @@
 /**
  * Auth.js v5 — Full configuration.
- * Includes Credentials provider with bcrypt password comparison.
+ * Includes Credentials provider with bcrypt password comparison,
+ * and Google OAuth provider with user creation/linking.
  * NOT for use in Edge runtime — use auth.config.ts for middleware.
  */
 
 import NextAuth from 'next-auth';
 import Credentials from 'next-auth/providers/credentials';
+import Google from 'next-auth/providers/google';
 import { eq } from 'drizzle-orm';
 import bcrypt from 'bcryptjs';
 import { z } from 'zod';
 import { authConfig } from './auth.config';
 import { db } from '@/lib/db';
 import { users, loginAttempts } from '@/lib/db/schema';
+import { findOrCreateOAuthUser } from '@/lib/auth/oauth';
 
 /** Maximum failed login attempts before lockout */
 const MAX_ATTEMPTS = 5;
@@ -26,6 +29,17 @@ const credentialsSchema = z.object({
 export const { handlers, auth, signIn, signOut } = NextAuth({
   ...authConfig,
   providers: [
+    Google({
+      clientId: process.env.GOOGLE_CLIENT_ID,
+      clientSecret: process.env.GOOGLE_CLIENT_SECRET,
+      authorization: {
+        params: {
+          prompt: 'consent',
+          access_type: 'offline',
+          response_type: 'code',
+        },
+      },
+    }),
     Credentials({
       credentials: {
         email: { label: 'Email', type: 'email' },
@@ -88,8 +102,22 @@ export const { handlers, auth, signIn, signOut } = NextAuth({
     }),
   ],
   callbacks: {
-    async jwt({ token, user }) {
-      // On initial sign-in, `user` is populated with the return value of `authorize`
+    async jwt({ token, user, account }) {
+      // Google OAuth sign-in — look up or create our DB user
+      if (account?.provider === 'google' && user?.email) {
+        const { userId } = await findOrCreateOAuthUser({
+          email: user.email,
+          name: user.name ?? 'Unknown',
+          image: user.image ?? null,
+        });
+        token.id = userId; // Our DB user id, not the Google sub
+        token.email = user.email;
+        token.name = user.name ?? token.name;
+        token.emailVerified = true; // Google verifies email ownership
+        return token;
+      }
+
+      // Credentials sign-in — `user` is the return value of `authorize`
       if (user) {
         token.id = user.id;
         token.email = user.email ?? token.email;
