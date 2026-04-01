@@ -19,18 +19,28 @@ vi.mock('next/navigation', () => ({
   useRouter: () => ({ refresh: vi.fn() }),
 }));
 
+const defaultProps = {
+  orgId: '550e8400-e29b-41d4-a716-446655440000',
+  plan: 'free' as const,
+  subscriptionStatus: 'free',
+  currentPeriodEnd: null,
+  maxUsers: 5,
+  currentUserCount: 2,
+  stripeCustomerId: null,
+};
+
 // ---------------------------------------------------------------------------
 // Tests
 // ---------------------------------------------------------------------------
 
 describe('BillingContent component', () => {
   it('renders billing heading', () => {
-    render(<BillingContent />);
+    render(<BillingContent {...defaultProps} />);
     expect(screen.getByText('Billing & Subscription')).toBeInTheDocument();
   });
 
   it('shows current plan section', () => {
-    render(<BillingContent />);
+    render(<BillingContent {...defaultProps} />);
     expect(screen.getByText('Current plan')).toBeInTheDocument();
     // "Free" appears multiple times (in text and badge), so check for at least one
     const freeTexts = screen.getAllByText('Free');
@@ -38,13 +48,13 @@ describe('BillingContent component', () => {
   });
 
   it('shows upgrade options', () => {
-    render(<BillingContent />);
+    render(<BillingContent {...defaultProps} />);
     expect(screen.getByText('Professional')).toBeInTheDocument();
     expect(screen.getByText('Enterprise')).toBeInTheDocument();
   });
 
   it('shows payment and invoices section', () => {
-    render(<BillingContent />);
+    render(<BillingContent {...defaultProps} />);
     expect(screen.getByText('Payment & invoices')).toBeInTheDocument();
   });
 });

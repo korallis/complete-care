@@ -86,6 +86,11 @@ describe('organisations schema', () => {
       orgType: null,
       domains: [],
       stripeCustomerId: null,
+      stripeSubscriptionId: null,
+      stripePriceId: null,
+      subscriptionStatus: 'free',
+      currentPeriodEnd: null,
+      maxUsers: 5,
       createdAt: new Date(),
       updatedAt: new Date(),
     };

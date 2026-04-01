@@ -1,4 +1,4 @@
-import { pgTable, uuid, text, timestamp } from 'drizzle-orm/pg-core';
+import { pgTable, uuid, text, timestamp, integer } from 'drizzle-orm/pg-core';
 
 /**
  * Organisations (tenants) — root of the multi-tenant data model.
@@ -20,7 +20,18 @@ export const organisations = pgTable('organisations', {
   orgType: text('org_type'),
   /** Which care domains are active for this org (domiciliary_care | supported_living | childrens_homes) */
   domains: text('domains').array().notNull().default([]),
+
+  // --- Stripe billing fields ---
   stripeCustomerId: text('stripe_customer_id'),
+  stripeSubscriptionId: text('stripe_subscription_id'),
+  stripePriceId: text('stripe_price_id'),
+  /** Stripe subscription status: active | past_due | canceled | trialing | incomplete */
+  subscriptionStatus: text('subscription_status').notNull().default('free'),
+  /** End of current billing period (null for free tier) */
+  currentPeriodEnd: timestamp('current_period_end'),
+  /** Maximum number of users allowed on the current plan */
+  maxUsers: integer('max_users').notNull().default(5),
+
   createdAt: timestamp('created_at').defaultNow().notNull(),
   updatedAt: timestamp('updated_at').defaultNow().notNull(),
 });

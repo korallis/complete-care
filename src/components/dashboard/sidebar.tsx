@@ -8,17 +8,20 @@
 import Link from 'next/link';
 import { Heart } from 'lucide-react';
 import { SidebarNav } from './sidebar-nav';
+import { PlanBadge } from '@/components/billing/plan-badge';
 import type { NavItem } from '@/lib/rbac/nav-items';
 import type { Role } from '@/lib/rbac/permissions';
+import type { Plan } from '@/types';
 
 interface SidebarProps {
   navItems: NavItem[];
   orgSlug: string;
   orgName: string;
   role: Role;
+  plan?: Plan;
 }
 
-export function Sidebar({ navItems, orgSlug, orgName, role }: SidebarProps) {
+export function Sidebar({ navItems, orgSlug, orgName, role, plan }: SidebarProps) {
   const roleLabel = ROLE_DISPLAY[role] ?? role;
 
   return (
@@ -55,9 +58,12 @@ export function Sidebar({ navItems, orgSlug, orgName, role }: SidebarProps) {
             <p className="text-xs font-semibold text-[oklch(0.22_0.04_160)] truncate leading-tight">
               {orgName}
             </p>
-            <p className="text-[10px] text-[oklch(0.58_0_0)] capitalize leading-tight mt-0.5">
-              {roleLabel}
-            </p>
+            <div className="flex items-center gap-1.5 mt-0.5">
+              <p className="text-[10px] text-[oklch(0.58_0_0)] capitalize leading-tight">
+                {roleLabel}
+              </p>
+              {plan && <PlanBadge plan={plan} />}
+            </div>
           </div>
         </div>
       </div>

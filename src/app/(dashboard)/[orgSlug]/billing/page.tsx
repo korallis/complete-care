@@ -2,6 +2,7 @@ import type { Metadata } from 'next';
 import { redirect } from 'next/navigation';
 import { auth } from '@/auth';
 import { BillingContent } from '@/components/billing/billing-content';
+import { getSubscriptionStatus } from '@/features/billing/actions';
 
 export const metadata: Metadata = {
   title: 'Billing — Complete Care',
@@ -29,5 +30,17 @@ export default async function BillingPage({ params }: BillingPageProps) {
     redirect(`/${orgSlug}/permission-denied`);
   }
 
-  return <BillingContent />;
+  const status = await getSubscriptionStatus();
+
+  return (
+    <BillingContent
+      orgId={session.user.activeOrgId}
+      plan={status?.plan ?? 'free'}
+      subscriptionStatus={status?.subscriptionStatus ?? 'free'}
+      currentPeriodEnd={status?.currentPeriodEnd ?? null}
+      maxUsers={status?.maxUsers ?? 5}
+      currentUserCount={status?.currentUserCount ?? 0}
+      stripeCustomerId={status?.stripeCustomerId ?? null}
+    />
+  );
 }

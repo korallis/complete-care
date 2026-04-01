@@ -11,13 +11,17 @@
  */
 import { Suspense } from 'react';
 import { redirect } from 'next/navigation';
+import { eq } from 'drizzle-orm';
 import { auth } from '@/auth';
 import { getNavItems } from '@/lib/rbac';
 import { getNotifications } from '@/features/notifications/actions';
+import { db } from '@/lib/db';
+import { organisations } from '@/lib/db/schema';
 import { Sidebar } from '@/components/dashboard/sidebar';
 import { DashboardHeader } from '@/components/dashboard/dashboard-header';
 import type { SessionMembership } from '@/types/auth';
 import type { Role } from '@/lib/rbac/permissions';
+import type { Plan } from '@/types';
 
 export default async function DashboardLayout({
   children,
@@ -46,8 +50,18 @@ export default async function DashboardLayout({
   // Fetch role-based nav items
   const navItems = getNavItems(role);
 
-  // Fetch notifications (parallel with nav items)
-  const { notifications, unreadCount } = await getNotifications();
+  // Fetch notifications and org plan in parallel
+  const [{ notifications, unreadCount }, orgData] = await Promise.all([
+    getNotifications(),
+    db
+      .select({ plan: organisations.plan })
+      .from(organisations)
+      .where(eq(organisations.id, session.user.activeOrgId))
+      .limit(1)
+      .then((rows) => rows[0] ?? null),
+  ]);
+
+  const plan = (orgData?.plan ?? 'free') as Plan;
 
   return (
     <div className="min-h-screen bg-[oklch(0.985_0.003_160)]">
@@ -57,6 +71,7 @@ export default async function DashboardLayout({
         orgSlug={activeOrgSlug}
         orgName={activeOrgName}
         role={role}
+        plan={plan}
       />
 
       {/* Main area — offset by sidebar width on desktop */}
