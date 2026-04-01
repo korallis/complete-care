@@ -1,0 +1,19 @@
+commands:
+  install: bun install
+  dev: bun run dev
+  build: bun run build
+  typecheck: bun run typecheck
+  lint: bun run lint
+  test: bun run test
+  db:generate: bun run db:generate
+  db:migrate: bun run db:migrate
+  db:push: bun run db:push
+  db:studio: bun run db:studio
+
+services:
+  web:
+    start: PORT=3200 bun run dev
+    stop: lsof -ti :3200 | xargs kill -9 2>/dev/null || true
+    healthcheck: curl -sf http://localhost:3200
+    port: 3200
+    depends_on: []
