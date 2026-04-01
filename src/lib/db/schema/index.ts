@@ -10,4 +10,12 @@ export * from './audit-logs';
 export * from './email-verification-tokens';
 export * from './password-reset-tokens';
 export * from './login-attempts';
+
+// Tenant-scoped entity tables (m1: minimal stubs for isolation enforcement)
+export * from './persons';
+export * from './staff-profiles';
+export * from './care-plans';
+export * from './care-notes';
+export * from './documents';
+
 export * from './relations';
