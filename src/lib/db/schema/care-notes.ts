@@ -3,6 +3,7 @@ import {
   uuid,
   text,
   timestamp,
+  jsonb,
   index,
 } from 'drizzle-orm/pg-core';
 import { organisations } from './organisations';
@@ -18,11 +19,47 @@ import { users } from './users';
  * TENANT ISOLATION: Every query MUST filter by organisationId.
  * Accessing a care note by ID requires assertBelongsToOrg() check.
  *
- * Extended columns (structured fields, note type, shift linkage) will
- * be added in m2-care-planning.
- *
  * Relations are defined in ./relations.ts to avoid circular imports.
  */
+
+// ---------------------------------------------------------------------------
+// JSONB field type definitions
+// ---------------------------------------------------------------------------
+
+export type CareNoteMood =
+  | 'happy'
+  | 'content'
+  | 'anxious'
+  | 'upset'
+  | 'withdrawn';
+
+export type PersonalCareItem = {
+  washed: boolean;
+  dressed: boolean;
+  oralCare: boolean;
+  notes?: string;
+};
+
+export type NutritionMeal = {
+  offered: boolean;
+  portionConsumed: 'none' | 'quarter' | 'half' | 'three_quarters' | 'all';
+  notes?: string;
+};
+
+export type NutritionData = {
+  breakfast?: NutritionMeal;
+  lunch?: NutritionMeal;
+  dinner?: NutritionMeal;
+  fluidsNote?: string;
+};
+
+export type CareNoteShift =
+  | 'morning'
+  | 'afternoon'
+  | 'evening'
+  | 'night'
+  | 'waking_night';
+
 export const careNotes = pgTable(
   'care_notes',
   {
@@ -39,10 +76,31 @@ export const careNotes = pgTable(
     authorId: uuid('author_id').references(() => users.id, {
       onDelete: 'set null',
     }),
+    /** Denormalised author name for display (persists even if user is deleted) */
+    authorName: text('author_name'),
     /** Note category: daily | handover | incident | safeguarding | medical */
     noteType: text('note_type').notNull().default('daily'),
+    /** Shift period: morning | afternoon | evening | night | waking_night */
+    shift: text('shift'),
     content: text('content').notNull(),
-    /** The care period this note covers (e.g. '07:00–14:00') */
+
+    // -----------------------------------------------------------------------
+    // Structured observation fields (JSONB)
+    // -----------------------------------------------------------------------
+    /** Mood observation: happy | content | anxious | upset | withdrawn */
+    mood: text('mood'),
+    /** Personal care checklist */
+    personalCare: jsonb('personal_care').$type<PersonalCareItem>(),
+    /** Nutrition tracking per meal */
+    nutrition: jsonb('nutrition').$type<NutritionData>(),
+    /** Free-text mobility observations */
+    mobility: text('mobility'),
+    /** Free-text health observations */
+    health: text('health'),
+    /** Handover points for next shift */
+    handover: text('handover'),
+
+    /** The care period this note covers (e.g. '07:00-14:00') */
     shiftPeriod: text('shift_period'),
     createdAt: timestamp('created_at').defaultNow().notNull(),
   },
@@ -63,6 +121,16 @@ export const careNotes = pgTable(
     index('care_notes_organisation_created_at_idx').on(
       t.organisationId,
       t.createdAt,
+    ),
+    /** Filter by shift */
+    index('care_notes_organisation_shift_idx').on(
+      t.organisationId,
+      t.shift,
+    ),
+    /** Filter by author */
+    index('care_notes_organisation_author_idx').on(
+      t.organisationId,
+      t.authorId,
     ),
   ],
 );

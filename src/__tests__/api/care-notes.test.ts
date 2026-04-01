@@ -5,6 +5,7 @@
  * - Route exists and is correctly structured
  * - Query parameter handling logic
  * - Pagination defaults
+ * - Immutability: no DELETE or PUT handlers
  */
 
 import { describe, it, expect, vi } from 'vitest';
@@ -53,6 +54,11 @@ describe('/api/care-notes route — structure', () => {
     const routeModule = await import('../../app/api/care-notes/route');
     expect((routeModule as Record<string, unknown>).PUT).toBeUndefined();
   });
+
+  it('does not export a PATCH handler', async () => {
+    const routeModule = await import('../../app/api/care-notes/route');
+    expect((routeModule as Record<string, unknown>).PATCH).toBeUndefined();
+  });
 });
 
 describe('/api/care-notes route — query param validation', () => {
@@ -72,5 +78,12 @@ describe('/api/care-notes route — query param validation', () => {
   it('page cannot be less than 1', () => {
     const page = Math.max(1, -5);
     expect(page).toBe(1);
+  });
+
+  it('offset is calculated correctly', () => {
+    const page = 3;
+    const limit = 25;
+    const offset = (page - 1) * limit;
+    expect(offset).toBe(50);
   });
 });
