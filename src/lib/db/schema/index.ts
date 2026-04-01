@@ -25,6 +25,9 @@ export * from './incidents';
 export * from './medications';
 export * from './prn-protocols';
 export * from './clinical-monitoring';
+export * from './vital-signs';
 export * from './dbs-checks';
+export * from './training';
+export * from './supervisions';
 
 export * from './relations';

@@ -21,7 +21,10 @@ import { incidents } from './incidents';
 import { medications, medicationAdministrations } from './medications';
 import { prnProtocols, prnAdministrations } from './prn-protocols';
 import { fluidEntries, mealEntries, mustAssessments } from './clinical-monitoring';
+import { vitalSigns } from './vital-signs';
 import { dbsChecks } from './dbs-checks';
+import { trainingCourses, trainingRecords, qualifications } from './training';
+import { supervisions } from './supervisions';
 
 export const organisationsRelations = relations(organisations, ({ many }) => ({
   memberships: many(memberships),
@@ -44,7 +47,12 @@ export const organisationsRelations = relations(organisations, ({ many }) => ({
   fluidEntries: many(fluidEntries),
   mealEntries: many(mealEntries),
   mustAssessments: many(mustAssessments),
+  vitalSigns: many(vitalSigns),
   dbsChecks: many(dbsChecks),
+  trainingCourses: many(trainingCourses),
+  trainingRecords: many(trainingRecords),
+  qualifications: many(qualifications),
+  supervisions: many(supervisions),
 }));
 
 export const usersRelations = relations(users, ({ many }) => ({
@@ -130,6 +138,7 @@ export const personsRelations = relations(persons, ({ one, many }) => ({
   fluidEntries: many(fluidEntries),
   mealEntries: many(mealEntries),
   mustAssessments: many(mustAssessments),
+  vitalSigns: many(vitalSigns),
 }));
 
 export const staffProfilesRelations = relations(staffProfiles, ({ one, many }) => ({
@@ -142,6 +151,9 @@ export const staffProfilesRelations = relations(staffProfiles, ({ one, many }) =
     references: [users.id],
   }),
   dbsChecks: many(dbsChecks),
+  trainingRecords: many(trainingRecords),
+  qualifications: many(qualifications),
+  supervisions: many(supervisions),
 }));
 
 export const carePlansRelations = relations(carePlans, ({ one, many }) => ({
@@ -382,6 +394,25 @@ export const mustAssessmentsRelations = relations(mustAssessments, ({ one }) => 
 }));
 
 // ---------------------------------------------------------------------------
+// Vital Signs relations
+// ---------------------------------------------------------------------------
+
+export const vitalSignsRelations = relations(vitalSigns, ({ one }) => ({
+  organisation: one(organisations, {
+    fields: [vitalSigns.organisationId],
+    references: [organisations.id],
+  }),
+  person: one(persons, {
+    fields: [vitalSigns.personId],
+    references: [persons.id],
+  }),
+  recordedBy: one(users, {
+    fields: [vitalSigns.recordedById],
+    references: [users.id],
+  }),
+}));
+
+// ---------------------------------------------------------------------------
 // DBS Check relations
 // ---------------------------------------------------------------------------
 
@@ -392,6 +423,59 @@ export const dbsChecksRelations = relations(dbsChecks, ({ one }) => ({
   }),
   staffProfile: one(staffProfiles, {
     fields: [dbsChecks.staffProfileId],
+    references: [staffProfiles.id],
+  }),
+}));
+
+// ---------------------------------------------------------------------------
+// Training relations
+// ---------------------------------------------------------------------------
+
+export const trainingCoursesRelations = relations(trainingCourses, ({ one, many }) => ({
+  organisation: one(organisations, {
+    fields: [trainingCourses.organisationId],
+    references: [organisations.id],
+  }),
+  trainingRecords: many(trainingRecords),
+}));
+
+export const trainingRecordsRelations = relations(trainingRecords, ({ one }) => ({
+  organisation: one(organisations, {
+    fields: [trainingRecords.organisationId],
+    references: [organisations.id],
+  }),
+  staffProfile: one(staffProfiles, {
+    fields: [trainingRecords.staffProfileId],
+    references: [staffProfiles.id],
+  }),
+  course: one(trainingCourses, {
+    fields: [trainingRecords.courseId],
+    references: [trainingCourses.id],
+  }),
+}));
+
+export const qualificationsRelations = relations(qualifications, ({ one }) => ({
+  organisation: one(organisations, {
+    fields: [qualifications.organisationId],
+    references: [organisations.id],
+  }),
+  staffProfile: one(staffProfiles, {
+    fields: [qualifications.staffProfileId],
+    references: [staffProfiles.id],
+  }),
+}));
+
+// ---------------------------------------------------------------------------
+// Supervision relations
+// ---------------------------------------------------------------------------
+
+export const supervisionsRelations = relations(supervisions, ({ one }) => ({
+  organisation: one(organisations, {
+    fields: [supervisions.organisationId],
+    references: [organisations.id],
+  }),
+  staffProfile: one(staffProfiles, {
+    fields: [supervisions.staffProfileId],
     references: [staffProfiles.id],
   }),
 }));
