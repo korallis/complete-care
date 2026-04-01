@@ -90,6 +90,13 @@ export const NAV_ITEMS_BY_ROLE: Record<Role, NavItem[]> = {
       icon: 'alert-triangle',
       section: 'care',
     },
+    // Schedule section
+    {
+      label: 'Scheduling',
+      href: '/scheduling',
+      icon: 'calendar-clock',
+      section: 'schedule',
+    },
     // Staff section
     {
       label: 'Staff',
@@ -105,9 +112,21 @@ export const NAV_ITEMS_BY_ROLE: Record<Role, NavItem[]> = {
     },
     // Operations section
     {
+      label: 'Properties',
+      href: '/properties',
+      icon: 'building',
+      section: 'operations',
+    },
+    {
       label: 'Compliance',
       href: '/compliance',
       icon: 'shield-check',
+      section: 'operations',
+    },
+    {
+      label: 'Ofsted',
+      href: '/ofsted',
+      icon: 'award',
       section: 'operations',
     },
     {
@@ -196,6 +215,13 @@ export const NAV_ITEMS_BY_ROLE: Record<Role, NavItem[]> = {
       icon: 'alert-triangle',
       section: 'care',
     },
+    // Schedule section
+    {
+      label: 'Scheduling',
+      href: '/scheduling',
+      icon: 'calendar-clock',
+      section: 'schedule',
+    },
     // Staff section
     {
       label: 'Staff',
@@ -211,9 +237,21 @@ export const NAV_ITEMS_BY_ROLE: Record<Role, NavItem[]> = {
     },
     // Operations section
     {
+      label: 'Properties',
+      href: '/properties',
+      icon: 'building',
+      section: 'operations',
+    },
+    {
       label: 'Compliance',
       href: '/compliance',
       icon: 'shield-check',
+      section: 'operations',
+    },
+    {
+      label: 'Ofsted',
+      href: '/ofsted',
+      icon: 'award',
       section: 'operations',
     },
     {
@@ -296,6 +334,13 @@ export const NAV_ITEMS_BY_ROLE: Record<Role, NavItem[]> = {
       icon: 'alert-triangle',
       section: 'care',
     },
+    // Schedule section
+    {
+      label: 'Scheduling',
+      href: '/scheduling',
+      icon: 'calendar-clock',
+      section: 'schedule',
+    },
     // Staff section
     {
       label: 'Staff',
@@ -311,9 +356,21 @@ export const NAV_ITEMS_BY_ROLE: Record<Role, NavItem[]> = {
     },
     // Operations section
     {
+      label: 'Properties',
+      href: '/properties',
+      icon: 'building',
+      section: 'operations',
+    },
+    {
       label: 'Compliance',
       href: '/compliance',
       icon: 'shield-check',
+      section: 'operations',
+    },
+    {
+      label: 'Ofsted',
+      href: '/ofsted',
+      icon: 'award',
       section: 'operations',
     },
     {
@@ -383,6 +440,12 @@ export const NAV_ITEMS_BY_ROLE: Record<Role, NavItem[]> = {
       label: 'Compliance',
       href: '/compliance',
       icon: 'shield-check',
+      section: 'operations',
+    },
+    {
+      label: 'Ofsted',
+      href: '/ofsted',
+      icon: 'award',
       section: 'operations',
     },
     {

@@ -28,6 +28,9 @@ import { trainingCourses, trainingRecords, qualifications } from './training';
 import { supervisions } from './supervisions';
 import { agencyRegister, agencyWorkers, recruitmentRecords } from './compliance';
 import { leaveRequests, leaveBalances } from './leave';
+import { properties, tenancies, propertyDocuments, maintenanceRequests } from './properties';
+import { ofstedStandards, ofstedEvidence, childrensRegister, statementOfPurpose } from './ofsted';
+import { carePackages, visitTypes, scheduledVisits } from './care-packages';
 
 export const organisationsRelations = relations(organisations, ({ many }) => ({
   memberships: many(memberships),
@@ -64,6 +67,17 @@ export const organisationsRelations = relations(organisations, ({ many }) => ({
   recruitmentRecords: many(recruitmentRecords),
   leaveRequests: many(leaveRequests),
   leaveBalances: many(leaveBalances),
+  properties: many(properties),
+  tenancies: many(tenancies),
+  propertyDocuments: many(propertyDocuments),
+  maintenanceRequests: many(maintenanceRequests),
+  ofstedStandards: many(ofstedStandards),
+  ofstedEvidence: many(ofstedEvidence),
+  childrensRegister: many(childrensRegister),
+  statementOfPurpose: many(statementOfPurpose),
+  carePackages: many(carePackages),
+  visitTypes: many(visitTypes),
+  scheduledVisits: many(scheduledVisits),
 }));
 
 export const usersRelations = relations(users, ({ many }) => ({
@@ -153,6 +167,10 @@ export const personsRelations = relations(persons, ({ one, many }) => ({
   bowelRecords: many(bowelRecords),
   sleepChecks: many(sleepChecks),
   painAssessments: many(painAssessments),
+  tenancies: many(tenancies),
+  childrensRegister: many(childrensRegister),
+  carePackages: many(carePackages),
+  scheduledVisits: many(scheduledVisits),
 }));
 
 export const staffProfilesRelations = relations(staffProfiles, ({ one, many }) => ({
@@ -171,6 +189,7 @@ export const staffProfilesRelations = relations(staffProfiles, ({ one, many }) =
   recruitmentRecords: many(recruitmentRecords),
   leaveRequests: many(leaveRequests),
   leaveBalances: many(leaveBalances),
+  scheduledVisits: many(scheduledVisits),
 }));
 
 export const carePlansRelations = relations(carePlans, ({ one, many }) => ({
@@ -607,5 +626,165 @@ export const painAssessmentsRelations = relations(painAssessments, ({ one }) => 
   recordedBy: one(users, {
     fields: [painAssessments.recordedById],
     references: [users.id],
+  }),
+}));
+
+// ---------------------------------------------------------------------------
+// Ofsted Compliance relations
+// ---------------------------------------------------------------------------
+
+export const ofstedStandardsRelations = relations(ofstedStandards, ({ one, many }) => ({
+  organisation: one(organisations, {
+    fields: [ofstedStandards.organisationId],
+    references: [organisations.id],
+  }),
+  evidence: many(ofstedEvidence),
+}));
+
+export const ofstedEvidenceRelations = relations(ofstedEvidence, ({ one }) => ({
+  organisation: one(organisations, {
+    fields: [ofstedEvidence.organisationId],
+    references: [organisations.id],
+  }),
+  standard: one(ofstedStandards, {
+    fields: [ofstedEvidence.standardId],
+    references: [ofstedStandards.id],
+  }),
+  reviewedBy: one(users, {
+    fields: [ofstedEvidence.reviewedById],
+    references: [users.id],
+  }),
+}));
+
+export const childrensRegisterRelations = relations(childrensRegister, ({ one }) => ({
+  organisation: one(organisations, {
+    fields: [childrensRegister.organisationId],
+    references: [organisations.id],
+  }),
+  person: one(persons, {
+    fields: [childrensRegister.personId],
+    references: [persons.id],
+  }),
+}));
+
+export const statementOfPurposeRelations = relations(statementOfPurpose, ({ one }) => ({
+  organisation: one(organisations, {
+    fields: [statementOfPurpose.organisationId],
+    references: [organisations.id],
+  }),
+  approvedBy: one(users, {
+    fields: [statementOfPurpose.approvedById],
+    references: [users.id],
+  }),
+}));
+
+// ---------------------------------------------------------------------------
+// Property & Tenancy relations
+// ---------------------------------------------------------------------------
+
+export const propertiesRelations = relations(properties, ({ one, many }) => ({
+  organisation: one(organisations, {
+    fields: [properties.organisationId],
+    references: [organisations.id],
+  }),
+  tenancies: many(tenancies),
+  propertyDocuments: many(propertyDocuments),
+  maintenanceRequests: many(maintenanceRequests),
+}));
+
+export const tenanciesRelations = relations(tenancies, ({ one }) => ({
+  organisation: one(organisations, {
+    fields: [tenancies.organisationId],
+    references: [organisations.id],
+  }),
+  property: one(properties, {
+    fields: [tenancies.propertyId],
+    references: [properties.id],
+  }),
+  person: one(persons, {
+    fields: [tenancies.personId],
+    references: [persons.id],
+  }),
+}));
+
+export const propertyDocumentsRelations = relations(propertyDocuments, ({ one }) => ({
+  organisation: one(organisations, {
+    fields: [propertyDocuments.organisationId],
+    references: [organisations.id],
+  }),
+  property: one(properties, {
+    fields: [propertyDocuments.propertyId],
+    references: [properties.id],
+  }),
+  uploadedBy: one(users, {
+    fields: [propertyDocuments.uploadedById],
+    references: [users.id],
+  }),
+}));
+
+export const maintenanceRequestsRelations = relations(maintenanceRequests, ({ one }) => ({
+  organisation: one(organisations, {
+    fields: [maintenanceRequests.organisationId],
+    references: [organisations.id],
+  }),
+  property: one(properties, {
+    fields: [maintenanceRequests.propertyId],
+    references: [properties.id],
+  }),
+  reportedBy: one(users, {
+    fields: [maintenanceRequests.reportedById],
+    references: [users.id],
+  }),
+}));
+
+// ---------------------------------------------------------------------------
+// Care Package relations
+// ---------------------------------------------------------------------------
+
+export const carePackagesRelations = relations(carePackages, ({ one, many }) => ({
+  organisation: one(organisations, {
+    fields: [carePackages.organisationId],
+    references: [organisations.id],
+  }),
+  person: one(persons, {
+    fields: [carePackages.personId],
+    references: [persons.id],
+  }),
+  visitTypes: many(visitTypes),
+  scheduledVisits: many(scheduledVisits),
+}));
+
+export const visitTypesRelations = relations(visitTypes, ({ one, many }) => ({
+  carePackage: one(carePackages, {
+    fields: [visitTypes.carePackageId],
+    references: [carePackages.id],
+  }),
+  organisation: one(organisations, {
+    fields: [visitTypes.organisationId],
+    references: [organisations.id],
+  }),
+  scheduledVisits: many(scheduledVisits),
+}));
+
+export const scheduledVisitsRelations = relations(scheduledVisits, ({ one }) => ({
+  visitType: one(visitTypes, {
+    fields: [scheduledVisits.visitTypeId],
+    references: [visitTypes.id],
+  }),
+  carePackage: one(carePackages, {
+    fields: [scheduledVisits.carePackageId],
+    references: [carePackages.id],
+  }),
+  person: one(persons, {
+    fields: [scheduledVisits.personId],
+    references: [persons.id],
+  }),
+  organisation: one(organisations, {
+    fields: [scheduledVisits.organisationId],
+    references: [organisations.id],
+  }),
+  assignedStaff: one(staffProfiles, {
+    fields: [scheduledVisits.assignedStaffId],
+    references: [staffProfiles.id],
   }),
 }));

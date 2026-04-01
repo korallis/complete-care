@@ -31,6 +31,7 @@ export function DashboardTabs({ orgSlug, personId }: DashboardTabsProps) {
     { id: 'risk-assessments', label: 'Risk Assessments', href: `${basePath}/risk-assessments` },
     { id: 'documents', label: 'Documents', href: `${basePath}/documents` },
     { id: 'body-map', label: 'Body Map', href: `${basePath}/body-map` },
+    { id: 'care-package', label: 'Care Package', href: `${basePath}/care-package` },
     { id: 'clinical', label: 'Clinical', href: `${basePath}/clinical/fluids` },
     { id: 'emar', label: 'EMAR', href: `${basePath}/emar` },
     { id: 'incidents', label: 'Incidents', href: `${basePath}/incidents` },

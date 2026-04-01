@@ -33,4 +33,8 @@ export * from './supervisions';
 export * from './compliance';
 export * from './leave';
 
+export * from './properties';
+export * from './ofsted';
+export * from './care-packages';
+
 export * from './relations';
