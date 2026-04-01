@@ -14,8 +14,9 @@ import { staffProfiles } from './staff-profiles';
 import { carePlans } from './care-plans';
 import { carePlanVersions } from './care-plan-versions';
 import { careNotes } from './care-notes';
-import { documents } from './documents';
+import { documents, bodyMapEntries } from './documents';
 import { notifications } from './notifications';
+import { riskAssessments } from './risk-assessments';
 
 export const organisationsRelations = relations(organisations, ({ many }) => ({
   memberships: many(memberships),
@@ -28,6 +29,8 @@ export const organisationsRelations = relations(organisations, ({ many }) => ({
   careNotes: many(careNotes),
   documents: many(documents),
   notifications: many(notifications),
+  riskAssessments: many(riskAssessments),
+  bodyMapEntries: many(bodyMapEntries),
 }));
 
 export const usersRelations = relations(users, ({ many }) => ({
@@ -104,6 +107,8 @@ export const personsRelations = relations(persons, ({ one, many }) => ({
   carePlans: many(carePlans),
   careNotes: many(careNotes),
   documents: many(documents),
+  riskAssessments: many(riskAssessments),
+  bodyMapEntries: many(bodyMapEntries),
 }));
 
 export const staffProfilesRelations = relations(staffProfiles, ({ one }) => ({
@@ -174,6 +179,36 @@ export const documentsRelations = relations(documents, ({ one }) => ({
   }),
   uploadedBy: one(users, {
     fields: [documents.uploadedById],
+    references: [users.id],
+  }),
+}));
+
+export const bodyMapEntriesRelations = relations(bodyMapEntries, ({ one }) => ({
+  organisation: one(organisations, {
+    fields: [bodyMapEntries.organisationId],
+    references: [organisations.id],
+  }),
+  person: one(persons, {
+    fields: [bodyMapEntries.personId],
+    references: [persons.id],
+  }),
+  createdBy: one(users, {
+    fields: [bodyMapEntries.createdById],
+    references: [users.id],
+  }),
+}));
+
+export const riskAssessmentsRelations = relations(riskAssessments, ({ one }) => ({
+  organisation: one(organisations, {
+    fields: [riskAssessments.organisationId],
+    references: [organisations.id],
+  }),
+  person: one(persons, {
+    fields: [riskAssessments.personId],
+    references: [persons.id],
+  }),
+  completedBy: one(users, {
+    fields: [riskAssessments.completedById],
     references: [users.id],
   }),
 }));

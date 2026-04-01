@@ -20,5 +20,6 @@ export * from './care-notes';
 export * from './documents';
 
 export * from './notifications';
+export * from './risk-assessments';
 
 export * from './relations';
