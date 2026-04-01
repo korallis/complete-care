@@ -30,6 +30,8 @@ export const auditLogs = pgTable(
     entityId: text('entity_id').notNull(),
     /** Before/after snapshot of changed fields. Structure: { before: {...}, after: {...} } */
     changes: jsonb('changes'),
+    /** The IP address of the client that triggered the action. Null for system-generated events. */
+    ipAddress: text('ip_address'),
     createdAt: timestamp('created_at').defaultNow().notNull(),
   },
   (t) => [

@@ -262,6 +262,7 @@ describe('auditLogs schema', () => {
       entityType: 'person',
       entityId: 'person-uuid',
       changes: { before: null, after: { name: 'Alice' } },
+      ipAddress: null,
       createdAt: new Date(),
     };
     expect(log.action).toBe('create');
