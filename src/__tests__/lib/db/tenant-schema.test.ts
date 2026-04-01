@@ -141,11 +141,21 @@ describe('staffProfiles schema', () => {
         'organisationId',
         'userId',
         'fullName',
+        'firstName',
+        'lastName',
         'jobTitle',
-        'employmentType',
-        'status',
+        'contractType',
+        'weeklyHours',
         'startDate',
         'endDate',
+        'niNumber',
+        'emergencyContactName',
+        'emergencyContactPhone',
+        'emergencyContactRelation',
+        'email',
+        'phone',
+        'status',
+        'employmentHistory',
         'createdAt',
         'updatedAt',
         'deletedAt',
@@ -166,8 +176,8 @@ describe('staffProfiles schema', () => {
     expect(staffProfiles.jobTitle.default).toBe('Care Worker');
   });
 
-  it('employmentType defaults to "full_time"', () => {
-    expect(staffProfiles.employmentType.default).toBe('full_time');
+  it('contractType defaults to "full_time"', () => {
+    expect(staffProfiles.contractType.default).toBe('full_time');
   });
 
   it('status defaults to "active"', () => {
@@ -180,11 +190,21 @@ describe('staffProfiles schema', () => {
       organisationId: 'org-id',
       userId: null,
       fullName: 'Jane Carer',
+      firstName: 'Jane',
+      lastName: 'Carer',
       jobTitle: 'Senior Carer',
-      employmentType: 'full_time',
+      contractType: 'full_time',
+      weeklyHours: '37.5',
+      niNumber: null,
+      email: null,
+      phone: null,
+      emergencyContactName: null,
+      emergencyContactPhone: null,
+      emergencyContactRelation: null,
       status: 'active',
       startDate: '2024-01-01',
       endDate: null,
+      employmentHistory: [],
       createdAt: new Date(),
       updatedAt: new Date(),
       deletedAt: null,

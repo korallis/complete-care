@@ -1,6 +1,13 @@
 import type { Metadata } from 'next';
 import { notFound, redirect } from 'next/navigation';
+import Link from 'next/link';
+import { Suspense } from 'react';
 import { auth } from '@/auth';
+import { listStaff } from '@/features/staff/actions';
+import { hasPermission } from '@/lib/rbac/permissions';
+import type { Role } from '@/lib/rbac/permissions';
+import { StaffList } from '@/components/staff/staff-list';
+import type { StaffStatus } from '@/features/staff/schema';
 
 export const metadata: Metadata = {
   title: 'Staff — Complete Care',
@@ -8,14 +15,21 @@ export const metadata: Metadata = {
 
 interface StaffPageProps {
   params: Promise<{ orgSlug: string }>;
+  searchParams: Promise<{
+    search?: string;
+    status?: string;
+    contractType?: string;
+    page?: string;
+  }>;
 }
 
-/**
- * Staff list page.
- * Stub page — full implementation coming in Milestone 3 (Staff Management).
- */
-export default async function StaffPage({ params }: StaffPageProps) {
+export default async function StaffPage({
+  params,
+  searchParams,
+}: StaffPageProps) {
   const { orgSlug } = await params;
+  const sp = await searchParams;
+
   const session = await auth();
 
   if (!session?.user?.id) {
@@ -26,7 +40,6 @@ export default async function StaffPage({ params }: StaffPageProps) {
     redirect('/onboarding');
   }
 
-  // Verify org slug matches active org
   const memberships = session.user.memberships ?? [];
   const activeMembership = memberships.find(
     (m) => m.orgId === session.user.activeOrgId,
@@ -40,52 +53,88 @@ export default async function StaffPage({ params }: StaffPageProps) {
     redirect(`/api/orgs/switch?slug=${orgSlug}&returnTo=/${orgSlug}/staff`);
   }
 
+  const role = (session.user.role ?? activeMembership.role ?? 'viewer') as Role;
+  const canCreate = hasPermission(role, 'create', 'staff');
+
+  // Parse search params
+  const search = sp.search ?? '';
+  const status = (sp.status ?? 'active') as StaffStatus | 'all';
+  const contractType = sp.contractType;
+  const page = Math.max(1, parseInt(sp.page ?? '1', 10));
+
+  // Fetch staff with pagination
+  const result = await listStaff({
+    search,
+    status,
+    contractType,
+    page,
+    pageSize: 25,
+  });
+
   return (
-    <div className="p-6 space-y-6">
+    <div className="p-6 space-y-6 max-w-5xl mx-auto">
       {/* Page header */}
-      <div className="flex items-center justify-between">
+      <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
         <div>
           <h1 className="text-2xl font-semibold text-[oklch(0.18_0.02_160)]">
             Staff
           </h1>
           <p className="text-sm text-[oklch(0.55_0_0)] mt-0.5">
-            Manage your care team at{' '}
-            <span className="font-medium text-[oklch(0.35_0.06_160)]">
-              {activeMembership.orgName}
-            </span>
+            {result.totalCount === 0
+              ? `No staff members in ${activeMembership.orgName} yet`
+              : `${result.totalCount} staff ${result.totalCount === 1 ? 'member' : 'members'} in ${activeMembership.orgName}`}
           </p>
         </div>
+        {canCreate && (
+          <Link
+            href={`/${orgSlug}/staff/new`}
+            className="inline-flex items-center gap-2 rounded-lg bg-[oklch(0.22_0.04_160)] px-4 py-2.5 text-sm font-medium text-white hover:bg-[oklch(0.28_0.06_160)] transition-colors focus:outline-none focus:ring-2 focus:ring-[oklch(0.35_0.06_160)] focus:ring-offset-2 self-start sm:self-auto"
+          >
+            <svg
+              xmlns="http://www.w3.org/2000/svg"
+              viewBox="0 0 24 24"
+              fill="none"
+              stroke="currentColor"
+              strokeWidth="2"
+              strokeLinecap="round"
+              strokeLinejoin="round"
+              className="h-4 w-4"
+              aria-hidden="true"
+            >
+              <path d="M5 12h14" />
+              <path d="M12 5v14" />
+            </svg>
+            Add staff member
+          </Link>
+        )}
       </div>
 
-      {/* Coming soon notice */}
-      <div className="rounded-xl border border-[oklch(0.91_0.005_160)] bg-white p-12 text-center">
-        <div className="mx-auto mb-4 h-12 w-12 rounded-full bg-[oklch(0.22_0.04_160)/0.08] flex items-center justify-center">
-          <svg
-            xmlns="http://www.w3.org/2000/svg"
-            viewBox="0 0 24 24"
-            fill="none"
-            stroke="oklch(0.22 0.04 160)"
-            strokeWidth="1.75"
-            strokeLinecap="round"
-            strokeLinejoin="round"
-            className="h-6 w-6"
-            aria-hidden="true"
-          >
-            <path d="M16 21v-2a4 4 0 0 0-4-4H6a4 4 0 0 0-4 4v2" />
-            <circle cx="9" cy="7" r="4" />
-            <path d="M22 21v-2a4 4 0 0 0-3-3.87" />
-            <path d="M16 3.13a4 4 0 0 1 0 7.75" />
-          </svg>
-        </div>
-        <h2 className="text-base font-semibold text-[oklch(0.18_0.02_160)]">
-          Staff Management — Coming in Milestone 3
-        </h2>
-        <p className="mt-1 text-sm text-[oklch(0.55_0_0)] max-w-md mx-auto">
-          Full staff management including DBS tracking, training records,
-          qualifications, supervision scheduling, and compliance dashboard will
-          be available in Milestone 3.
-        </p>
-      </div>
+      {/* Staff list with search/filter */}
+      <Suspense
+        fallback={
+          <div className="space-y-3">
+            {[...Array(5)].map((_, i) => (
+              <div
+                key={i}
+                className="h-16 rounded-xl bg-[oklch(0.93_0.003_160)] animate-pulse"
+              />
+            ))}
+          </div>
+        }
+      >
+        <StaffList
+          staff={result.staff}
+          totalCount={result.totalCount}
+          page={result.page}
+          pageSize={result.pageSize}
+          totalPages={result.totalPages}
+          orgSlug={orgSlug}
+          canCreate={canCreate}
+          searchQuery={search}
+          statusFilter={typeof status === 'string' ? status : 'active'}
+          contractTypeFilter={contractType ?? ''}
+        />
+      </Suspense>
     </div>
   );
 }

@@ -230,8 +230,12 @@ describe('hasPermission', () => {
       expect(hasPermission('carer', 'approve', 'care_plans')).toBe(false);
     });
 
-    it('cannot access staff records', () => {
-      expect(hasPermission('carer', 'read', 'staff')).toBe(false);
+    it('can read staff records (read-only)', () => {
+      expect(hasPermission('carer', 'read', 'staff')).toBe(true);
+    });
+
+    it('cannot create staff records', () => {
+      expect(hasPermission('carer', 'create', 'staff')).toBe(false);
     });
 
     it('cannot manage rota', () => {
@@ -313,8 +317,12 @@ describe('hasPermission', () => {
       });
     });
 
-    it('cannot access staff records', () => {
-      expect(hasPermission('viewer', 'read', 'staff')).toBe(false);
+    it('can read staff records (read-only)', () => {
+      expect(hasPermission('viewer', 'read', 'staff')).toBe(true);
+    });
+
+    it('cannot create staff records', () => {
+      expect(hasPermission('viewer', 'create', 'staff')).toBe(false);
     });
 
     it('cannot manage billing', () => {

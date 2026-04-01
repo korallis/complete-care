@@ -49,7 +49,7 @@ export async function GET(request: Request) {
         id: staffProfiles.id,
         fullName: staffProfiles.fullName,
         jobTitle: staffProfiles.jobTitle,
-        employmentType: staffProfiles.employmentType,
+        contractType: staffProfiles.contractType,
         status: staffProfiles.status,
         startDate: staffProfiles.startDate,
         createdAt: staffProfiles.createdAt,
