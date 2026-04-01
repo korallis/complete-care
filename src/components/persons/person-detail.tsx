@@ -35,7 +35,7 @@ const TABS: { id: Tab; label: string }[] = [
   { id: 'timeline', label: 'Timeline' },
 ];
 
-function TabContent({ tab, person }: { tab: Tab; person: Person; orgSlug: string }) {
+function TabContent({ tab, person, orgSlug }: { tab: Tab; person: Person; orgSlug: string }) {
   if (tab === 'overview') {
     const emergencyContacts = (person.emergencyContacts ?? []) as EmergencyContact[];
     const age = calculateAge(person.dateOfBirth);
@@ -201,9 +201,34 @@ function TabContent({ tab, person }: { tab: Tab; person: Person; orgSlug: string
     );
   }
 
+  // Care plans tab — link to the dedicated care plans page
+  if (tab === 'care-plans') {
+    return (
+      <div className="rounded-xl border border-dashed border-[oklch(0.88_0.005_160)] bg-[oklch(0.985_0.003_160)] p-10 text-center">
+        <div className="mx-auto mb-3 flex h-10 w-10 items-center justify-center rounded-full bg-[oklch(0.94_0.015_160)]">
+          <svg className="h-5 w-5 text-[oklch(0.45_0.07_160)]" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth="1.5" aria-hidden="true">
+            <path strokeLinecap="round" strokeLinejoin="round" d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
+          </svg>
+        </div>
+        <p className="text-sm font-medium text-[oklch(0.22_0.04_160)] mb-1">Care Plans</p>
+        <p className="text-sm text-[oklch(0.55_0_0)] mb-4">
+          View, create and manage version-controlled care plans for this person.
+        </p>
+        <Link
+          href={`/${orgSlug}/persons/${person.id}/care-plans`}
+          className="inline-flex items-center gap-1.5 rounded-lg bg-[oklch(0.3_0.08_160)] px-4 py-2 text-sm font-medium text-white hover:bg-[oklch(0.25_0.08_160)] transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[oklch(0.5_0.1_160)] focus-visible:ring-offset-2"
+        >
+          <svg className="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth="2" aria-hidden="true">
+            <path strokeLinecap="round" strokeLinejoin="round" d="M9 5l7 7-7 7" />
+          </svg>
+          Open care plans
+        </Link>
+      </div>
+    );
+  }
+
   // Placeholder tabs — to be implemented in future features
-  const placeholders: Record<Exclude<Tab, 'overview'>, string> = {
-    'care-plans': 'Care plans will be available in the care planning feature.',
+  const placeholders: Record<Exclude<Tab, 'overview' | 'care-plans'>, string> = {
     notes: 'Care notes and timeline entries will appear here.',
     assessments: 'Risk assessments and scored evaluations will appear here.',
     documents: 'Uploaded documents and attachments will appear here.',

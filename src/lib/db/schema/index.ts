@@ -15,6 +15,7 @@ export * from './login-attempts';
 export * from './persons';
 export * from './staff-profiles';
 export * from './care-plans';
+export * from './care-plan-versions';
 export * from './care-notes';
 export * from './documents';
 

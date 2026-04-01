@@ -12,6 +12,7 @@ import { emailVerificationTokens } from './email-verification-tokens';
 import { persons } from './persons';
 import { staffProfiles } from './staff-profiles';
 import { carePlans } from './care-plans';
+import { carePlanVersions } from './care-plan-versions';
 import { careNotes } from './care-notes';
 import { documents } from './documents';
 import { notifications } from './notifications';
@@ -23,6 +24,7 @@ export const organisationsRelations = relations(organisations, ({ many }) => ({
   persons: many(persons),
   staffProfiles: many(staffProfiles),
   carePlans: many(carePlans),
+  carePlanVersions: many(carePlanVersions),
   careNotes: many(careNotes),
   documents: many(documents),
   notifications: many(notifications),
@@ -115,7 +117,7 @@ export const staffProfilesRelations = relations(staffProfiles, ({ one }) => ({
   }),
 }));
 
-export const carePlansRelations = relations(carePlans, ({ one }) => ({
+export const carePlansRelations = relations(carePlans, ({ one, many }) => ({
   organisation: one(organisations, {
     fields: [carePlans.organisationId],
     references: [organisations.id],
@@ -123,6 +125,26 @@ export const carePlansRelations = relations(carePlans, ({ one }) => ({
   person: one(persons, {
     fields: [carePlans.personId],
     references: [persons.id],
+  }),
+  approvedBy: one(users, {
+    fields: [carePlans.approvedById],
+    references: [users.id],
+  }),
+  versions: many(carePlanVersions),
+}));
+
+export const carePlanVersionsRelations = relations(carePlanVersions, ({ one }) => ({
+  carePlan: one(carePlans, {
+    fields: [carePlanVersions.carePlanId],
+    references: [carePlans.id],
+  }),
+  organisation: one(organisations, {
+    fields: [carePlanVersions.organisationId],
+    references: [organisations.id],
+  }),
+  createdBy: one(users, {
+    fields: [carePlanVersions.createdById],
+    references: [users.id],
   }),
 }));
 
