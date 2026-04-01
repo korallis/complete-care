@@ -13,9 +13,10 @@ import bcrypt from 'bcryptjs';
 import { z } from 'zod';
 import { authConfig } from './auth.config';
 import { db } from '@/lib/db';
-import { users, loginAttempts, memberships } from '@/lib/db/schema';
+import { users, loginAttempts, memberships, organisations } from '@/lib/db/schema';
 import { findOrCreateOAuthUser } from '@/lib/auth/oauth';
 import type { Role } from '@/lib/rbac/permissions';
+import type { SessionMembership } from '@/types/auth';
 
 /** Maximum failed login attempts before lockout */
 const MAX_ATTEMPTS = 5;
@@ -103,7 +104,7 @@ export const { handlers, auth, signIn, signOut } = NextAuth({
     }),
   ],
   callbacks: {
-    async jwt({ token, user, account, trigger }) {
+    async jwt({ token, user, account, trigger, session: sessionData }) {
       // -----------------------------------------------------------------------
       // Google OAuth sign-in — look up or create our DB user
       // -----------------------------------------------------------------------
@@ -118,11 +119,12 @@ export const { handlers, auth, signIn, signOut } = NextAuth({
         token.name = user.name ?? token.name;
         token.emailVerified = true; // Google verifies email ownership
 
-        // Fetch the user's first active membership for org context
-        const firstMembership = await getFirstActiveMembership(userId);
-        if (firstMembership) {
-          token.activeOrgId = firstMembership.organisationId;
-          token.role = firstMembership.role as Role;
+        // Fetch all memberships for org switcher
+        const allMemberships = await getAllActiveMemberships(userId);
+        token.memberships = allMemberships;
+        if (allMemberships.length > 0) {
+          token.activeOrgId = allMemberships[0].orgId;
+          token.role = allMemberships[0].role;
         }
         return token;
       }
@@ -136,53 +138,76 @@ export const { handlers, auth, signIn, signOut } = NextAuth({
         token.name = user.name ?? token.name;
         token.emailVerified = user.emailVerified ?? false;
 
-        // Fetch the user's first active membership for org context
+        // Fetch all memberships for org switcher
         if (user.id) {
-          const firstMembership = await getFirstActiveMembership(user.id);
-          if (firstMembership) {
-            token.activeOrgId = firstMembership.organisationId;
-            token.role = firstMembership.role as Role;
+          const allMemberships = await getAllActiveMemberships(user.id);
+          token.memberships = allMemberships;
+          if (allMemberships.length > 0) {
+            token.activeOrgId = allMemberships[0].orgId;
+            token.role = allMemberships[0].role;
           }
         }
         return token;
       }
 
       // -----------------------------------------------------------------------
-      // Session update (trigger === 'update') — re-fetch role from DB.
-      // Called when session.update() is invoked client-side after a role change
-      // (e.g., owner promotes a member; the new role is reflected on next request).
+      // Session update (trigger === 'update') — handle org switching or role refresh.
+      // Called when session.update({ activeOrgId }) is invoked client-side.
       // -----------------------------------------------------------------------
       if (trigger === 'update') {
         const userId = token.id as string | undefined;
-        const activeOrgId = token.activeOrgId as string | undefined;
+        if (!userId) return token;
 
-        if (userId && activeOrgId) {
-          // Re-fetch role for the current org
+        // Org switch: client passes a new activeOrgId
+        const newActiveOrgId = (sessionData as { activeOrgId?: string })?.activeOrgId;
+        if (newActiveOrgId) {
+          // Verify the user actually belongs to the target org
           const [membership] = await db
-            .select({
-              role: memberships.role,
-              organisationId: memberships.organisationId,
-            })
+            .select({ role: memberships.role })
             .from(memberships)
             .where(
               and(
                 eq(memberships.userId, userId),
-                eq(memberships.organisationId, activeOrgId),
+                eq(memberships.organisationId, newActiveOrgId),
                 eq(memberships.status, 'active'),
               ),
             )
             .limit(1);
 
           if (membership) {
+            token.activeOrgId = newActiveOrgId;
             token.role = membership.role as Role;
           }
-        } else if (userId) {
-          // No active org yet — fetch first membership
-          const firstMembership = await getFirstActiveMembership(userId);
-          if (firstMembership) {
-            token.activeOrgId = firstMembership.organisationId;
-            token.role = firstMembership.role as Role;
+        } else {
+          // Role refresh for current org
+          const activeOrgId = token.activeOrgId as string | undefined;
+          if (activeOrgId) {
+            const [membership] = await db
+              .select({ role: memberships.role })
+              .from(memberships)
+              .where(
+                and(
+                  eq(memberships.userId, userId),
+                  eq(memberships.organisationId, activeOrgId),
+                  eq(memberships.status, 'active'),
+                ),
+              )
+              .limit(1);
+
+            if (membership) {
+              token.role = membership.role as Role;
+            }
           }
+        }
+
+        // Always refresh the memberships list so org switcher stays current
+        const allMemberships = await getAllActiveMemberships(userId);
+        token.memberships = allMemberships;
+
+        // If no active org was set yet, pick the first available
+        if (!token.activeOrgId && allMemberships.length > 0) {
+          token.activeOrgId = allMemberships[0].orgId;
+          token.role = allMemberships[0].role;
         }
       }
 
@@ -199,6 +224,8 @@ export const { handlers, auth, signIn, signOut } = NextAuth({
         // Org context — set by JWT callback on sign-in or trigger='update'
         session.user.activeOrgId = token.activeOrgId as string | undefined;
         session.user.role = token.role as Role | undefined;
+        // All memberships for org switcher UI
+        session.user.memberships = token.memberships as SessionMembership[] | undefined;
       }
       return session;
     },
@@ -206,30 +233,32 @@ export const { handlers, auth, signIn, signOut } = NextAuth({
 });
 
 /**
- * Fetches the user's first active organisation membership.
- * Used during sign-in to populate the JWT with org context.
- * Returns the most recently created active membership, or null if none.
+ * Fetches all active memberships for a user, joined with organisation details.
+ * Used to populate the JWT with org context and the org switcher UI.
  */
-async function getFirstActiveMembership(userId: string): Promise<{
-  organisationId: string;
-  role: string;
-} | null> {
-  const [membership] = await db
+async function getAllActiveMemberships(
+  userId: string,
+): Promise<SessionMembership[]> {
+  const rows = await db
     .select({
-      organisationId: memberships.organisationId,
+      orgId: memberships.organisationId,
+      orgName: organisations.name,
+      orgSlug: organisations.slug,
       role: memberships.role,
     })
     .from(memberships)
+    .innerJoin(organisations, eq(memberships.organisationId, organisations.id))
     .where(
-      and(
-        eq(memberships.userId, userId),
-        eq(memberships.status, 'active'),
-      ),
+      and(eq(memberships.userId, userId), eq(memberships.status, 'active')),
     )
-    .orderBy(desc(memberships.createdAt))
-    .limit(1);
+    .orderBy(desc(memberships.createdAt));
 
-  return membership ?? null;
+  return rows.map((r) => ({
+    orgId: r.orgId,
+    orgName: r.orgName,
+    orgSlug: r.orgSlug,
+    role: r.role as Role,
+  }));
 }
 
 /**

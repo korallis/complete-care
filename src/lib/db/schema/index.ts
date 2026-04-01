@@ -5,6 +5,7 @@
 export * from './organisations';
 export * from './users';
 export * from './memberships';
+export * from './invitations';
 export * from './audit-logs';
 export * from './email-verification-tokens';
 export * from './password-reset-tokens';

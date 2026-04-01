@@ -6,6 +6,14 @@
 import 'next-auth';
 import type { Role } from '@/lib/rbac/permissions';
 
+/** A single org membership entry stored in the JWT for the org switcher */
+export type SessionMembership = {
+  orgId: string;
+  orgName: string;
+  orgSlug: string;
+  role: Role;
+};
+
 declare module 'next-auth' {
   interface Session {
     user: {
@@ -18,6 +26,8 @@ declare module 'next-auth' {
       activeOrgId?: string;
       /** The user's role in the active organisation (cached from JWT; DB is authoritative) */
       role?: Role;
+      /** All organisations the user belongs to — used to render the org switcher */
+      memberships?: SessionMembership[];
     };
   }
 

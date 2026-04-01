@@ -22,6 +22,15 @@ const authRoutes = [
   '/reset-password',
 ];
 
+/**
+ * Routes accessible to authenticated users ONLY (not redirected if logged in).
+ * Used for post-auth flows that require an authenticated session.
+ */
+const authenticatedOnlyRoutes = [
+  '/onboarding',
+  '/invitations',
+];
+
 /** Prefix for API auth routes — always accessible */
 const apiAuthPrefix = '/api/auth';
 
@@ -58,6 +67,20 @@ export const authConfig = {
 
       // Allow verify-email page for logged-in unverified users
       if (pathname.startsWith('/verify-email')) {
+        return true;
+      }
+
+      // Authenticated-only routes — require login but don't redirect back if already logged in
+      // (e.g., /onboarding, /invitations/accept)
+      if (
+        authenticatedOnlyRoutes.some((route) => pathname.startsWith(route))
+      ) {
+        if (!isLoggedIn) {
+          const callbackUrl = encodeURIComponent(pathname + nextUrl.search);
+          return Response.redirect(
+            new URL(`/login?callbackUrl=${callbackUrl}`, nextUrl),
+          );
+        }
         return true;
       }
 
