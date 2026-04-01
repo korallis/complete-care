@@ -14,6 +14,7 @@ import { staffProfiles } from './staff-profiles';
 import { carePlans } from './care-plans';
 import { careNotes } from './care-notes';
 import { documents } from './documents';
+import { notifications } from './notifications';
 
 export const organisationsRelations = relations(organisations, ({ many }) => ({
   memberships: many(memberships),
@@ -24,6 +25,7 @@ export const organisationsRelations = relations(organisations, ({ many }) => ({
   carePlans: many(carePlans),
   careNotes: many(careNotes),
   documents: many(documents),
+  notifications: many(notifications),
 }));
 
 export const usersRelations = relations(users, ({ many }) => ({
@@ -31,6 +33,18 @@ export const usersRelations = relations(users, ({ many }) => ({
   sentInvitations: many(invitations),
   auditLogs: many(auditLogs),
   emailVerificationTokens: many(emailVerificationTokens),
+  notifications: many(notifications),
+}));
+
+export const notificationsRelations = relations(notifications, ({ one }) => ({
+  user: one(users, {
+    fields: [notifications.userId],
+    references: [users.id],
+  }),
+  organisation: one(organisations, {
+    fields: [notifications.organisationId],
+    references: [organisations.id],
+  }),
 }));
 
 export const membershipsRelations = relations(memberships, ({ one }) => ({

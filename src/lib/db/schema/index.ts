@@ -18,4 +18,6 @@ export * from './care-plans';
 export * from './care-notes';
 export * from './documents';
 
+export * from './notifications';
+
 export * from './relations';

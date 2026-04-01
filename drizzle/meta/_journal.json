@@ -29,6 +29,13 @@
       "when": 1775028331449,
       "tag": "0003_lovely_cyclops",
       "breakpoints": true
+    },
+    {
+      "idx": 4,
+      "version": "7",
+      "when": 1775029070960,
+      "tag": "0004_square_bedlam",
+      "breakpoints": true
     }
   ]
 }
