@@ -1,0 +1,219 @@
+{
+  "milestone": "foundation",
+  "round": 1,
+  "status": "fail",
+  "assertionsSummary": {
+    "total": 66,
+    "passed": 25,
+    "failed": 37,
+    "blocked": 4
+  },
+  "passedAssertions": [
+    "VAL-AUTH-005",
+    "VAL-AUTH-006",
+    "VAL-AUTH-009",
+    "VAL-AUTH-011",
+    "VAL-AUTH-014",
+    "VAL-AUTH-016",
+    "VAL-AUTH-019",
+    "VAL-CROSS-013",
+    "VAL-CROSS-017",
+    "VAL-CROSS-018",
+    "VAL-CROSS-019",
+    "VAL-CROSS-023",
+    "VAL-MARKET-001",
+    "VAL-MARKET-002",
+    "VAL-MARKET-004",
+    "VAL-MARKET-005",
+    "VAL-MARKET-006",
+    "VAL-MARKET-007",
+    "VAL-MARKET-009",
+    "VAL-MARKET-012",
+    "VAL-MARKET-015",
+    "VAL-TENANT-007",
+    "VAL-TENANT-009",
+    "VAL-TENANT-010",
+    "VAL-TENANT-011"
+  ],
+  "failedAssertions": [
+    {
+      "id": "VAL-AUTH-001",
+      "reason": "Registration created the account and emitted a verification email, but the UI stayed on /register with an 'Account created!' confirmation card instead of redirecting to the onboarding flow."
+    },
+    {
+      "id": "VAL-AUTH-002",
+      "reason": "Duplicate registration returned a specific enumeration-prone message \u2014 'An account with this email already exists. Try signing in instead.' \u2014 rather than a generic non-revealing response."
+    },
+    {
+      "id": "VAL-AUTH-003",
+      "reason": "Submitting the weak password '123456' produced only the single client-side error 'Password must be at least 8 characters'; the validation surface did not specify the remaining uppercase/number/special-character requirements as the assertion requires."
+    },
+    {
+      "id": "VAL-AUTH-004",
+      "reason": "POST /api/auth/login returned 200 and set authjs.session-token, but the user was redirected to /onboarding instead of /dashboard after sign-in."
+    },
+    {
+      "id": "VAL-AUTH-007",
+      "reason": "The first five consecutive bad-password submissions for authsess-20260401@example.test all returned 401 with the generic error. The lockout message and 429 appeared only on the following attempt, so lockout was enforced one request late."
+    },
+    {
+      "id": "VAL-AUTH-010",
+      "reason": "The valid reset token updated the password successfully \u2014 the old password was rejected and the new password logged in \u2014 but the app did not redirect to /login after reset; it stayed on the reset page with a success card and manual sign-in link."
+    },
+    {
+      "id": "VAL-AUTH-012",
+      "reason": "Clicking the real 'Sign in with Google' button on /login did not start a usable Google consent/authentication flow. The browser landed on Google\u2019s OAuth error page showing 'Access blocked: Authorization Error' and 'Missing required parameter: client_id', so no new-user account creation, Google identity linking, callback redirect, onboarding redirect, or session creation could occur."
+    },
+    {
+      "id": "VAL-AUTH-013",
+      "reason": "Repeating the real Google sign-in initiation for the existing-user path produced the same Google OAuth error page before any Google account chooser or consent step. Because the provider request failed with 'Missing required parameter: client_id', the app could not authenticate an existing user, link a Google identity, redirect to the dashboard, or create a logged-in session."
+    },
+    {
+      "id": "VAL-AUTH-015",
+      "reason": "After 65 seconds of inactivity, reloading the protected page kept the user authenticated on /onboarding and no session-expired message appeared. The session cookie expiry was 2026-05-01T09:20:49.053859Z (~30 days), so there is no visible inactivity-timeout path."
+    },
+    {
+      "id": "VAL-AUTH-017",
+      "reason": "Direct navigation to /rbacui-org-a-20260401/settings/billing as a carer did not return 403 or an Access Denied page. The app redirected to /login?callbackUrl=%2Frbacui-org-a-20260401%2Fsettings%2Fbilling instead."
+    },
+    {
+      "id": "VAL-AUTH-018",
+      "reason": "The direct viewer bypass attempt against PUT /api/persons/:id returned 405 Method Not Allowed because no PUT handler exists, not the expected 403 permission denial."
+    },
+    {
+      "id": "VAL-AUTH-020",
+      "reason": "Selecting Org B from the switcher did not land on a working Org B dashboard. The UI navigated to /rbacui-org-b-20260401/dashboard, which returns a 404 page, so the required switched dashboard state never appeared through the real flow."
+    },
+    {
+      "id": "VAL-AUTH-021",
+      "reason": "A real viewer session token was modified from role=viewer to role=owner and then invalidated; the protected API did not return 401 and instead redirected to /login with 302 while clearing the session cookie."
+    },
+    {
+      "id": "VAL-AUTH-022",
+      "reason": "No real password-change UI was available while logged in. Signing in with the test account routed to /onboarding, which exposes no password fields or account settings, and navigating to /settings returned 404 instead of a password-change screen."
+    },
+    {
+      "id": "VAL-CROSS-001",
+      "reason": "Registration, email verification, and sign-in worked, but the first-visit flow could not reach a personalised dashboard because onboarding completion failed and /dashboard redirected back to /onboarding."
+    },
+    {
+      "id": "VAL-CROSS-007",
+      "reason": "Org B list queries for persons and care plans showed only Org B data, but the required /api/care-notes route is missing and returned a framework 404 page instead of a tenant-scoped API response."
+    },
+    {
+      "id": "VAL-CROSS-008",
+      "reason": "The end-to-end escalation flow is not reliable through the real UI. Before refresh, the promoted user's existing session still rendered the Org A team page as a carer/read-only view. Owner promotion updated the membership row but the UI action threw a 500 because audit_logs expects a missing ip_address column. After attempting a session refresh via the org switcher, /api/auth/session still reported Org A role=carer with stale memberships instead of the promoted admin role."
+    },
+    {
+      "id": "VAL-CROSS-015",
+      "reason": "The central audit log route crashes with `column audit_logs.ip_address does not exist` before any audit entries render, so the UI never lets a user verify create/update/delete audit entries or their immutability."
+    },
+    {
+      "id": "VAL-CROSS-016",
+      "reason": "The same audit log schema error prevents the central audit log from rendering its search/filter UI, and I did not find any entity-specific audit surface on the implemented foundation routes."
+    },
+    {
+      "id": "VAL-MARKET-003",
+      "reason": "The primary Get Started CTA correctly navigated to /register, but the Book a Demo CTA did not open a public demo-booking flow. It redirected to /login?callbackUrl=%2Fdemo instead."
+    },
+    {
+      "id": "VAL-MARKET-008",
+      "reason": "Step 1 allowed organisation name and slug entry, but no organisation type field was present even though the assertion requires name and type."
+    },
+    {
+      "id": "VAL-MARKET-010",
+      "reason": "Step 3 supports multiple invite rows and shows a skip option, but both 'Send Invites & Finish' and 'Skip for now' end in a server-side 500 error instead of completing onboarding."
+    },
+    {
+      "id": "VAL-MARKET-011",
+      "reason": "Completing onboarding never redirected to an organisation dashboard; completion attempts crashed with a server error and no welcome or guided dashboard state appeared."
+    },
+    {
+      "id": "VAL-MARKET-013",
+      "reason": "Keyboard focus was visible, but the landing page failed basic accessibility checks because axe reported serious color-contrast failures and invalid aria-label usage on testimonial rating containers."
+    },
+    {
+      "id": "VAL-MARKET-014",
+      "reason": "The page title, description, Open Graph tags, and canonical URL were present, but og:image resolved to http://localhost:3200/og-image.png, which is not a publicly shareable production URL."
+    },
+    {
+      "id": "VAL-TENANT-001",
+      "reason": "Account A completed registration, verification, and sign-in, but finishing onboarding with org name 'tenantorg-a-20260401 children' and the Children's Residential domain crashed on submit. The browser stayed on /onboarding, showed an application error, and owner assignment could not be confirmed through the real UI."
+    },
+    {
+      "id": "VAL-TENANT-002",
+      "reason": "The empty-name case showed inline validation, but the over-limit case did not. Attempting to enter a 111-character organisation name silently truncated the value and allowed the wizard to continue to step 2 instead of showing a maximum-length validation message."
+    },
+    {
+      "id": "VAL-TENANT-005",
+      "reason": "Clicking Send invitation triggered a server-side application error instead of a clean success flow. The invitation email was logged and the invite persisted as pending after reload, but the real UI crashed on submit."
+    },
+    {
+      "id": "VAL-TENANT-006",
+      "reason": "The invited manager reached the correct invitation page, but clicking Accept invitation crashed with a 500 error and left the invitee on an application error page. The membership and accepted status were written in the database, yet the invitee never saw the invited organisation in their dashboard/session."
+    },
+    {
+      "id": "VAL-TENANT-008",
+      "reason": "Revoking a pending invitation from the team page triggered a 500 application error instead of a clean UI update. The invitation state did change to revoked and the invitation page then showed the revoked error, but the owner-facing revoke flow is broken."
+    },
+    {
+      "id": "VAL-TENANT-012",
+      "reason": "Owner settings form exposes only organisation name, slug, and care domains (no contact email or address fields). Saving the updated org name partially persists the name change, but the mutation crashes with NeonDbError: column \"ip_address\" of relation \"audit_logs\" does not exist, so the required settings flow does not complete successfully."
+    },
+    {
+      "id": "VAL-TENANT-013",
+      "reason": "Manager/non-owner restrictions are visible in the UI: settings fields are disabled and admin navigation links like Billing/Team are not shown. However, the expected direct API enforcement surface is missing: PUT /api/organisations/c90f09df-3996-426a-8392-59c4ff2bab7d returned 404 Not Found instead of 403 Forbidden."
+    },
+    {
+      "id": "VAL-TENANT-014",
+      "reason": "Changing Tenant Settings Carer from carer to senior_carer via the team UI persists the new role and the next session shows senior_carer navigation, but the role-change action itself crashes the page with the same audit_logs ip_address NeonDbError instead of completing cleanly."
+    },
+    {
+      "id": "VAL-TENANT-015",
+      "reason": "Removing Tenant Settings Manager from the team UI deletes the membership and the removed user's subsequent GET /api/persons request is denied with 403 Not a member of this organisation, but the removal action itself crashes to an error boundary because the audit_logs ip_address column is missing."
+    },
+    {
+      "id": "VAL-TENANT-016",
+      "reason": "The owner row has no self-remove button, so the UI prevents self-removal by omission, but the required explicit error message about transferring ownership first is never shown through the real user surface."
+    },
+    {
+      "id": "VAL-TENANT-017",
+      "reason": "The org switcher renders both assigned organisations and switching updates the session's activeOrgId to Org B, and Org B settings render correctly. However, the switcher redirects to /tenantsettings-org-b-20260401/dashboard, which 404s, and the org-scoped persons and staff routes also 404, so the full UI context does not update as required."
+    },
+    {
+      "id": "VAL-TENANT-018",
+      "reason": "An existing single-org owner has no visible create-new-organisation control on the dashboard, and manual navigation to /onboarding redirects back to /dashboard. After a second org was seeded to continue testing, the switcher's Create new organisation link still returns to /dashboard instead of a working creation flow, so the end-to-end user flow does not succeed."
+    }
+  ],
+  "blockedAssertions": [
+    {
+      "id": "VAL-AUTH-008",
+      "blockedBy": "After login, the app redirects to /onboarding and onboarding completion fails with POST /onboarding -> 500 (column \"ip_address\" of relation \"audit_logs\" does not exist). That prevents reaching the dashboard/logout button, so logout and back-navigation could not be validated through the real UI."
+    },
+    {
+      "id": "VAL-CROSS-011",
+      "blockedBy": "Domain-adapted dashboards for two completed organisations could not be compared because onboarding completion is currently broken by POST /onboarding failing with a missing audit_logs.ip_address column."
+    },
+    {
+      "id": "VAL-TENANT-003",
+      "blockedBy": "The Children's Residential option was selectable in onboarding, but persistence into organisation settings and domain-specific terminology could not be validated because onboarding completion failed before any organisation settings/dashboard surface became reachable. Re-signing into account A returned the user to /onboarding instead of an organisation context."
+    },
+    {
+      "id": "VAL-TENANT-004",
+      "blockedBy": "Account B successfully selected multiple care domains in the onboarding UI (Domiciliary Care and Supported Living), but the same onboarding completion failure prevented validation of persisted organisation settings or domain-specific features for both domains."
+    }
+  ],
+  "appliedUpdates": [
+    {
+      "target": "user-testing.md",
+      "description": "Documented development email-link recovery from the shared Next.js log and added flow-validator isolation guidance for agent-browser and curl.",
+      "source": "setup"
+    },
+    {
+      "target": "user-testing.md",
+      "description": "Recorded the live audit_logs.ip_address schema mismatch, the org-context caveat for /api/auth/login, and the Google OAuth client_id misconfiguration observed during validation.",
+      "source": "flow-report"
+    }
+  ],
+  "previousRound": null
+}

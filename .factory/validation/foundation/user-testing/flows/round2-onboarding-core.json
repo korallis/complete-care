@@ -1,0 +1,165 @@
+{
+  "groupId": "round2-onboarding-core",
+  "testedAt": "2026-04-01T11:50:25Z",
+  "isolation": {
+    "appUrl": "http://localhost:3200",
+    "surface": "agent-browser",
+    "emailNamespace": "round2-onboardingcore-20260401@example.test and plus-variants",
+    "accountsUsed": [
+      "round2-onboardingcore-20260401+skip@example.test",
+      "round2-onboardingcore-20260401+invite@example.test"
+    ],
+    "inviteEmails": [
+      "round2-onboardingcore-20260401+invite-team1@example.test",
+      "round2-onboardingcore-20260401+invite-team2@example.test"
+    ],
+    "orgPrefix": "round2-onboardingcore-20260401"
+  },
+  "toolsUsed": [
+    "agent-browser",
+    "shared dev-server log"
+  ],
+  "assertions": [
+    {
+      "id": "VAL-MARKET-008",
+      "title": "Onboarding flow — step 1: create organisation",
+      "status": "pass",
+      "steps": [
+        {
+          "action": "Register, verify, and sign in as round2-onboardingcore-20260401+skip@example.test",
+          "expected": "First-run login lands on onboarding step 1 with organisation creation fields",
+          "observed": "The browser landed on /onboarding and step 1 showed Organisation name, Organisation type (optional), URL slug, and Continue."
+        },
+        {
+          "action": "Fill organisation name, choose an organisation type, and enter a slug",
+          "expected": "Step 1 accepts the values and proceeds to step 2",
+          "observed": "Entered 'round2-onboardingcore-20260401 Skip Care', selected 'Independent care provider', set slug 'round2-onboardingcore-20260401-skip-care', and advanced to step 2 successfully."
+        }
+      ],
+      "evidence": {
+        "screenshots": [
+          "foundation/round2-onboarding-core/onboarding-step1-initial-skip.png",
+          "foundation/round2-onboarding-core/VAL-MARKET-008-step1-filled-skip.png",
+          "foundation/round2-onboarding-core/login-after-verification-skip.png"
+        ],
+        "consoleErrors": "none",
+        "network": "Shared dev-server log: POST /api/auth/register -> 201; GET /api/auth/verify-email?token=... -> 307 to /login?message=email_verified&callbackUrl=%2Fonboarding; POST /api/auth/login -> 200; GET /onboarding -> 200."
+      },
+      "issues": null
+    },
+    {
+      "id": "VAL-MARKET-010",
+      "title": "Onboarding flow — step 3: invite team",
+      "status": "pass",
+      "steps": [
+        {
+          "action": "Advance both onboarding runs to step 3",
+          "expected": "Step 3 shows invite inputs and an explicit skip option",
+          "observed": "Step 3 showed an invitee email field, role selector, 'Add another person', 'Skip inviting team members for now', and a finish button."
+        },
+        {
+          "action": "Click 'Add another person' and fill two invite rows in the second run",
+          "expected": "The UI supports multiple invitees with independent role selection",
+          "observed": "A second invite row appeared. I filled team1/team2 addresses and selected Manager and Viewer roles respectively."
+        },
+        {
+          "action": "Exercise both completion paths",
+          "expected": "Skipping is allowed, and sending invites completes with the entered invitees",
+          "observed": "The skip path completed successfully in the first run, and the send-invites path completed successfully in the second run while emitting invitation emails for both invitees in the shared dev-server log."
+        }
+      ],
+      "evidence": {
+        "screenshots": [
+          "foundation/round2-onboarding-core/VAL-MARKET-010-step3-initial-skip.png",
+          "foundation/round2-onboarding-core/VAL-MARKET-010-step3-before-add-invite.png",
+          "foundation/round2-onboarding-core/VAL-MARKET-010-step3-filled-multiple-invites.png"
+        ],
+        "consoleErrors": "none",
+        "network": "Shared dev-server log: skip run POST /onboarding -> 280; invite run emitted invitation emails to round2-onboardingcore-20260401+invite-team1@example.test (Manager) and round2-onboardingcore-20260401+invite-team2@example.test (Viewer), then POST /onboarding -> 292."
+      },
+      "issues": null
+    },
+    {
+      "id": "VAL-MARKET-011",
+      "title": "Onboarding flow — completion",
+      "status": "pass",
+      "steps": [
+        {
+          "action": "Complete onboarding via the skip path for the Supported Living organisation",
+          "expected": "The app redirects to the organisation dashboard and shows a welcome/guided state",
+          "observed": "After a short redirect delay, the app landed on /round2-onboardingcore-20260401-skip-care/dashboard?welcome=true with a welcome banner and CTAs for Add your first person, Invite team members, and Configure settings."
+        },
+        {
+          "action": "Complete onboarding via the send-invites path for the Domiciliary organisation",
+          "expected": "The app again redirects to the organisation dashboard with the welcome state",
+          "observed": "The app landed on /round2-onboardingcore-20260401-invite-care/dashboard?welcome=true and displayed the same welcome banner/guided CTAs."
+        }
+      ],
+      "evidence": {
+        "screenshots": [
+          "foundation/round2-onboarding-core/VAL-MARKET-011-dashboard-after-skip-settled.png",
+          "foundation/round2-onboarding-core/VAL-MARKET-011-dashboard-after-invites.png"
+        ],
+        "consoleErrors": "none",
+        "network": "Shared dev-server log: POST /onboarding -> 280 then GET /round2-onboardingcore-20260401-skip-care/dashboard?welcome=true -> 200; POST /onboarding -> 292 then GET /round2-onboardingcore-20260401-invite-care/dashboard?welcome=true -> 200."
+      },
+      "issues": null
+    },
+    {
+      "id": "VAL-CROSS-001",
+      "title": "First-visit flow: registration to dashboard",
+      "status": "fail",
+      "steps": [
+        {
+          "action": "Register, verify, and sign in as a brand-new user",
+          "expected": "The first-visit flow progresses through registration, verification, and login into onboarding",
+          "observed": "Registration succeeded, verification succeeded via the logged email link, and login returned the user to /onboarding."
+        },
+        {
+          "action": "Complete onboarding and inspect the resulting authenticated session",
+          "expected": "The organisation is created, the membership is owner, and activeOrgId is present so the app stays out of onboarding",
+          "observed": "After completion, browser eval of /api/auth/session returned role='owner', membership orgSlug='round2-onboardingcore-20260401-skip-care', and activeOrgId='7e90e565-f60f-48e9-a11c-f46af6cef869'. Visiting /dashboard and /onboarding both resolved to the org-scoped dashboard instead of bouncing back to onboarding."
+        },
+        {
+          "action": "Inspect the landing dashboard content for the completed Supported Living org",
+          "expected": "A personalised dashboard shows domain-appropriate widgets for the newly created organisation",
+          "observed": "The dashboard was personalised with the org name, owner role, and a welcome banner, but the widgets were still generic placeholders ('People in care', 'Staff on duty', 'Active care plans', 'Compliance items') and the page text said 'Dashboard widgets will be populated as features are added in upcoming milestones.' No free-plan state was exposed on the tested user surface."
+        }
+      ],
+      "evidence": {
+        "screenshots": [
+          "foundation/round2-onboarding-core/register-success-card-skip.png",
+          "foundation/round2-onboarding-core/login-after-verification-skip.png",
+          "foundation/round2-onboarding-core/VAL-MARKET-011-dashboard-after-skip-settled.png",
+          "foundation/round2-onboarding-core/VAL-CROSS-001-dashboard-route-after-skip.png",
+          "foundation/round2-onboarding-core/VAL-CROSS-001-onboarding-route-after-completion.png"
+        ],
+        "consoleErrors": "none",
+        "network": "Shared dev-server log: POST /api/auth/register -> 201; GET /api/auth/verify-email?token=... -> 307 to /login?message=email_verified&callbackUrl=%2Fonboarding; POST /api/auth/login -> 200; POST /onboarding -> 280; GET /round2-onboardingcore-20260401-skip-care/dashboard?welcome=true -> 200. Browser eval of /api/auth/session confirmed activeOrgId and owner role for the completed org."
+      },
+      "issues": "The onboarding completion and redirect logic are now working, but the final dashboard still does not satisfy the full assertion because it shows generic placeholder widgets rather than domain-appropriate first-visit content, and the org's free-plan state is not observable in the tested UI."
+    }
+  ],
+  "frictions": [
+    {
+      "description": "Opening the auto-redirecting /verify-email link directly with agent-browser threw a transient 'Execution context was destroyed' CLI error even though verification completed successfully server-side.",
+      "resolved": true,
+      "resolution": "Confirmed verification success in the shared dev-server log and resumed from /login?message=email_verified&callbackUrl=%2Fonboarding.",
+      "affectedAssertions": [
+        "VAL-MARKET-008",
+        "VAL-MARKET-010",
+        "VAL-MARKET-011",
+        "VAL-CROSS-001"
+      ]
+    }
+  ],
+  "blockers": [],
+  "notes": [
+    "Step 1 fields observed: Organisation name, Organisation type (optional dropdown), URL slug, Continue. Organisation type options were: Independent care provider, Care group / multiple locations, NHS / statutory provider, Local authority, Charity / not-for-profit, and Other.",
+    "Step 3 skip/send behaviour observed: the button labels were 'Skip inviting team members for now' and 'Send Invites & Finish'. Both routes completed successfully in this re-test.",
+    "Dashboard redirect targets observed: skip flow -> /round2-onboardingcore-20260401-skip-care/dashboard?welcome=true; invite flow -> /round2-onboardingcore-20260401-invite-care/dashboard?welcome=true.",
+    "Welcome/guided state observed on both completed dashboards: 'Welcome to Complete Care, Round2!' with CTAs for Add your first person, Invite team members, and Configure settings.",
+    "activeOrgId/onboarding redirect logic is resolved for the completed skip-flow org: /api/auth/session returned activeOrgId 7e90e565-f60f-48e9-a11c-f46af6cef869 and role owner, and both /dashboard and /onboarding resolved to the org-scoped dashboard instead of back to onboarding."
+  ],
+  "summary": "Retested 4 assigned assertions: 3 passed (VAL-MARKET-008, VAL-MARKET-010, VAL-MARKET-011) and 1 failed (VAL-CROSS-001). The onboarding flow now includes the organisation-type field, supports both skip and multi-invite completion on step 3, and redirects to org-scoped dashboards with welcome=true and a visible welcome banner. The remaining gap is that the first-visit dashboard still renders generic placeholder widgets rather than domain-appropriate widgets, even though owner membership, activeOrgId, and onboarding redirect behaviour are now correct."
+}

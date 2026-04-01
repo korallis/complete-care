@@ -1,0 +1,105 @@
+{
+  "groupId": "round2-auth-oauth-rbac",
+  "testedAt": "2026-04-01T11:27:17.133058+00:00",
+  "isolation": {
+    "appUrl": "http://localhost:3200",
+    "surface": "agent-browser",
+    "emailNamespace": [
+      "round2-authrbac-20260401@example.test",
+      "round2-authrbac-carer-20260401@example.test"
+    ],
+    "orgPrefix": "round2-authrbac-20260401",
+    "evidenceDir": "/Users/leebarry/.factory/missions/0151c86a-d61e-40f6-af14-f9e925a367f3/evidence/foundation/round2-auth-oauth-rbac"
+  },
+  "toolsUsed": [
+    "agent-browser",
+    "shared dev-server log"
+  ],
+  "assertions": [
+    {
+      "id": "VAL-AUTH-012",
+      "status": "blocked",
+      "reason": "The real Google sign-in entrypoint opened Google's OAuth error page instead of a usable consent/authentication flow. The visible page text showed 'Access blocked: Authorization Error' and 'Missing required parameter: client_id', so no new-user account creation, callback redirect, onboarding redirect, or session token could be verified.",
+      "evidence": [
+        "foundation/round2-auth-oauth-rbac/login-page-annotated.png (login page with the real 'Sign in with Google' button)",
+        "foundation/round2-auth-oauth-rbac/VAL-AUTH-012-google-error-page.png (provider opened https://accounts.google.com/signin/oauth/error?...)",
+        "foundation/round2-auth-oauth-rbac/VAL-AUTH-012-google-error-details.png (error details show 'Missing required parameter: client_id')",
+        "Browser cookies after the attempt contained authjs.csrf-token, authjs.callback-url, and authjs.pkce.code_verifier only; no authenticated session cookie was present.",
+        "Console errors: none observed in agent-browser during the attempt."
+      ]
+    },
+    {
+      "id": "VAL-AUTH-013",
+      "status": "blocked",
+      "reason": "Re-running the real Google sign-in entrypoint after creating namespace-scoped existing accounts produced the same Google OAuth error page before any Google account chooser or dashboard redirect. The existing-user linking/login path is therefore blocked by provider misconfiguration rather than by in-app account state.",
+      "evidence": [
+        "foundation/round2-auth-oauth-rbac/VAL-AUTH-013-login-page.png (login page before the existing-user attempt)",
+        "foundation/round2-auth-oauth-rbac/VAL-AUTH-013-google-error-page.png (browser landed on https://accounts.google.com/signin/oauth/error?...)",
+        "foundation/round2-auth-oauth-rbac/VAL-AUTH-013-google-error-details.png (error details show 'Access blocked: Authorization Error' and 'Missing required parameter: client_id')",
+        "Browser tab URL after click: https://accounts.google.com/signin/oauth/error?...client_id...",
+        "Console errors: none observed in agent-browser during the attempt."
+      ]
+    },
+    {
+      "id": "VAL-AUTH-017",
+      "status": "fail",
+      "reason": "A real carer session could navigate directly to /round2-authrbac-20260401-beta-care/settings/billing, but the app returned a generic 404 page instead of a 403 Forbidden response or an Access Denied redirect/page. Visible UI text was '404' and 'This page could not be found.' while the URL stayed on the restricted billing route.",
+      "evidence": [
+        "foundation/round2-auth-oauth-rbac/invite-accepted-result.png (carer dashboard after accepting the Beta Care invitation; nav shows carer-specific items such as My Persons and Daily Tasks)",
+        "foundation/round2-auth-oauth-rbac/VAL-AUTH-017-restricted-page-result.png (direct billing URL for the carer session renders the 404 page)",
+        "Shared dev-server log: GET /round2-authrbac-20260401-beta-care/settings/billing -> 404 in 380ms",
+        "Console errors: none observed in agent-browser during the restricted-page check."
+      ]
+    },
+    {
+      "id": "VAL-AUTH-020",
+      "status": "pass",
+      "reason": "The multi-org owner saw both namespace-scoped organisations in the switcher, selected 'round2-authrbac-20260401 Beta Care', and the UI reloaded to the Beta Care dashboard. The final URL was /round2-authrbac-20260401-beta-care/dashboard and the visible header/switcher label changed from Alpha Care to Beta Care with no Alpha Care label remaining on the loaded dashboard.",
+      "evidence": [
+        "foundation/round2-auth-oauth-rbac/VAL-AUTH-020-org-switcher-open.png (switcher lists both 'round2-authrbac-20260401 Alpha Care' and 'round2-authrbac-20260401 Beta Care')",
+        "foundation/round2-auth-oauth-rbac/VAL-AUTH-020-switched-org-result.png (dashboard after selecting Beta Care from the switcher)",
+        "Shared dev-server log: GET /round2-authrbac-20260401-beta-care/dashboard -> 200",
+        "Visible UI text after switch: 'round2-authrbac-20260401 Beta Care' and owner dashboard navigation."
+      ]
+    },
+    {
+      "id": "VAL-AUTH-022",
+      "status": "pass",
+      "reason": "The logged-in owner opened the real security settings page at /round2-authrbac-20260401-beta-care/settings/security, changed the password successfully, signed out, and then verified that the old password failed while the new password logged back into the Beta Care dashboard.",
+      "evidence": [
+        "foundation/round2-auth-oauth-rbac/VAL-AUTH-022-password-change-form.png (security settings page with current/new/confirm password fields)",
+        "foundation/round2-auth-oauth-rbac/VAL-AUTH-022-password-change-success.png (success state after submitting the password change)",
+        "foundation/round2-auth-oauth-rbac/VAL-AUTH-022-old-password-rejected.png (login page shows 'Invalid email or password' for the old password)",
+        "foundation/round2-auth-oauth-rbac/VAL-AUTH-022-login-with-new-password.png (new password returns to the Beta Care dashboard)",
+        "Shared dev-server log: GET /round2-authrbac-20260401-beta-care/settings/security -> 200; POST /api/auth/change-password -> 200; POST /api/auth/login -> 401 with old password then 200 with new password."
+      ]
+    }
+  ],
+  "frictions": [
+    {
+      "description": "The organisation switcher trigger was not exposed in agent-browser's default interactive snapshot on dashboard pages.",
+      "resolved": true,
+      "resolution": "Used the DOM selector button[aria-label^='Current organisation'] to open the switcher, then continued with normal UI interactions."
+    },
+    {
+      "description": "Opening verify-email links caused an 'Execution context was destroyed' tool error during the redirect chain.",
+      "resolved": true,
+      "resolution": "Re-read the browser's final URL/state after navigation; the verification flow still completed and showed the expected login-page success banner."
+    }
+  ],
+  "blockers": [
+    {
+      "description": "Google OAuth is misconfigured in this environment: the real provider flow stops on Google's error page with 'Missing required parameter: client_id'.",
+      "affectedAssertions": [
+        "VAL-AUTH-012",
+        "VAL-AUTH-013"
+      ],
+      "quickFixAttempted": "Retried the real Google button before and after creating existing accounts; both attempts produced the same provider error page."
+    }
+  ],
+  "notes": [
+    "Namespace-scoped accounts exercised: round2-authrbac-20260401@example.test (owner) and round2-authrbac-carer-20260401@example.test (carer).",
+    "Namespace-scoped organisations exercised: round2-authrbac-20260401 Alpha Care and round2-authrbac-20260401 Beta Care; the app normalized the second org slug to round2-authrbac-20260401-beta-care in URLs.",
+    "Concrete pass/fail outcome for this rerun: 2 passed (VAL-AUTH-020, VAL-AUTH-022), 1 failed (VAL-AUTH-017), 2 blocked (VAL-AUTH-012, VAL-AUTH-013)."
+  ]
+}

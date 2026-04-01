@@ -1,0 +1,185 @@
+{
+  "groupId": "round2-tenant-onboarding",
+  "testedAt": "2026-04-01T11:53:01.120717+00:00",
+  "isolation": {
+    "appUrl": "http://localhost:3200",
+    "surface": "agent-browser",
+    "emailNamespace": [
+      "round2-tenantonboard-20260401-a@example.test",
+      "round2-tenantonboard-20260401-b@example.test"
+    ],
+    "orgPrefixes": [
+      "round2-tenantonboard-20260401-a",
+      "round2-tenantonboard-20260401-b"
+    ],
+    "evidenceDir": "/Users/leebarry/.factory/missions/0151c86a-d61e-40f6-af14-f9e925a367f3/evidence/foundation/round2-tenant-onboarding"
+  },
+  "toolsUsed": [
+    "agent-browser",
+    "shared dev-server log"
+  ],
+  "assertions": [
+    {
+      "id": "VAL-TENANT-001",
+      "title": "Organisation creation during onboarding",
+      "status": "pass",
+      "steps": [
+        {
+          "action": "Register and verify round2-tenantonboard-20260401-a@example.test, then sign in to /onboarding",
+          "expected": "Verified user reaches the real onboarding flow",
+          "observed": "The verification link from the shared dev-server log redirected to /login?message=email_verified&callbackUrl=%2Fonboarding, and sign-in loaded /onboarding."
+        },
+        {
+          "action": "Complete onboarding with the Children's Residential Homes domain and skip invites",
+          "expected": "The organisation is created and the user is redirected into the new org dashboard",
+          "observed": "POST /onboarding returned 200 and the browser loaded /round2-tenantonboard-20260401-a-abcdefghijklmnopqrstuvwxyz-abcd/dashboard?welcome=true."
+        },
+        {
+          "action": "Open organisation team settings",
+          "expected": "The creator is assigned the owner role",
+          "observed": "The team page listed Round2 Tenant A (round2-tenantonboard-20260401-a@example.test) with the role Owner."
+        }
+      ],
+      "reason": "The A-account completed the real onboarding flow successfully, landed on its org-scoped dashboard, and the resulting team page confirmed the creator was assigned Owner.",
+      "evidence": [
+        "foundation/round2-tenant-onboarding/verify-a-success.png (verification success banner on the login page for account A)",
+        "foundation/round2-tenant-onboarding/onboarding-a-step2-children-selected.png (Children's Residential Homes selected during onboarding)",
+        "foundation/round2-tenant-onboarding/onboarding-a-complete-result.png (org-scoped dashboard after onboarding completion)",
+        "foundation/round2-tenant-onboarding/org-a-team-owner.png (team page showing Round2 Tenant A and the Owner role)",
+        "Shared dev-server log: POST /api/auth/register -> 201 for round2-tenantonboard-20260401-a@example.test; POST /api/auth/login -> 200; POST /onboarding -> 200; GET /round2-tenantonboard-20260401-a-abcdefghijklmnopqrstuvwxyz-abcd/dashboard?welcome=true -> 200.",
+        "Console errors: none observed in agent-browser during registration, onboarding, or owner-role verification."
+      ]
+    },
+    {
+      "id": "VAL-TENANT-002",
+      "title": "Organisation name validation",
+      "status": "fail",
+      "steps": [
+        {
+          "action": "Click Continue on step 1 with an empty organisation name",
+          "expected": "The wizard blocks progress and shows validation messages",
+          "observed": "The page displayed 'Organisation name is required' and 'Slug is required' and stayed on step 1."
+        },
+        {
+          "action": "Paste an over-limit organisation name (132 characters)",
+          "expected": "The wizard rejects the value with a maximum-length validation message",
+          "observed": "The field silently truncated the value to 100 characters, auto-generated a slug, and allowed the wizard to continue to step 2 with no max-length error message."
+        }
+      ],
+      "reason": "The empty-name branch validates correctly, but the over-limit branch does not. Instead of rejecting the value with a maximum-length message, the UI truncates it to 100 characters and proceeds.",
+      "evidence": [
+        "foundation/round2-tenant-onboarding/VAL-TENANT-002-empty-name-validation.png (step 1 shows 'Organisation name is required' and 'Slug is required')",
+        "foundation/round2-tenant-onboarding/VAL-TENANT-002-max-length-behavior.png (the wizard advanced to step 2 after pasting an over-limit name)",
+        "Captured field value after paste: 'round2-tenantonboard-20260401-a-abcdefghijklmnopqrstuvwxyz-abcdefghijklmnopqrstuvwxyz-abcdefghijklmn' (100 characters).",
+        "Console errors: none observed during the validation checks."
+      ]
+    },
+    {
+      "id": "VAL-TENANT-003",
+      "title": "Care domain selection persists",
+      "status": "fail",
+      "steps": [
+        {
+          "action": "Create org A by selecting Children's Residential Homes during onboarding",
+          "expected": "The selected domain persists in organisation settings",
+          "observed": "The settings page at /round2-tenantonboard-20260401-a-abcdefghijklmnopqrstuvwxyz-abcd/settings loaded successfully and showed only the Children's Residential checkbox selected."
+        },
+        {
+          "action": "Inspect org A dashboard and persons page after onboarding",
+          "expected": "Domain-specific terminology and children's-residential tooling are applied throughout the UI",
+          "observed": "The dashboard showed generic cards and navigation only, with no visible Ofsted / Reg 44 / Reg 45 / LAC / PEP / young person text; the persons page still used generic 'People' and 'people in care' wording."
+        }
+      ],
+      "reason": "The Children's Residential selection does persist into organisation settings, but the rest of the UI does not adapt. The dashboard and persons page stayed generic and did not expose the expected children's-residential terminology or Ofsted-specific surfaces.",
+      "evidence": [
+        "foundation/round2-tenant-onboarding/org-a-settings-root-direct.png (org A settings page with only Children's Residential checked)",
+        "foundation/round2-tenant-onboarding/org-a-dashboard-clean.png (org A dashboard remained generic after onboarding)",
+        "foundation/round2-tenant-onboarding/org-a-persons-generic.png (org A persons page still says 'People' / 'people in care')",
+        "Captured settings state for org A: Domiciliary=false, Supported Living=false, Children's Residential=true; name='round2-tenantonboard-20260401-a-abcdefghijklmnopqrstuvwxyz-abcdefghijklmnopqrstuvwxyz-abcdefghijklmn'; slug='round2-tenantonboard-20260401-a-abcdefghijklmnopqrstuvwxyz-abcd'.",
+        "Dashboard text inspection for org A found Ofsted=false, Reg 44=false, Reg 45=false, missing from care=false, LAC=false, PEP=false, young person=false.",
+        "Console errors: none observed while checking org A settings, dashboard, and persons page."
+      ]
+    },
+    {
+      "id": "VAL-TENANT-004",
+      "title": "Multiple care domain selection",
+      "status": "fail",
+      "steps": [
+        {
+          "action": "Create org B by selecting Domiciliary Care and Supported Living during onboarding",
+          "expected": "Both selected domains persist in settings and enable relevant dual-domain tooling",
+          "observed": "The settings page at /round2-tenantonboard-20260401-b-domiciliary-supported-living/settings showed both Domiciliary Care and Supported Living checked, with Children's Residential unchecked."
+        },
+        {
+          "action": "Inspect the org B dashboard after onboarding",
+          "expected": "The dashboard exposes CQC / domiciliary and supported-living specific tools for the selected domains",
+          "observed": "The dashboard stayed generic and did not show CQC, visit scheduling, EVV, travel time, client visit summaries, PBS, or outcomes-tracking surfaces."
+        }
+      ],
+      "reason": "The multi-select state persists correctly in settings, but the expected combined domain tooling does not appear on the live dashboard. Org B remained a generic shell instead of exposing both domiciliary-care and supported-living surfaces.",
+      "evidence": [
+        "foundation/round2-tenant-onboarding/onboarding-b-step2-multi-selected.png (Domiciliary Care and Supported Living selected together during onboarding)",
+        "foundation/round2-tenant-onboarding/org-b-settings-root.png (org B settings page with Domiciliary Care and Supported Living checked)",
+        "foundation/round2-tenant-onboarding/org-b-dashboard.png (org B dashboard remained generic after onboarding)",
+        "Captured settings state for org B: Domiciliary=true, Supported Living=true, Children's Residential=false; name='round2-tenantonboard-20260401-b domiciliary supported living'; slug='round2-tenantonboard-20260401-b-domiciliary-supported-living'.",
+        "Dashboard text inspection for org B found CQC=false, visit scheduling=false, EVV=false, travel time=false, client visit summaries=false, PBS=false, outcomes=false.",
+        "Console errors: none observed while checking org B settings and dashboard."
+      ]
+    },
+    {
+      "id": "VAL-CROSS-011",
+      "title": "Domain adaptation",
+      "status": "fail",
+      "steps": [
+        {
+          "action": "Compare the completed dashboard for org A (Children's Residential) with the completed dashboard for org B (Domiciliary Care + Supported Living)",
+          "expected": "Org A shows Ofsted-specific tools and terminology, while org B shows CQC/domiciliary-specific tools and terminology",
+          "observed": "Both dashboards showed the same generic starter shell and generic cards (People, Staff, Settings) instead of domain-adapted surfaces."
+        },
+        {
+          "action": "Check for the assertion's required dashboard terms",
+          "expected": "Org A exposes Reg 44/45, missing-from-care, LAC, and PEP items; org B exposes visit scheduling, EVV, travel time, and client visit summaries",
+          "observed": "None of those required terms appeared on the respective dashboards."
+        }
+      ],
+      "reason": "This rerun is no longer blocked by onboarding failure, but the completed dashboards still do not adapt by domain. The children's-residential dashboard lacked the required Ofsted-specific tools, and the domiciliary/supported-living dashboard lacked the required CQC-specific tools.",
+      "evidence": [
+        "foundation/round2-tenant-onboarding/org-a-dashboard-clean.png (completed dashboard for the children's-residential org A)",
+        "foundation/round2-tenant-onboarding/org-b-dashboard.png (completed dashboard for the domiciliary/supported-living org B)",
+        "Org A dashboard text inspection: Ofsted=false, Reg 44=false, Reg 45=false, missing from care=false, LAC=false, PEP=false, young person=false.",
+        "Org B dashboard text inspection: CQC=false, visit scheduling=false, EVV=false, travel time=false, client visit summaries=false, PBS=false, outcomes=false.",
+        "Shared dev-server log: GET /round2-tenantonboard-20260401-a-abcdefghijklmnopqrstuvwxyz-abcd/dashboard -> 200 and GET /round2-tenantonboard-20260401-b-domiciliary-supported-living/dashboard -> 200 after successful POST /onboarding submissions.",
+        "Console errors: none observed while comparing the completed dashboards."
+      ]
+    }
+  ],
+  "frictions": [
+    {
+      "description": "The dashboard sidebar Organisation link targeted /settings/organisation, which returned a 404 for org A even though the actual organisation settings form was available at /settings.",
+      "resolved": true,
+      "resolution": "Used the app's working /settings route directly to verify persisted domain selections and organisation details.",
+      "affectedAssertions": [
+        "VAL-TENANT-003",
+        "VAL-TENANT-004"
+      ]
+    },
+    {
+      "description": "Opening verify-email links in agent-browser triggered a transient 'Execution context was destroyed' tool error during the redirect chain.",
+      "resolved": true,
+      "resolution": "Waited for the final redirected page and then captured the resulting login-page success state; both verification flows completed successfully.",
+      "affectedAssertions": [
+        "VAL-TENANT-001",
+        "VAL-TENANT-003",
+        "VAL-TENANT-004",
+        "VAL-CROSS-011"
+      ]
+    }
+  ],
+  "blockers": [],
+  "summary": "Tested 5 assertions: 1 passed (VAL-TENANT-001) and 4 failed (VAL-TENANT-002, VAL-TENANT-003, VAL-TENANT-004, VAL-CROSS-011).",
+  "notes": [
+    "Namespace-scoped accounts exercised: round2-tenantonboard-20260401-a@example.test and round2-tenantonboard-20260401-b@example.test.",
+    "Namespace-scoped organisations exercised: org A persisted as name 'round2-tenantonboard-20260401-a-abcdefghijklmnopqrstuvwxyz-abcdefghijklmnopqrstuvwxyz-abcdefghijklmn' with slug 'round2-tenantonboard-20260401-a-abcdefghijklmnopqrstuvwxyz-abcd'; org B persisted as name 'round2-tenantonboard-20260401-b domiciliary supported living' with slug 'round2-tenantonboard-20260401-b-domiciliary-supported-living'.",
+    "Concrete rerun outcome: onboarding is now working end-to-end for both isolated accounts, owner assignment is visible in team settings, domain selections persist in settings, but max-length validation and domain-adapted surfaces still fail."
+  ]
+}

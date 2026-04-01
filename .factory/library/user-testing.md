@@ -40,8 +40,9 @@ Testing surface, required testing skills/tools, and resource cost classification
 ## Runtime Observations
 
 - In development, verification, password reset, and invitation emails are **logged to the Next.js dev server console** when SMTP is not configured. Flow validators can read the shared dev-server log to recover real verification/reset/invitation URLs without adding any email mock service.
+- Opening logged verification links inside browser automation can intermittently fail during the redirect chain with a transient "Execution context was destroyed" error even though the server-side verification still succeeds. When that happens, reuse the token from the logged URL against `/api/auth/verify-email?token=...` or reload the final redirected login URL and continue from the success banner.
 - The app is healthy at `http://localhost:3200` with `.env.local` loaded.
-- The live database schema is currently missing `audit_logs.ip_address`. Any onboarding, invite, team-management, org-settings, or audit-log flow that writes/reads this column can 500 after partially committing data.
+- The earlier `audit_logs.ip_address` schema mismatch no longer blocks the foundation rerun surfaces: onboarding, invitations, team management, org settings, and the central audit log now complete without the prior NeonDbError. The remaining audit limitation is missing care-significant mutation UI/routes needed to fully verify end-to-end audit coverage.
 - For org-scoped API validation, the custom `/api/auth/login` path is not sufficient to establish `activeOrgId`/role context. Use the real Auth.js credentials callback/browser login flow (or an equivalent session established through it) before running org-scoped API checks.
 
 ## Known Constraints

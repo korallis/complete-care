@@ -1,0 +1,351 @@
+{
+  "groupId": "round3-tenant-management",
+  "testedAt": "2026-04-01T12:36:06.051149Z",
+  "isolation": {
+    "appUrl": "http://localhost:3200",
+    "missionDir": "/Users/leebarry/.factory/missions/0151c86a-d61e-40f6-af14-f9e925a367f3",
+    "orgPrefix": "round3-tenantmgmt-20260401",
+    "ownerEmail": "round3-tenantmgmt-20260401-owner@example.test",
+    "orgSlugs": [
+      "round3-tenantmgmt-20260401-alpha",
+      "round3-tenantmgmt-20260401-beta"
+    ]
+  },
+  "toolsUsed": [
+    "agent-browser",
+    "curl"
+  ],
+  "assertions": [
+    {
+      "id": "VAL-TENANT-005",
+      "title": "Team member invitation sends email",
+      "status": "pass",
+      "steps": [
+        {
+          "action": "Open /round3-tenantmgmt-20260401-alpha/settings/team as the owner",
+          "expected": "Team invitation form is available",
+          "observed": "The owner team-management page loaded with the invite form."
+        },
+        {
+          "action": "Invite round3-tenantmgmt-20260401-owner+manager@example.test as manager",
+          "expected": "Invitation is sent and the team list shows a pending member",
+          "observed": "The invite email was emitted in the shared dev-server log and the pending invitation row appeared with a revoke action."
+        }
+      ],
+      "evidence": {
+        "screenshots": [
+          "foundation/round3-tenant-management/VAL-TENANT-005-team-list-with-pending-member.png"
+        ],
+        "consoleErrors": "none",
+        "network": "POST /round3-tenantmgmt-20260401-alpha/settings/team -> 200; invitation email emitted to round3-tenantmgmt-20260401-owner+manager@example.test with the accept token."
+      },
+      "issues": null
+    },
+    {
+      "id": "VAL-TENANT-006",
+      "title": "Team member accepts invitation",
+      "status": "pass",
+      "steps": [
+        {
+          "action": "Open the manager invitation link from the shared dev-server log",
+          "expected": "Invitee can continue into the accept flow",
+          "observed": "The flow redirected to login, then to the accept-invitation page after the invitee account signed in."
+        },
+        {
+          "action": "Sign in as the invitee and click Accept invitation and join organisation",
+          "expected": "Membership is created with role manager",
+          "observed": "POST /invitations/accept?token=... returned 200 and the invitee account was added as manager."
+        },
+        {
+          "action": "Load the invitee dashboard after acceptance",
+          "expected": "The invited organisation is visible in the dashboard",
+          "observed": "The invitee landed on /round3-tenantmgmt-20260401-alpha/dashboard and the alpha org was visible in the session/dashboard."
+        }
+      ],
+      "evidence": {
+        "screenshots": [
+          "foundation/round3-tenant-management/VAL-TENANT-006-invitation-page-before-accept.png",
+          "foundation/round3-tenant-management/invitee-login-after-verify.png"
+        ],
+        "consoleErrors": "none",
+        "network": "POST /invitations/accept?token=1eeee6208b71ba98fa9b3e219d54ca1df80261249bc83321ab1a3f350e30940e -> 200."
+      },
+      "issues": null
+    },
+    {
+      "id": "VAL-TENANT-008",
+      "title": "Invitation can be revoked",
+      "status": "fail",
+      "steps": [
+        {
+          "action": "Revoke the pending invitation for round3-tenantmgmt-20260401-owner+revoked@example.test from the owner team page",
+          "expected": "The invitation status changes to revoked in the team list",
+          "observed": "After confirming the action, the pending invitation disappeared from the list instead of showing a revoked status."
+        },
+        {
+          "action": "Reuse the revoked invitation link",
+          "expected": "The invitee immediately sees a revoked-invitation error",
+          "observed": "A logged-out visit first redirected to login; after signing in, the accept page showed 'This invitation has been revoked. Please ask your organisation admin to send a new invitation.'"
+        }
+      ],
+      "evidence": {
+        "screenshots": [
+          "foundation/round3-tenant-management/VAL-TENANT-008-revoked-status-in-team-list.png",
+          "foundation/round3-tenant-management/VAL-TENANT-008-revoked-invitation-error.png",
+          "foundation/round3-tenant-management/VAL-TENANT-008-revoked-after-login.png"
+        ],
+        "consoleErrors": "none",
+        "network": "POST /round3-tenantmgmt-20260401-alpha/settings/team -> 200 during revoke; no DELETE /api/invitations/:id request was observed."
+      },
+      "issues": "The owner-facing team list does not show a revoked status; the invite simply disappears, and logged-out reuse of the link redirects to login instead of directly surfacing the revoked error."
+    },
+    {
+      "id": "VAL-TENANT-012",
+      "title": "Organisation settings management",
+      "status": "fail",
+      "steps": [
+        {
+          "action": "Open /round3-tenantmgmt-20260401-alpha/settings as the owner",
+          "expected": "The form exposes org name, contact email, and address fields",
+          "observed": "The form only exposed organisation name, slug, and care-domain checkboxes; no contact email or address inputs were present."
+        },
+        {
+          "action": "Update the organisation name and save",
+          "expected": "Changes save and are reflected immediately in the UI header",
+          "observed": "POST /round3-tenantmgmt-20260401-alpha/settings returned 200 and the edited name persisted in the form, but the dashboard header still showed the old name immediately after save."
+        }
+      ],
+      "evidence": {
+        "screenshots": [
+          "foundation/round3-tenant-management/VAL-TENANT-012-settings-form-with-updated-values.png",
+          "foundation/round3-tenant-management/VAL-TENANT-012-dashboard-header-after-save.png"
+        ],
+        "consoleErrors": "none",
+        "network": "POST /round3-tenantmgmt-20260401-alpha/settings -> 200."
+      },
+      "issues": "Required contact-email and address fields are still missing, and the updated organisation name did not reflect immediately across the dashboard header after save."
+    },
+    {
+      "id": "VAL-TENANT-013",
+      "title": "Non-owner cannot modify organisation settings",
+      "status": "pass",
+      "steps": [
+        {
+          "action": "Sign in as the manager invitee and open /round3-tenantmgmt-20260401-alpha/settings",
+          "expected": "Critical organisation settings are hidden or disabled",
+          "observed": "Organisation name, slug, and care-domain controls were rendered disabled for the manager account."
+        },
+        {
+          "action": "Send a direct PUT request to /api/organisations/:id as the manager",
+          "expected": "The API rejects the update with 403",
+          "observed": "PUT /api/organisations/42f1b8ab-0130-4157-9fca-8cd430a8ff83 returned 403 with 'Insufficient permissions'."
+        }
+      ],
+      "evidence": {
+        "screenshots": [
+          "foundation/round3-tenant-management/VAL-TENANT-013-restricted-settings.png"
+        ],
+        "consoleErrors": "none",
+        "network": "PUT /api/organisations/42f1b8ab-0130-4157-9fca-8cd430a8ff83 -> 403; response saved in foundation/round3-tenant-management/VAL-TENANT-013-manager-put-response.txt."
+      },
+      "issues": null
+    },
+    {
+      "id": "VAL-TENANT-014",
+      "title": "Team member role modification",
+      "status": "pass",
+      "steps": [
+        {
+          "action": "Change Round3 Senior Candidate from carer to senior_carer in the owner team page",
+          "expected": "The new role persists immediately in the team list",
+          "observed": "The team row updated to Senior Carer after the owner changed the role."
+        },
+        {
+          "action": "Sign in again as Round3 Senior Candidate",
+          "expected": "Permissions update on the next request/page load",
+          "observed": "The refreshed session reported role senior_carer and the dashboard nav gained My Rota, Compliance, and Audit Log entries."
+        }
+      ],
+      "evidence": {
+        "screenshots": [
+          "foundation/round3-tenant-management/VAL-TENANT-014-updated-role-in-team-list.png",
+          "foundation/round3-tenant-management/VAL-TENANT-014-senior-permissions-after-refresh.png"
+        ],
+        "consoleErrors": "none",
+        "network": "POST /round3-tenantmgmt-20260401-alpha/settings/team -> 200 during the role change."
+      },
+      "issues": null
+    },
+    {
+      "id": "VAL-TENANT-015",
+      "title": "Team member removal",
+      "status": "pass",
+      "steps": [
+        {
+          "action": "Remove Round3 Removal Candidate from the owner team page",
+          "expected": "The member disappears from the team list",
+          "observed": "The member row disappeared from the team list after the owner confirmed removal."
+        },
+        {
+          "action": "Reuse the removed user's existing session token against GET /api/persons",
+          "expected": "The removed member can no longer access the organisation's data",
+          "observed": "GET /api/persons returned 403 with 'Not a member of this organisation'."
+        }
+      ],
+      "evidence": {
+        "screenshots": [
+          "foundation/round3-tenant-management/VAL-TENANT-015-member-removed-from-list.png"
+        ],
+        "consoleErrors": "none",
+        "network": "GET /api/persons -> 403 for the removed user's preserved session; response saved in foundation/round3-tenant-management/VAL-TENANT-015-removed-user-api-response.txt."
+      },
+      "issues": null
+    },
+    {
+      "id": "VAL-TENANT-016",
+      "title": "Owner cannot remove themselves",
+      "status": "pass",
+      "steps": [
+        {
+          "action": "Click Leave organisation on the owner row in /round3-tenantmgmt-20260401-alpha/settings/team",
+          "expected": "The system blocks self-removal and tells the owner to transfer ownership first",
+          "observed": "The page rendered the validation text 'Cannot remove the owner. Transfer ownership first.' while keeping the owner membership intact."
+        }
+      ],
+      "evidence": {
+        "screenshots": [
+          "foundation/round3-tenant-management/VAL-TENANT-016-owner-self-remove-error.png"
+        ],
+        "consoleErrors": "none",
+        "network": "The owner-leave attempt stayed on /round3-tenantmgmt-20260401-alpha/settings/team and surfaced the transfer-ownership validation message in the rendered page text."
+      },
+      "issues": null
+    },
+    {
+      "id": "VAL-TENANT-017",
+      "title": "Organisation switching for multi-org users",
+      "status": "pass",
+      "steps": [
+        {
+          "action": "Open the org switcher from the alpha dashboard and choose Round3 Tenant Mgmt Beta Care",
+          "expected": "The dashboard switches from org A to org B",
+          "observed": "The UI navigated to /round3-tenantmgmt-20260401-beta/dashboard and the header changed to Round3 Tenant Mgmt Beta Care."
+        },
+        {
+          "action": "Visit persons, staff, and settings within org B",
+          "expected": "Those pages all reflect org B context",
+          "observed": "The persons page, staff page, and settings page all loaded under the beta slug and showed the beta org name in the header/breadcrumb area."
+        }
+      ],
+      "evidence": {
+        "screenshots": [
+          "foundation/round3-tenant-management/VAL-TENANT-017-org-switch-attempt.png",
+          "foundation/round3-tenant-management/VAL-TENANT-017-org-b-persons-list.png",
+          "foundation/round3-tenant-management/VAL-TENANT-017-org-b-staff-list.png",
+          "foundation/round3-tenant-management/VAL-TENANT-017-org-b-header.png"
+        ],
+        "consoleErrors": "none",
+        "network": "n/a"
+      },
+      "issues": null
+    },
+    {
+      "id": "VAL-TENANT-018",
+      "title": "New org creation by existing user",
+      "status": "fail",
+      "steps": [
+        {
+          "action": "Open the org-switcher menu from the alpha dashboard and choose Create new organisation",
+          "expected": "The owner can start a second-organisation flow from the dashboard",
+          "observed": "The create-new-organisation wizard opened successfully from the org-switcher menu."
+        },
+        {
+          "action": "Complete the wizard for Round3 Tenant Mgmt Beta Care and skip team invites",
+          "expected": "The app creates the org, assigns the current user as owner, and lands on the new org dashboard",
+          "observed": "POST /new-organisation returned 200 and the beta org was created, but the final navigation landed on /api/orgs/switch?... which returned 404 instead of leaving the owner on the new org dashboard."
+        },
+        {
+          "action": "Re-open the org switcher after the create flow",
+          "expected": "Both orgs are listed and the user is owner of the new org",
+          "observed": "The org switcher and session memberships showed both Alpha and Beta with owner roles."
+        }
+      ],
+      "evidence": {
+        "screenshots": [
+          "foundation/round3-tenant-management/VAL-TENANT-018-org-switcher-before-create.png",
+          "foundation/round3-tenant-management/VAL-TENANT-018-new-org-dashboard.png",
+          "foundation/round3-tenant-management/VAL-TENANT-018-org-switcher-showing-both-orgs.png"
+        ],
+        "consoleErrors": "none",
+        "network": "POST /new-organisation -> 200; GET /round3-tenantmgmt-20260401-beta/dashboard?welcome=true -> 200; immediate follow-up GET /api/orgs/switch?slug=round3-tenantmgmt-20260401-beta&returnTo=%2Fround3-tenantmgmt-20260401-beta%2Fdashboard -> 404."
+      },
+      "issues": "The second organisation is created and added to the switcher, but the real user flow still ends on a broken /api/orgs/switch 404 instead of a clean post-create destination."
+    },
+    {
+      "id": "VAL-CROSS-008",
+      "title": "Role escalation",
+      "status": "fail",
+      "steps": [
+        {
+          "action": "Sign in as Round3 Admin Candidate while their membership role is still carer and open /round3-tenantmgmt-20260401-alpha/settings/team",
+          "expected": "The user is redirected to /dashboard?error=unauthorized and blocked from admin surfaces",
+          "observed": "The carer account loaded the team-management page directly at /round3-tenantmgmt-20260401-alpha/settings/team instead of being redirected away."
+        },
+        {
+          "action": "Promote Round3 Admin Candidate to admin from the owner team page",
+          "expected": "The membership role updates to admin",
+          "observed": "The owner changed the role to Admin and the team row updated accordingly."
+        },
+        {
+          "action": "Sign in again as Round3 Admin Candidate and reload the admin page",
+          "expected": "The JWT/session refresh picks up role=admin and admin pages become accessible",
+          "observed": "The refreshed session reported role admin and the user could access the team-management page, but /round3-tenantmgmt-20260401-alpha/settings/billing still returned 404."
+        }
+      ],
+      "evidence": {
+        "screenshots": [
+          "foundation/round3-tenant-management/VAL-CROSS-008-blocked-access-as-carer.png",
+          "foundation/round3-tenant-management/VAL-CROSS-008-owner-promoted-admin-candidate.png",
+          "foundation/round3-tenant-management/VAL-CROSS-008-admin-access-after-promotion.png",
+          "foundation/round3-tenant-management/VAL-CROSS-008-admin-billing-check.png"
+        ],
+        "consoleErrors": "none",
+        "network": "Pre-promotion: GET /round3-tenantmgmt-20260401-alpha/settings/team -> 200 for the carer account. Post-promotion: POST /round3-tenantmgmt-20260401-alpha/settings/team -> 200 and /api/auth/session updated to role=admin on the next login; GET /round3-tenantmgmt-20260401-alpha/settings/billing -> 404."
+      },
+      "issues": "The promotion/JWT-refresh half works, but the required pre-promotion unauthorized redirect does not happen and the promoted admin still cannot load the billing surface because that route 404s."
+    }
+  ],
+  "frictions": [
+    {
+      "description": "Native confirm dialogs in the agent-browser session did not reliably proceed revoke/remove/leave actions.",
+      "resolved": true,
+      "resolution": "Used a session-scoped browser override (window.confirm = () => true) before clicking the action buttons.",
+      "affectedAssertions": [
+        "VAL-TENANT-008",
+        "VAL-TENANT-015",
+        "VAL-TENANT-016"
+      ]
+    },
+    {
+      "description": "Email verification links from the dev log did not complete verification when opened naively in the browser session; the verification API endpoint had to be invoked explicitly before invitee sign-in flows were stable.",
+      "resolved": true,
+      "resolution": "Recovered the token from the shared dev-server log and called /api/auth/verify-email?token=... for each newly registered invitee before continuing the invitation flow.",
+      "affectedAssertions": [
+        "VAL-TENANT-006",
+        "VAL-TENANT-014",
+        "VAL-TENANT-015",
+        "VAL-CROSS-008"
+      ]
+    },
+    {
+      "description": "The create-new-organisation flow creates the beta org server-side but then navigates through /api/orgs/switch?... which returns 404 in the real UI.",
+      "resolved": false,
+      "resolution": "Verified the org was still created by re-opening the org switcher and inspecting the owner session memberships.",
+      "affectedAssertions": [
+        "VAL-TENANT-018"
+      ]
+    }
+  ],
+  "blockers": [],
+  "summary": "Tested 11 assertions: 7 passed (VAL-TENANT-005, VAL-TENANT-006, VAL-TENANT-013, VAL-TENANT-014, VAL-TENANT-015, VAL-TENANT-016, VAL-TENANT-017) and 4 failed (VAL-TENANT-008, VAL-TENANT-012, VAL-TENANT-018, VAL-CROSS-008)."
+}

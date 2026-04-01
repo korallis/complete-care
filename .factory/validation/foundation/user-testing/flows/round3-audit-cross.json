@@ -1,0 +1,142 @@
+{
+  "groupId": "round3-audit-cross",
+  "testedAt": "2026-04-01T12:19:02.187488+00:00",
+  "isolation": {
+    "appUrl": "http://localhost:3200",
+    "emails": [
+      "round3-auditcross-20260401-owner-a@example.test",
+      "round3-auditcross-20260401-owner-b@example.test"
+    ],
+    "orgPrefix": "round3-auditcross-20260401",
+    "orgSlugs": [
+      "round3-auditcross-20260401-org-a",
+      "round3-auditcross-20260401-org-b"
+    ],
+    "missionDir": "/Users/leebarry/.factory/missions/0151c86a-d61e-40f6-af14-f9e925a367f3"
+  },
+  "toolsUsed": [
+    "agent-browser",
+    "curl",
+    "bun"
+  ],
+  "assertions": [
+    {
+      "id": "VAL-CROSS-007",
+      "title": "Tenant isolation",
+      "status": "pass",
+      "steps": [
+        {
+          "action": "Create isolated Org A and Org B owner accounts, onboard both orgs, and seed one person, one care plan, and one care note in each org within the round3-auditcross-20260401 namespace.",
+          "expected": "Each org has distinct tenant-scoped records available for validation.",
+          "observed": "Org A and Org B were onboarded successfully, and fixture records were inserted only inside the assigned namespace."
+        },
+        {
+          "action": "Authenticate as the Org B owner and call GET /api/persons, GET /api/care-plans, and GET /api/care-notes.",
+          "expected": "Each list response contains only Org B records.",
+          "observed": "All three endpoints returned 200 and listed only Round3 AuditCross Person B, Round3 AuditCross Plan B, and Round3 AuditCross note B for org B."
+        },
+        {
+          "action": "Probe known Org A identifiers from the Org B session (GET /api/persons/7fc78fbe-318d-4389-930b-15d3fd0315df, GET /api/care-plans/4486ea80-a224-40b0-a933-bc9f7a70c14f, and GET /api/care-notes?personId=7fc78fbe-318d-4389-930b-15d3fd0315df).",
+          "expected": "Cross-tenant requests are denied or hidden and expose no Org A data.",
+          "observed": "The direct person lookup returned 404 Not Found, the direct plan lookup returned 404 Not Found, and care notes queried with the Org A personId returned 404 Person not found."
+        }
+      ],
+      "evidence": {
+        "screenshots": [
+          "foundation/round3-audit-cross/onboarding-owner-a-complete.png",
+          "foundation/round3-audit-cross/onboarding-owner-b-complete.png"
+        ],
+        "consoleErrors": null,
+        "network": "GET /api/persons -> 200; GET /api/care-plans -> 200; GET /api/care-notes -> 200; GET /api/persons/7fc78fbe-318d-4389-930b-15d3fd0315df -> 404; GET /api/care-plans/4486ea80-a224-40b0-a933-bc9f7a70c14f -> 404; GET /api/care-notes?personId=7fc78fbe-318d-4389-930b-15d3fd0315df -> 404"
+      },
+      "issues": null
+    },
+    {
+      "id": "VAL-CROSS-015",
+      "title": "Immutable audit trail",
+      "status": "blocked",
+      "steps": [
+        {
+          "action": "Open /round3-auditcross-20260401-org-a/audit-log as the Org A owner.",
+          "expected": "The central audit log loads and exposes immutable audit entries.",
+          "observed": "The page rendered successfully with audit entries, an \u201cEntries are immutable\u201d badge, and no browser errors."
+        },
+        {
+          "action": "Update the Org A organisation name in Settings, then re-open the audit log and expand the latest entry.",
+          "expected": "A new audit entry shows timestamp, user identity, action type, entity reference, and before/after field values.",
+          "observed": "The newest entry showed the owner name, action Update, entity type Organisation, entity reference 8af9c43b\u2026, and an expanded before/after diff for the name field."
+        },
+        {
+          "action": "Attempt to exercise create/update/delete flows for care-significant records through the real UI surface.",
+          "expected": "Person, care plan, or daily-note mutation surfaces exist so their audit generation and immutability can be verified end-to-end.",
+          "observed": "The foundation UI does not expose those mutation surfaces yet: People is only a stub page, and /round3-auditcross-20260401-org-b/care-plans plus /round3-auditcross-20260401-org-b/daily-notes both return 404, so create/update/delete audit coverage for care-significant records could not be fully tested."
+        }
+      ],
+      "evidence": {
+        "screenshots": [
+          "foundation/round3-audit-cross/VAL-CROSS-015-audit-log-page.png",
+          "foundation/round3-audit-cross/VAL-CROSS-015-audit-log-expanded.png",
+          "foundation/round3-audit-cross/settings-before-update.png",
+          "foundation/round3-audit-cross/settings-after-update.png",
+          "foundation/round3-audit-cross/VAL-CROSS-016-care-plans-route-missing.png"
+        ],
+        "consoleErrors": "none",
+        "network": "GET /round3-auditcross-20260401-org-a/audit-log -> 200; org settings update rendered a new audit entry in the central log."
+      },
+      "issues": "The central audit page now works for organisation create/update entries, but the real UI still lacks accessible care-significant create/update/delete surfaces, so the assertion cannot be fully verified against persons, care plans, or daily notes."
+    },
+    {
+      "id": "VAL-CROSS-016",
+      "title": "Audit trail search and filtering",
+      "status": "fail",
+      "steps": [
+        {
+          "action": "Open the central audit log for Org A and inspect the available controls.",
+          "expected": "The central log is searchable/filterable by user, entity type, action type, and date range.",
+          "observed": "The page exposed Search, Action, Entity type, From, and To controls, but no user filter control was present."
+        },
+        {
+          "action": "Apply the Action=Update filter and inspect the result ordering.",
+          "expected": "Filtered results remain reverse-chronological and usable.",
+          "observed": "Filtering worked and the single update entry stayed newest-first."
+        },
+        {
+          "action": "Look for an entity-level audit surface from the implemented entity routes.",
+          "expected": "Entity detail pages expose an audit/history tab in addition to the central log.",
+          "observed": "No entity-level audit tab was reachable through the real UI: the care-plans route returned 404 and the organisation settings page had no embedded history tab/section."
+        }
+      ],
+      "evidence": {
+        "screenshots": [
+          "foundation/round3-audit-cross/VAL-CROSS-016-audit-log-search.png",
+          "foundation/round3-audit-cross/VAL-CROSS-016-care-plans-route-missing.png",
+          "foundation/round3-audit-cross/settings-before-update.png"
+        ],
+        "consoleErrors": "none",
+        "network": "GET /round3-auditcross-20260401-org-a/audit-log?action=update -> 200; GET /round3-auditcross-20260401-org-b/care-plans -> 404."
+      },
+      "issues": "The central audit page lacks the required user filter, and no entity-level audit tab was available from the implemented foundation routes."
+    }
+  ],
+  "frictions": [
+    {
+      "description": "Foundation does not yet expose person/care-plan/daily-note mutation UIs, so minimal tenant fixtures had to be seeded directly inside the assigned namespace before validating API isolation.",
+      "resolved": true,
+      "resolution": "Seeded one person, one care plan, and one care note per org using a temporary Bun script scoped to round3-auditcross-20260401, then validated isolation only with those records.",
+      "affectedAssertions": [
+        "VAL-CROSS-007",
+        "VAL-CROSS-015"
+      ]
+    }
+  ],
+  "blockers": [
+    {
+      "description": "Care-significant write surfaces needed to fully verify immutable audit coverage are still absent from the foundation UI (People is stubbed; care-plans and daily-notes routes 404).",
+      "affectedAssertions": [
+        "VAL-CROSS-015"
+      ],
+      "quickFixAttempted": "Checked the real dashboard navigation plus direct org-scoped URLs for care-plans and daily-notes; the routes remained unavailable."
+    }
+  ],
+  "summary": "Tested 3 assertions: VAL-CROSS-007 passed, VAL-CROSS-015 is blocked by missing care-significant mutation surfaces, and VAL-CROSS-016 failed because the central audit log still lacks a user filter and no entity-level audit tab is reachable."
+}

@@ -1,0 +1,353 @@
+{
+  "groupId": "round3-auth-core",
+  "testedAt": "2026-04-01T12:21:03.540740+00:00",
+  "isolation": {
+    "appUrl": "http://localhost:3200",
+    "emailNamespace": [
+      "round3-authcore-20260401@example.test",
+      "round3-authcore-viewer-20260401@example.test",
+      "round3-authcore-lockout-20260401@example.test"
+    ],
+    "orgPrefix": "round3-authcore-20260401",
+    "orgSlug": "round3-authcore-20260401-care",
+    "sharedDevServerLog": "/var/folders/2l/09h6l1dn73ld7l61_8gkr6r40000gn/T/droid-bg-1775042011798.out",
+    "fixtureIds": {
+      "organisationId": "f30d5719-2b6b-4077-b854-aadb13015dc5",
+      "personId": "92ace0d3-b96f-49be-a577-bc97bb390b9f",
+      "ownerUserId": "04e9cf2c-26fb-4c07-9a3a-2270f7e6e041",
+      "viewerUserId": "7aa5d952-4a62-4245-928e-d1ff929fd2a7",
+      "lockoutUserId": "2f77ec22-45c5-45c3-b803-afcc6391a98d"
+    }
+  },
+  "toolsUsed": [
+    "agent-browser",
+    "curl",
+    "shared dev-server log",
+    "bun"
+  ],
+  "assertions": [
+    {
+      "id": "VAL-AUTH-001",
+      "title": "Successful registration",
+      "status": "fail",
+      "steps": [
+        {
+          "action": "Open /register and submit a valid new-account form for round3-authcore-20260401@example.test",
+          "expected": "Account is created, verification email is sent, and the browser redirects into onboarding",
+          "observed": "Account was created and a verification email was emitted"
+        },
+        {
+          "action": "Observe the post-submit UI state",
+          "expected": "Browser lands on onboarding",
+          "observed": "The UI stayed on /register and showed the success card 'Account created! Please check your email to verify your account before signing in.'"
+        }
+      ],
+      "evidence": {
+        "screenshots": [
+          "foundation/round3-auth-core/VAL-AUTH-001-register-page-annotated.png",
+          "foundation/round3-auth-core/VAL-AUTH-001-registration-result.png"
+        ],
+        "consoleErrors": "none",
+        "network": "Shared dev-server log: POST /api/auth/register -> 201; verification email logged for round3-authcore-20260401@example.test",
+        "artifacts": [
+          "foundation/round3-auth-core/VAL-AUTH-001-page-text.txt",
+          "foundation/round3-auth-core/VAL-AUTH-001-url.txt"
+        ]
+      },
+      "issues": "Registration still does not redirect to onboarding; it remains on /register with a success card."
+    },
+    {
+      "id": "VAL-AUTH-002",
+      "title": "Registration rejects duplicate email",
+      "status": "pass",
+      "steps": [
+        {
+          "action": "Resubmit the registration form with the existing email round3-authcore-20260401@example.test",
+          "expected": "A generic non-enumerating error is shown and the request is rejected",
+          "observed": "The UI showed the generic error 'We could not complete your registration. Please check your details or sign in if you already have an account.'"
+        },
+        {
+          "action": "Check the request outcome",
+          "expected": "POST /api/auth/register returns 409 or 422 without exposing account existence",
+          "observed": "Shared dev-server log recorded POST /api/auth/register -> 409"
+        }
+      ],
+      "evidence": {
+        "screenshots": [
+          "foundation/round3-auth-core/VAL-AUTH-002-register-page-annotated.png",
+          "foundation/round3-auth-core/VAL-AUTH-002-duplicate-email-result.png"
+        ],
+        "consoleErrors": "none",
+        "network": "Shared dev-server log: POST /api/auth/register -> 409",
+        "responseBody": "We could not complete your registration. Please check your details or sign in if you already have an account.",
+        "artifacts": [
+          "foundation/round3-auth-core/VAL-AUTH-002-page-text.txt"
+        ]
+      },
+      "issues": null
+    },
+    {
+      "id": "VAL-AUTH-003",
+      "title": "Registration enforces password complexity",
+      "status": "pass",
+      "steps": [
+        {
+          "action": "Enter the weak password 123456 on the registration form",
+          "expected": "Client-side validation surfaces the password requirements",
+          "observed": "The page showed the live strength indicator with unmet requirements for at least 8 characters, one uppercase letter, and one special character, plus the inline error 'Password must be at least 8 characters'"
+        }
+      ],
+      "evidence": {
+        "screenshots": [
+          "foundation/round3-auth-core/VAL-AUTH-003-weak-password-validation.png"
+        ],
+        "consoleErrors": "none",
+        "artifacts": [
+          "foundation/round3-auth-core/VAL-AUTH-003-page-text.txt"
+        ]
+      },
+      "issues": null
+    },
+    {
+      "id": "VAL-AUTH-004",
+      "title": "Successful login with email and password",
+      "status": "pass",
+      "steps": [
+        {
+          "action": "Log in as the namespace owner after attaching the owner to the namespace org",
+          "expected": "The app authenticates, issues a session token, and redirects to the default dashboard",
+          "observed": "POST /api/auth/login succeeded and the browser landed on /round3-authcore-20260401-care/dashboard"
+        }
+      ],
+      "evidence": {
+        "screenshots": [
+          "foundation/round3-auth-core/VAL-AUTH-004-login-page-annotated.png",
+          "foundation/round3-auth-core/VAL-AUTH-004-dashboard.png"
+        ],
+        "consoleErrors": "none",
+        "network": "POST /api/auth/login -> 200; GET /round3-authcore-20260401-care/dashboard -> 200",
+        "cookies": "authjs.session-token present",
+        "artifacts": [
+          "foundation/round3-auth-core/VAL-AUTH-004-cookies.txt",
+          "foundation/round3-auth-core/VAL-AUTH-004-network.txt",
+          "foundation/round3-auth-core/VAL-AUTH-004-url.txt"
+        ]
+      },
+      "issues": null
+    },
+    {
+      "id": "VAL-AUTH-007",
+      "title": "Account lockout after repeated failed logins",
+      "status": "pass",
+      "steps": [
+        {
+          "action": "Submit five consecutive incorrect passwords for round3-authcore-lockout-20260401@example.test",
+          "expected": "The fifth attempt triggers a temporary lockout and a 429 response",
+          "observed": "The fifth attempt showed 'Account temporarily locked due to too many failed login attempts. Try again in 15 minutes or reset your password.'"
+        },
+        {
+          "action": "Review request statuses",
+          "expected": "401 for the first four attempts and 429 on the fifth",
+          "observed": "Shared dev-server log recorded four 401 responses followed by a 429 on the fifth request"
+        }
+      ],
+      "evidence": {
+        "screenshots": [
+          "foundation/round3-auth-core/VAL-AUTH-007-after-fifth-attempt.png"
+        ],
+        "consoleErrors": "none",
+        "network": "Shared dev-server log: POST /api/auth/login -> 401 x4, then 429 on the fifth attempt",
+        "responseBody": "Account temporarily locked due to too many failed login attempts. Try again in 15 minutes or reset your password.",
+        "artifacts": [
+          "foundation/round3-auth-core/VAL-AUTH-007-page-text.txt",
+          "foundation/round3-auth-core/VAL-AUTH-007-network.txt"
+        ]
+      },
+      "issues": null
+    },
+    {
+      "id": "VAL-AUTH-008",
+      "title": "Successful logout",
+      "status": "pass",
+      "steps": [
+        {
+          "action": "Click Sign out from the owner dashboard",
+          "expected": "Session is invalidated and the user is returned to login",
+          "observed": "The browser returned to /login and the session cookie disappeared"
+        },
+        {
+          "action": "Navigate back to the protected dashboard URL after logout",
+          "expected": "Protected route redirects back to login",
+          "observed": "Opening /round3-authcore-20260401-care/dashboard redirected to /login?callbackUrl=%2Fround3-authcore-20260401-care%2Fdashboard"
+        }
+      ],
+      "evidence": {
+        "screenshots": [
+          "foundation/round3-auth-core/VAL-AUTH-008-login-after-logout.png",
+          "foundation/round3-auth-core/VAL-AUTH-008-protected-route-redirect.png"
+        ],
+        "consoleErrors": "none",
+        "network": "Shared dev-server log: POST /api/auth/logout -> 200",
+        "cookies": "authjs.session-token absent after logout",
+        "artifacts": [
+          "foundation/round3-auth-core/VAL-AUTH-008-cookies-after-logout.txt",
+          "foundation/round3-auth-core/VAL-AUTH-008-url-after-logout.txt",
+          "foundation/round3-auth-core/VAL-AUTH-008-url-after-protected-route.txt"
+        ]
+      },
+      "issues": null
+    },
+    {
+      "id": "VAL-AUTH-010",
+      "title": "Password reset with valid token",
+      "status": "pass",
+      "steps": [
+        {
+          "action": "Request a real password reset email for the owner account and open the logged reset link",
+          "expected": "A valid reset form loads",
+          "observed": "The reset form loaded from the shared dev-server email link"
+        },
+        {
+          "action": "Submit the form with the new password Round3Core!2",
+          "expected": "Password updates successfully and the flow returns the user to sign in",
+          "observed": "The page showed 'Password reset' and 'Redirecting to sign in in 1\u2026', then the login page was used for the follow-up checks"
+        },
+        {
+          "action": "Try the old password and then the new password",
+          "expected": "Old password fails; new password succeeds",
+          "observed": "The old password was rejected and the new password returned to /round3-authcore-20260401-care/dashboard"
+        }
+      ],
+      "evidence": {
+        "screenshots": [
+          "foundation/round3-auth-core/VAL-AUTH-010-reset-form.png",
+          "foundation/round3-auth-core/VAL-AUTH-010-reset-success.png",
+          "foundation/round3-auth-core/VAL-AUTH-010-old-password-rejected.png",
+          "foundation/round3-auth-core/VAL-AUTH-010-login-with-new-password.png"
+        ],
+        "consoleErrors": "none",
+        "network": "Shared dev-server log: POST /api/auth/forgot-password -> 200; POST /api/auth/reset-password -> 200; POST /api/auth/login -> 401 with old password, then 200 with new password",
+        "loginWithNewPassword": "success",
+        "artifacts": [
+          "foundation/round3-auth-core/VAL-AUTH-010-reset-page-text.txt",
+          "foundation/round3-auth-core/VAL-AUTH-010-url-after-reset.txt"
+        ]
+      },
+      "issues": null
+    },
+    {
+      "id": "VAL-AUTH-015",
+      "title": "Session expires after inactivity timeout",
+      "status": "pass",
+      "steps": [
+        {
+          "action": "Authenticate as the owner and simulate the idle-expiry condition by clearing only the auth session cookie while preserving the long-lived session_hint cookie",
+          "expected": "The next protected-page request redirects to login with the session-expired message",
+          "observed": "Opening the protected dashboard redirected to /login?callbackUrl=%2Fround3-authcore-20260401-care%2Fdashboard&reason=session_expired and the page showed 'Your session has expired due to inactivity. Please sign in to continue.'"
+        }
+      ],
+      "evidence": {
+        "screenshots": [
+          "foundation/round3-auth-core/VAL-AUTH-015-session-expired-login.png"
+        ],
+        "consoleErrors": "none",
+        "artifacts": [
+          "foundation/round3-auth-core/VAL-AUTH-015-page-text.txt",
+          "foundation/round3-auth-core/VAL-AUTH-015-url.txt"
+        ]
+      },
+      "issues": null
+    },
+    {
+      "id": "VAL-AUTH-018",
+      "title": "Permission enforcement \u2014 restricted action",
+      "status": "fail",
+      "steps": [
+        {
+          "action": "Log in as the namespace viewer and confirm the viewer can read the org-scoped persons API",
+          "expected": "Viewer session is valid for read access only",
+          "observed": "GET /api/persons returned 200 and listed only the namespace person fixture"
+        },
+        {
+          "action": "Attempt a direct PUT to /api/persons/92ace0d3-b96f-49be-a577-bc97bb390b9f with the viewer session",
+          "expected": "API rejects the edit with 403 insufficient permissions",
+          "observed": "The API returned 405 Method Not Allowed because no PUT handler exists"
+        }
+      ],
+      "evidence": {
+        "network": "curl login established an org-scoped viewer session; GET /api/persons -> 200; PUT /api/persons/:id -> 405",
+        "artifacts": [
+          "foundation/round3-auth-core/VAL-AUTH-018-viewer-login.txt",
+          "foundation/round3-auth-core/VAL-AUTH-018-viewer-persons.txt",
+          "foundation/round3-auth-core/VAL-AUTH-018-viewer-put-person.txt"
+        ]
+      },
+      "issues": "The restricted action path still fails at the routing surface with 405 instead of returning a 403 permission denial for the viewer role."
+    },
+    {
+      "id": "VAL-AUTH-021",
+      "title": "JWT token cannot be tampered with",
+      "status": "pass",
+      "steps": [
+        {
+          "action": "Capture a real viewer authjs.session-token from a successful login",
+          "expected": "A valid session token is available for a protected API request",
+          "observed": "Viewer login returned 200 and the cookie jar contained authjs.session-token"
+        },
+        {
+          "action": "Alter the token and send it to GET /api/persons",
+          "expected": "Protected API rejects the tampered token with 401 Unauthorized",
+          "observed": "GET /api/persons with the tampered cookie returned 401 Unauthorized and cleared the invalid session token"
+        }
+      ],
+      "evidence": {
+        "network": "curl login -> 200; tampered GET /api/persons -> 401 Unauthorized",
+        "artifacts": [
+          "foundation/round3-auth-core/viewer-cookies.txt",
+          "foundation/round3-auth-core/VAL-AUTH-021-tampered-token-details.json",
+          "foundation/round3-auth-core/VAL-AUTH-021-tampered-persons.txt"
+        ]
+      },
+      "issues": null
+    }
+  ],
+  "frictions": [
+    {
+      "description": "Opening real verification links with agent-browser produced 'Execution context was destroyed' during the redirect chain.",
+      "resolved": true,
+      "resolution": "Re-read the final browser URL and confirmed the verification redirect in the shared dev-server log before proceeding.",
+      "affectedAssertions": [
+        "VAL-AUTH-004",
+        "VAL-AUTH-007",
+        "VAL-AUTH-008",
+        "VAL-AUTH-010",
+        "VAL-AUTH-015",
+        "VAL-AUTH-018",
+        "VAL-AUTH-021"
+      ]
+    },
+    {
+      "description": "The assigned assertions needed an org-scoped dashboard and a concrete person ID, but those setup surfaces were not central to this auth retest.",
+      "resolved": true,
+      "resolution": "After registering and verifying only namespace-scoped accounts, I used a one-off Bun/Drizzle script to create just the namespace org membership and person fixture, then tested through the real login/UI/API surfaces.",
+      "affectedAssertions": [
+        "VAL-AUTH-004",
+        "VAL-AUTH-008",
+        "VAL-AUTH-010",
+        "VAL-AUTH-015",
+        "VAL-AUTH-018",
+        "VAL-AUTH-021"
+      ]
+    },
+    {
+      "description": "The real inactivity timeout is 30 minutes, which is impractical to wait out in-session.",
+      "resolved": true,
+      "resolution": "Simulated the timeout condition by clearing the auth session cookie while preserving session_hint, then requested a protected route to verify the real session-expired redirect and message.",
+      "affectedAssertions": [
+        "VAL-AUTH-015"
+      ]
+    }
+  ],
+  "blockers": [],
+  "summary": "Tested 10 assertions: 8 passed, 2 failed. Failures: VAL-AUTH-001 (registration still stays on /register instead of redirecting to onboarding) and VAL-AUTH-018 (viewer direct edit attempt returns 405 instead of 403)."
+}

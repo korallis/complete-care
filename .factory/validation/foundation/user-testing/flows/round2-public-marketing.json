@@ -1,0 +1,76 @@
+{
+  "groupId": "round2-public-marketing",
+  "testedAt": "2026-04-01T11:19:44Z",
+  "isolation": {
+    "surface": "agent-browser",
+    "appUrl": "http://localhost:3200",
+    "missionDir": "/Users/leebarry/.factory/missions/0151c86a-d61e-40f6-af14-f9e925a367f3",
+    "evidenceDir": "/Users/leebarry/.factory/missions/0151c86a-d61e-40f6-af14-f9e925a367f3/evidence/foundation/round2-public-marketing",
+    "publicRoutesOnly": true
+  },
+  "toolsUsed": [
+    "agent-browser"
+  ],
+  "assertions": [
+    {
+      "id": "VAL-MARKET-003",
+      "status": "pass",
+      "reason": "The public landing-page CTAs now work: clicking \"Get Started Free\" navigated to http://localhost:3200/register, and clicking \"Book a Demo\" navigated to the public demo route at http://localhost:3200/demo where a visible booking form rendered with Full name, Work email, Organisation name, Care domain, and Request demo fields. No visible runtime errors appeared during the CTA flow.",
+      "evidence": [
+        "foundation/round2-public-marketing/VAL-MARKET-003-registration-page-after-get-started.png",
+        "foundation/round2-public-marketing/VAL-MARKET-003-demo-booking-page.png",
+        "url:get-started=http://localhost:3200/register",
+        "url:book-demo=http://localhost:3200/demo",
+        "network:GET http://localhost:3200/demo?_rsc=51ee0 (fetch)",
+        "dom-inspection:demo-form-fields=Full name|Work email|Organisation name|Phone number (optional)|Care domain|Request demo",
+        "console-errors:none"
+      ]
+    },
+    {
+      "id": "VAL-MARKET-013",
+      "status": "fail",
+      "reason": "Keyboard focus is visible and the landing page is tab-navigable, but the rerun accessibility audit still fails basic checks. Axe reported 2 serious violations: invalid aria-label usage on three testimonial star-rating divs and insufficient color contrast on four visible text elements (\"★ You're here\", the comparison update note, the compliance subtitle, and the footer copyright text).",
+      "evidence": [
+        "foundation/round2-public-marketing/VAL-MARKET-013-focused-element.png",
+        "keyboard-tab-sequence:1=Complete Care(/),2=Features(/#features),3=Why Us(/#compare),4=Pricing(/pricing)",
+        "focus-indicator:Complete Care link outline=oklab(0.708 0 0 / 0.5) auto 1px; outline-offset=1px",
+        "dom-inspection:images=0,missing-alt=0,unnamed-interactive=0",
+        "axe:2 serious violations -> aria-prohibited-attr on 3 div[aria-label='5 out of 5 stars']; color-contrast on 4 elements",
+        "axe:contrast-targets=★ You're here|Comparison based on publicly available feature information. Last updated April 2026.|Compliant with CQC & Ofsted requirements|© 2026 Complete Care Ltd. All rights reserved. Registered in England & Wales.",
+        "console-errors:none"
+      ]
+    },
+    {
+      "id": "VAL-MARKET-014",
+      "status": "fail",
+      "reason": "The landing page renders title, description, and Open Graph fields, but the SEO/social metadata is still populated with local development URLs instead of a public canonical/shareable origin. The rendered canonical URL is http://localhost:3200 and og:image is http://localhost:3200/og-image.png.",
+      "evidence": [
+        "title=Complete Care — UK Care Management Platform | Complete Care",
+        "description=The only platform purpose-built for domiciliary care, supported living, and children's residential homes — with native Ofsted + CQC compliance and AI throughout.",
+        "og:title=Complete Care — UK Care Management Platform",
+        "og:description=Manage domiciliary care, supported living, and children's residential homes from a single unified platform with native CQC and Ofsted compliance.",
+        "og:image=http://localhost:3200/og-image.png",
+        "canonical=http://localhost:3200",
+        "url=http://localhost:3200/"
+      ]
+    }
+  ],
+  "frictions": [
+    {
+      "description": "A cookie-consent banner appeared on the first landing-page load and partially covered the hero CTAs until dismissed.",
+      "resolved": true,
+      "resolution": "Clicked Reject once, then continued the public-route assertions in the same browser session.",
+      "affectedAssertions": [
+        "VAL-MARKET-003",
+        "VAL-MARKET-013",
+        "VAL-MARKET-014"
+      ]
+    }
+  ],
+  "blockers": [],
+  "notes": [
+    "Rerun executed only on public routes with a single agent-browser session.",
+    "Landing and demo-page console/page errors were empty during this rerun.",
+    "Accessibility audit was executed against the rendered landing page with axe-core runOnly tags wcag2a and wcag2aa."
+  ]
+}
