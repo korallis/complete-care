@@ -22,9 +22,12 @@ import { medications, medicationAdministrations } from './medications';
 import { prnProtocols, prnAdministrations } from './prn-protocols';
 import { fluidEntries, mealEntries, mustAssessments } from './clinical-monitoring';
 import { vitalSigns } from './vital-signs';
+import { bowelRecords, sleepChecks, painAssessments } from './bowel-sleep-pain';
 import { dbsChecks } from './dbs-checks';
 import { trainingCourses, trainingRecords, qualifications } from './training';
 import { supervisions } from './supervisions';
+import { agencyRegister, agencyWorkers, recruitmentRecords } from './compliance';
+import { leaveRequests, leaveBalances } from './leave';
 
 export const organisationsRelations = relations(organisations, ({ many }) => ({
   memberships: many(memberships),
@@ -48,11 +51,19 @@ export const organisationsRelations = relations(organisations, ({ many }) => ({
   mealEntries: many(mealEntries),
   mustAssessments: many(mustAssessments),
   vitalSigns: many(vitalSigns),
+  bowelRecords: many(bowelRecords),
+  sleepChecks: many(sleepChecks),
+  painAssessments: many(painAssessments),
   dbsChecks: many(dbsChecks),
   trainingCourses: many(trainingCourses),
   trainingRecords: many(trainingRecords),
   qualifications: many(qualifications),
   supervisions: many(supervisions),
+  agencyRegister: many(agencyRegister),
+  agencyWorkers: many(agencyWorkers),
+  recruitmentRecords: many(recruitmentRecords),
+  leaveRequests: many(leaveRequests),
+  leaveBalances: many(leaveBalances),
 }));
 
 export const usersRelations = relations(users, ({ many }) => ({
@@ -139,6 +150,9 @@ export const personsRelations = relations(persons, ({ one, many }) => ({
   mealEntries: many(mealEntries),
   mustAssessments: many(mustAssessments),
   vitalSigns: many(vitalSigns),
+  bowelRecords: many(bowelRecords),
+  sleepChecks: many(sleepChecks),
+  painAssessments: many(painAssessments),
 }));
 
 export const staffProfilesRelations = relations(staffProfiles, ({ one, many }) => ({
@@ -154,6 +168,9 @@ export const staffProfilesRelations = relations(staffProfiles, ({ one, many }) =
   trainingRecords: many(trainingRecords),
   qualifications: many(qualifications),
   supervisions: many(supervisions),
+  recruitmentRecords: many(recruitmentRecords),
+  leaveRequests: many(leaveRequests),
+  leaveBalances: many(leaveBalances),
 }));
 
 export const carePlansRelations = relations(carePlans, ({ one, many }) => ({
@@ -477,5 +494,118 @@ export const supervisionsRelations = relations(supervisions, ({ one }) => ({
   staffProfile: one(staffProfiles, {
     fields: [supervisions.staffProfileId],
     references: [staffProfiles.id],
+  }),
+}));
+
+// ---------------------------------------------------------------------------
+// Leave relations
+// ---------------------------------------------------------------------------
+
+export const leaveRequestsRelations = relations(leaveRequests, ({ one }) => ({
+  organisation: one(organisations, {
+    fields: [leaveRequests.organisationId],
+    references: [organisations.id],
+  }),
+  staffProfile: one(staffProfiles, {
+    fields: [leaveRequests.staffProfileId],
+    references: [staffProfiles.id],
+  }),
+}));
+
+export const leaveBalancesRelations = relations(leaveBalances, ({ one }) => ({
+  organisation: one(organisations, {
+    fields: [leaveBalances.organisationId],
+    references: [organisations.id],
+  }),
+  staffProfile: one(staffProfiles, {
+    fields: [leaveBalances.staffProfileId],
+    references: [staffProfiles.id],
+  }),
+}));
+
+// ---------------------------------------------------------------------------
+// Agency Register relations
+// ---------------------------------------------------------------------------
+
+export const agencyRegisterRelations = relations(agencyRegister, ({ one, many }) => ({
+  organisation: one(organisations, {
+    fields: [agencyRegister.organisationId],
+    references: [organisations.id],
+  }),
+  workers: many(agencyWorkers),
+}));
+
+export const agencyWorkersRelations = relations(agencyWorkers, ({ one }) => ({
+  organisation: one(organisations, {
+    fields: [agencyWorkers.organisationId],
+    references: [organisations.id],
+  }),
+  agency: one(agencyRegister, {
+    fields: [agencyWorkers.agencyId],
+    references: [agencyRegister.id],
+  }),
+}));
+
+// ---------------------------------------------------------------------------
+// Recruitment Records relations
+// ---------------------------------------------------------------------------
+
+export const recruitmentRecordsRelations = relations(recruitmentRecords, ({ one }) => ({
+  organisation: one(organisations, {
+    fields: [recruitmentRecords.organisationId],
+    references: [organisations.id],
+  }),
+  staffProfile: one(staffProfiles, {
+    fields: [recruitmentRecords.staffProfileId],
+    references: [staffProfiles.id],
+  }),
+}));
+
+// ---------------------------------------------------------------------------
+// Bowel, Sleep & Pain relations
+// ---------------------------------------------------------------------------
+
+export const bowelRecordsRelations = relations(bowelRecords, ({ one }) => ({
+  organisation: one(organisations, {
+    fields: [bowelRecords.organisationId],
+    references: [organisations.id],
+  }),
+  person: one(persons, {
+    fields: [bowelRecords.personId],
+    references: [persons.id],
+  }),
+  recordedBy: one(users, {
+    fields: [bowelRecords.recordedById],
+    references: [users.id],
+  }),
+}));
+
+export const sleepChecksRelations = relations(sleepChecks, ({ one }) => ({
+  organisation: one(organisations, {
+    fields: [sleepChecks.organisationId],
+    references: [organisations.id],
+  }),
+  person: one(persons, {
+    fields: [sleepChecks.personId],
+    references: [persons.id],
+  }),
+  recordedBy: one(users, {
+    fields: [sleepChecks.recordedById],
+    references: [users.id],
+  }),
+}));
+
+export const painAssessmentsRelations = relations(painAssessments, ({ one }) => ({
+  organisation: one(organisations, {
+    fields: [painAssessments.organisationId],
+    references: [organisations.id],
+  }),
+  person: one(persons, {
+    fields: [painAssessments.personId],
+    references: [persons.id],
+  }),
+  recordedBy: one(users, {
+    fields: [painAssessments.recordedById],
+    references: [users.id],
   }),
 }));
