@@ -36,8 +36,13 @@ export async function GET(request: NextRequest) {
   const result = await verifyEmailToken(token);
 
   if (result.success) {
+    // After email verification the user has no org yet, so send them to
+    // login with a callback to /onboarding (and a success message).
     return NextResponse.redirect(
-      new URL('/login?message=email_verified', APP_URL),
+      new URL(
+        '/login?message=email_verified&callbackUrl=%2Fonboarding',
+        APP_URL,
+      ),
     );
   }
 

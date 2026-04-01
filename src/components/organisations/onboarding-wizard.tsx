@@ -270,7 +270,9 @@ export function OnboardingWizard({ userName }: OnboardingWizardProps) {
 
       // Refresh session so the JWT picks up the new org
       await updateSession({});
-      router.push('/dashboard?welcome=true');
+      // Redirect to the org-scoped dashboard with welcome message
+      const orgSlug = result.data?.orgSlug ?? '';
+      router.push(orgSlug ? `/${orgSlug}/dashboard?welcome=true` : '/dashboard?welcome=true');
       router.refresh();
     });
   }

@@ -47,8 +47,21 @@ export function LoginForm({ callbackUrl }: LoginFormProps) {
     }
 
     setIsSuccess(true);
-    // Redirect to callback URL or dashboard
-    const redirectUrl = callbackUrl ?? '/dashboard';
+
+    // Determine redirect destination:
+    // 1. If an explicit callbackUrl was provided (e.g., from a protected page), honour it
+    // 2. If user has an active org, go to the org-scoped dashboard
+    // 3. If no org, go to onboarding
+    let redirectUrl: string;
+    if (callbackUrl) {
+      redirectUrl = callbackUrl;
+    } else if (json.orgSlug) {
+      redirectUrl = `/${json.orgSlug}/dashboard`;
+    } else {
+      // No org yet — onboarding flow
+      redirectUrl = '/onboarding';
+    }
+
     window.location.href = redirectUrl;
   };
 

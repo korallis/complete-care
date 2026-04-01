@@ -6,7 +6,7 @@
  * - Checks rate limiting (5 attempts → 15-min lockout)
  * - Returns 429 if account is locked
  * - Returns 401 for invalid credentials (generic message — prevents enumeration)
- * - Returns 200 with session on success
+ * - Returns 200 with session on success, including org context for redirect
  *
  * The actual session cookie is set by the Auth.js credentials provider
  * via the /api/auth/callback/credentials flow. This route is the entry
@@ -15,17 +15,18 @@
 
 import { NextRequest, NextResponse } from 'next/server';
 import bcrypt from 'bcryptjs';
-import { eq } from 'drizzle-orm';
+import { and, eq, desc } from 'drizzle-orm';
 import { encode } from '@auth/core/jwt';
 import { cookies } from 'next/headers';
 import { db } from '@/lib/db';
-import { users, loginAttempts } from '@/lib/db/schema';
+import { users, loginAttempts, memberships, organisations } from '@/lib/db/schema';
 import {
   loginSchema,
   isAccountLocked,
   shouldLockAccount,
   LOCKOUT_DURATION_MS,
 } from '@/lib/auth/validation';
+import type { Role } from '@/lib/rbac/permissions';
 
 const COOKIE_NAME =
   process.env.NODE_ENV === 'production'
@@ -101,7 +102,27 @@ export async function POST(request: NextRequest) {
     .delete(loginAttempts)
     .where(eq(loginAttempts.email, normalizedEmail));
 
-  // Create Auth.js JWT session token
+  // Fetch all active memberships for org context
+  const allMemberships = await db
+    .select({
+      orgId: memberships.organisationId,
+      orgName: organisations.name,
+      orgSlug: organisations.slug,
+      role: memberships.role,
+    })
+    .from(memberships)
+    .innerJoin(organisations, eq(memberships.organisationId, organisations.id))
+    .where(
+      and(
+        eq(memberships.userId, user.id),
+        eq(memberships.status, 'active'),
+      ),
+    )
+    .orderBy(desc(memberships.createdAt));
+
+  const firstMembership = allMemberships[0] ?? null;
+
+  // Create Auth.js JWT session token (include org context)
   const secret = process.env.AUTH_SECRET!;
   const tokenPayload = {
     sub: user.id,
@@ -109,6 +130,14 @@ export async function POST(request: NextRequest) {
     email: user.email,
     name: user.name,
     emailVerified: user.emailVerified,
+    activeOrgId: firstMembership?.orgId ?? undefined,
+    role: firstMembership?.role as Role | undefined,
+    memberships: allMemberships.map((m) => ({
+      orgId: m.orgId,
+      orgName: m.orgName,
+      orgSlug: m.orgSlug,
+      role: m.role as Role,
+    })),
     iat: Math.floor(Date.now() / 1000),
     exp: Math.floor(Date.now() / 1000) + SESSION_MAX_AGE,
   };
@@ -139,6 +168,9 @@ export async function POST(request: NextRequest) {
         name: user.name,
         emailVerified: user.emailVerified,
       },
+      // Org redirect context — used by the login form to navigate correctly
+      orgSlug: firstMembership?.orgSlug ?? null,
+      hasOrg: allMemberships.length > 0,
     },
     { status: 200 },
   );

@@ -1,6 +1,6 @@
 'use client';
 
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import Link from 'next/link';
@@ -21,6 +21,20 @@ export function ResetPasswordForm({ token }: ResetPasswordFormProps) {
   const [showConfirmPassword, setShowConfirmPassword] = useState(false);
   const [serverError, setServerError] = useState<string | null>(null);
   const [isSuccess, setIsSuccess] = useState(false);
+  const [redirectCountdown, setRedirectCountdown] = useState(3);
+
+  // Auto-redirect to login after successful password reset
+  useEffect(() => {
+    if (!isSuccess) return;
+    if (redirectCountdown <= 0) {
+      window.location.href = '/login';
+      return;
+    }
+    const timer = setTimeout(() => {
+      setRedirectCountdown((c) => c - 1);
+    }, 1000);
+    return () => clearTimeout(timer);
+  }, [isSuccess, redirectCountdown]);
 
   const {
     register,
@@ -82,12 +96,15 @@ export function ResetPasswordForm({ token }: ResetPasswordFormProps) {
             Your password has been updated. You can now sign in with your new
             password.
           </p>
+          <p className="mt-2 text-xs text-muted-foreground">
+            Redirecting to sign in in {redirectCountdown}…
+          </p>
         </div>
         <Link
           href="/login"
           className="inline-flex h-9 items-center justify-center rounded-md bg-[oklch(0.22_0.04_160)] px-6 text-sm font-medium text-white hover:bg-[oklch(0.28_0.05_160)] transition-colors"
         >
-          Sign in
+          Sign in now
         </Link>
       </div>
     );
