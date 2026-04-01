@@ -17,6 +17,7 @@ import { careNotes } from './care-notes';
 import { documents, bodyMapEntries } from './documents';
 import { notifications } from './notifications';
 import { riskAssessments } from './risk-assessments';
+import { incidents } from './incidents';
 
 export const organisationsRelations = relations(organisations, ({ many }) => ({
   memberships: many(memberships),
@@ -31,6 +32,7 @@ export const organisationsRelations = relations(organisations, ({ many }) => ({
   notifications: many(notifications),
   riskAssessments: many(riskAssessments),
   bodyMapEntries: many(bodyMapEntries),
+  incidents: many(incidents),
 }));
 
 export const usersRelations = relations(users, ({ many }) => ({
@@ -109,6 +111,7 @@ export const personsRelations = relations(persons, ({ one, many }) => ({
   documents: many(documents),
   riskAssessments: many(riskAssessments),
   bodyMapEntries: many(bodyMapEntries),
+  incidents: many(incidents),
 }));
 
 export const staffProfilesRelations = relations(staffProfiles, ({ one }) => ({
@@ -209,6 +212,21 @@ export const riskAssessmentsRelations = relations(riskAssessments, ({ one }) => 
   }),
   completedBy: one(users, {
     fields: [riskAssessments.completedById],
+    references: [users.id],
+  }),
+}));
+
+export const incidentsRelations = relations(incidents, ({ one }) => ({
+  organisation: one(organisations, {
+    fields: [incidents.organisationId],
+    references: [organisations.id],
+  }),
+  person: one(persons, {
+    fields: [incidents.personId],
+    references: [persons.id],
+  }),
+  reportedBy: one(users, {
+    fields: [incidents.reportedById],
     references: [users.id],
   }),
 }));
