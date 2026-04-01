@@ -8,13 +8,14 @@
 import NextAuth from 'next-auth';
 import Credentials from 'next-auth/providers/credentials';
 import Google from 'next-auth/providers/google';
-import { eq } from 'drizzle-orm';
+import { and, eq, desc } from 'drizzle-orm';
 import bcrypt from 'bcryptjs';
 import { z } from 'zod';
 import { authConfig } from './auth.config';
 import { db } from '@/lib/db';
-import { users, loginAttempts } from '@/lib/db/schema';
+import { users, loginAttempts, memberships } from '@/lib/db/schema';
 import { findOrCreateOAuthUser } from '@/lib/auth/oauth';
+import type { Role } from '@/lib/rbac/permissions';
 
 /** Maximum failed login attempts before lockout */
 const MAX_ATTEMPTS = 5;
@@ -102,8 +103,10 @@ export const { handlers, auth, signIn, signOut } = NextAuth({
     }),
   ],
   callbacks: {
-    async jwt({ token, user, account }) {
+    async jwt({ token, user, account, trigger }) {
+      // -----------------------------------------------------------------------
       // Google OAuth sign-in — look up or create our DB user
+      // -----------------------------------------------------------------------
       if (account?.provider === 'google' && user?.email) {
         const { userId } = await findOrCreateOAuthUser({
           email: user.email,
@@ -114,18 +117,78 @@ export const { handlers, auth, signIn, signOut } = NextAuth({
         token.email = user.email;
         token.name = user.name ?? token.name;
         token.emailVerified = true; // Google verifies email ownership
+
+        // Fetch the user's first active membership for org context
+        const firstMembership = await getFirstActiveMembership(userId);
+        if (firstMembership) {
+          token.activeOrgId = firstMembership.organisationId;
+          token.role = firstMembership.role as Role;
+        }
         return token;
       }
 
+      // -----------------------------------------------------------------------
       // Credentials sign-in — `user` is the return value of `authorize`
+      // -----------------------------------------------------------------------
       if (user) {
         token.id = user.id;
         token.email = user.email ?? token.email;
         token.name = user.name ?? token.name;
         token.emailVerified = user.emailVerified ?? false;
+
+        // Fetch the user's first active membership for org context
+        if (user.id) {
+          const firstMembership = await getFirstActiveMembership(user.id);
+          if (firstMembership) {
+            token.activeOrgId = firstMembership.organisationId;
+            token.role = firstMembership.role as Role;
+          }
+        }
+        return token;
       }
+
+      // -----------------------------------------------------------------------
+      // Session update (trigger === 'update') — re-fetch role from DB.
+      // Called when session.update() is invoked client-side after a role change
+      // (e.g., owner promotes a member; the new role is reflected on next request).
+      // -----------------------------------------------------------------------
+      if (trigger === 'update') {
+        const userId = token.id as string | undefined;
+        const activeOrgId = token.activeOrgId as string | undefined;
+
+        if (userId && activeOrgId) {
+          // Re-fetch role for the current org
+          const [membership] = await db
+            .select({
+              role: memberships.role,
+              organisationId: memberships.organisationId,
+            })
+            .from(memberships)
+            .where(
+              and(
+                eq(memberships.userId, userId),
+                eq(memberships.organisationId, activeOrgId),
+                eq(memberships.status, 'active'),
+              ),
+            )
+            .limit(1);
+
+          if (membership) {
+            token.role = membership.role as Role;
+          }
+        } else if (userId) {
+          // No active org yet — fetch first membership
+          const firstMembership = await getFirstActiveMembership(userId);
+          if (firstMembership) {
+            token.activeOrgId = firstMembership.organisationId;
+            token.role = firstMembership.role as Role;
+          }
+        }
+      }
+
       return token;
     },
+
     async session({ session, token }) {
       if (token) {
         session.user.id = (token.id ?? token.sub) as string;
@@ -133,11 +196,41 @@ export const { handlers, auth, signIn, signOut } = NextAuth({
         // Cast through unknown to avoid the intersection type error.
         (session.user as unknown as { emailVerified: boolean }).emailVerified =
           (token.emailVerified as boolean) ?? false;
+        // Org context — set by JWT callback on sign-in or trigger='update'
+        session.user.activeOrgId = token.activeOrgId as string | undefined;
+        session.user.role = token.role as Role | undefined;
       }
       return session;
     },
   },
 });
+
+/**
+ * Fetches the user's first active organisation membership.
+ * Used during sign-in to populate the JWT with org context.
+ * Returns the most recently created active membership, or null if none.
+ */
+async function getFirstActiveMembership(userId: string): Promise<{
+  organisationId: string;
+  role: string;
+} | null> {
+  const [membership] = await db
+    .select({
+      organisationId: memberships.organisationId,
+      role: memberships.role,
+    })
+    .from(memberships)
+    .where(
+      and(
+        eq(memberships.userId, userId),
+        eq(memberships.status, 'active'),
+      ),
+    )
+    .orderBy(desc(memberships.createdAt))
+    .limit(1);
+
+  return membership ?? null;
+}
 
 /**
  * Records a failed login attempt for an email address.

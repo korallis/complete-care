@@ -89,6 +89,9 @@ export const authConfig = {
         session.user.id = (token.id ?? token.sub) as string;
         (session.user as unknown as { emailVerified: boolean }).emailVerified =
           (token.emailVerified as boolean) ?? false;
+        // Pass through org context fields set by the full auth.ts JWT callback
+        session.user.activeOrgId = token.activeOrgId as string | undefined;
+        session.user.role = token.role as import('@/lib/rbac/permissions').Role | undefined;
       }
       return session;
     },

@@ -4,6 +4,7 @@
  */
 
 import 'next-auth';
+import type { Role } from '@/lib/rbac/permissions';
 
 declare module 'next-auth' {
   interface Session {
@@ -13,6 +14,10 @@ declare module 'next-auth' {
       name: string;
       emailVerified: boolean;
       image?: string | null;
+      /** The currently active organisation ID (org-switcher context) */
+      activeOrgId?: string;
+      /** The user's role in the active organisation (cached from JWT; DB is authoritative) */
+      role?: Role;
     };
   }
 
@@ -24,3 +29,5 @@ declare module 'next-auth' {
     image?: string | null;
   }
 }
+
+
