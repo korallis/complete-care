@@ -1,15 +1,14 @@
 import type { Metadata } from 'next';
 import { notFound, redirect } from 'next/navigation';
-import Link from 'next/link';
 import { auth } from '@/auth';
-import { db } from '@/lib/db';
-import { organisations } from '@/lib/db/schema';
-import { eq } from 'drizzle-orm';
-import { getPerson, archivePerson, restorePerson } from '@/features/persons/actions';
-import { getPersonTerminology } from '@/features/persons/utils';
+import { getPerson } from '@/features/persons/actions';
 import { hasPermission } from '@/lib/rbac/permissions';
 import type { Role } from '@/lib/rbac/permissions';
-import { PersonDetail } from '@/components/persons/person-detail';
+import { getDashboardMetrics, getRecentActivity } from '@/features/person-dashboard/actions';
+import { PersonSummaryCard } from '@/components/person-dashboard/person-summary-card';
+import { MetricsGrid } from '@/components/person-dashboard/metrics-grid';
+import { QuickActions } from '@/components/person-dashboard/quick-actions';
+import { UnifiedTimeline } from '@/components/person-dashboard/unified-timeline';
 
 interface PersonDetailPageProps {
   params: Promise<{ orgSlug: string; personId: string }>;
@@ -67,59 +66,33 @@ export default async function PersonDetailPage({
     notFound();
   }
 
-  // Get org domains for terminology
-  const [org] = await db
-    .select({ domains: organisations.domains })
-    .from(organisations)
-    .where(eq(organisations.id, session.user.activeOrgId))
-    .limit(1);
-
-  const domains = org?.domains ?? [];
-  const terminology = getPersonTerminology(domains);
-
-  async function handleArchive() {
-    'use server';
-    await archivePerson(personId);
-  }
-
-  async function handleRestore() {
-    'use server';
-    await restorePerson(personId);
-  }
+  // Fetch dashboard data in parallel
+  const [metrics, recentActivity] = await Promise.all([
+    getDashboardMetrics(personId),
+    getRecentActivity(personId),
+  ]);
 
   return (
-    <div className="p-6 max-w-5xl mx-auto">
-      {/* Breadcrumb */}
-      <nav aria-label="Breadcrumb" className="mb-6">
-        <ol className="flex items-center gap-2 text-sm text-[oklch(0.55_0_0)]">
-          <li>
-            <Link
-              href={`/${orgSlug}/persons`}
-              className="hover:text-[oklch(0.35_0.06_160)] transition-colors"
-            >
-              {terminology.plural}
-            </Link>
-          </li>
-          <li aria-hidden="true" className="text-[oklch(0.75_0_0)]">
-            /
-          </li>
-          <li
-            className="text-[oklch(0.35_0.04_160)] font-medium truncate max-w-xs"
-            aria-current="page"
-          >
-            {person.fullName}
-          </li>
-        </ol>
-      </nav>
+    <div className="space-y-6">
+      {/* Person summary card */}
+      <PersonSummaryCard person={person} />
 
-      <PersonDetail
-        person={person}
-        orgSlug={orgSlug}
-        terminology={terminology}
-        canEdit={canEdit}
-        onArchive={canEdit ? handleArchive : undefined}
-        onRestore={canEdit ? handleRestore : undefined}
-      />
+      {/* Metrics grid */}
+      <MetricsGrid metrics={metrics} />
+
+      {/* Quick actions */}
+      <QuickActions orgSlug={orgSlug} personId={personId} canEdit={canEdit} />
+
+      {/* Recent activity */}
+      <div>
+        <h3 className="text-sm font-semibold text-[oklch(0.35_0.04_160)] uppercase tracking-wide mb-3">
+          Recent activity
+        </h3>
+        <UnifiedTimeline
+          entries={recentActivity}
+          emptyMessage="No recent activity for this person."
+        />
+      </div>
     </div>
   );
 }
