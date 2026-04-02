@@ -79,6 +79,13 @@ export default async function OrgSettingsPage({ params }: OrgSettingsPageProps) 
           </Link>
           <span className="text-[oklch(0.75_0_0)]">·</span>
           <Link
+            href={`/${orgSlug}/settings/gdpr`}
+            className="text-sm text-[oklch(0.35_0.06_160)] hover:text-[oklch(0.25_0.05_160)] font-medium transition-colors"
+          >
+            GDPR centre
+          </Link>
+          <span className="text-[oklch(0.75_0_0)]">·</span>
+          <Link
             href={`/${orgSlug}/audit-log`}
             className="text-sm text-[oklch(0.35_0.06_160)] hover:text-[oklch(0.25_0.05_160)] font-medium transition-colors"
           >

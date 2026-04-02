@@ -167,7 +167,10 @@ export async function createSar(
     }, { userId, organisationId: orgId });
 
     const slug = await getOrgSlug(orgId);
-    if (slug) revalidatePath(`/${slug}/gdpr/sars`);
+    if (slug) {
+      revalidatePath(`/${slug}/settings/gdpr`);
+      revalidatePath(`/${slug}/settings/gdpr/sars`);
+    }
 
     return { success: true, data: row };
   } catch (error) {
@@ -216,7 +219,10 @@ export async function updateSarStatus(
     }, { userId, organisationId: orgId });
 
     const slug = await getOrgSlug(orgId);
-    if (slug) revalidatePath(`/${slug}/gdpr/sars`);
+    if (slug) {
+      revalidatePath(`/${slug}/settings/gdpr`);
+      revalidatePath(`/${slug}/settings/gdpr/sars`);
+    }
 
     return { success: true, data: updated };
   } catch (error) {
@@ -332,7 +338,10 @@ export async function createErasureRequest(
     }, { userId, organisationId: orgId });
 
     const slug = await getOrgSlug(orgId);
-    if (slug) revalidatePath(`/${slug}/gdpr/erasure`);
+    if (slug) {
+      revalidatePath(`/${slug}/settings/gdpr`);
+      revalidatePath(`/${slug}/settings/gdpr/erasure`);
+    }
 
     return { success: true, data: row };
   } catch (error) {
@@ -381,7 +390,10 @@ export async function updateErasureRequestStatus(
     }, { userId, organisationId: orgId });
 
     const slug = await getOrgSlug(orgId);
-    if (slug) revalidatePath(`/${slug}/gdpr/erasure`);
+    if (slug) {
+      revalidatePath(`/${slug}/settings/gdpr`);
+      revalidatePath(`/${slug}/settings/gdpr/erasure`);
+    }
 
     return { success: true, data: updated };
   } catch (error) {
@@ -438,7 +450,10 @@ export async function createRetentionPolicy(
     }, { userId, organisationId: orgId });
 
     const slug = await getOrgSlug(orgId);
-    if (slug) revalidatePath(`/${slug}/gdpr/retention`);
+    if (slug) {
+      revalidatePath(`/${slug}/settings/gdpr`);
+      revalidatePath(`/${slug}/settings/gdpr/retention`);
+    }
 
     return { success: true, data: row };
   } catch (error) {
@@ -483,7 +498,10 @@ export async function updateRetentionPolicy(
     }, { userId, organisationId: orgId });
 
     const slug = await getOrgSlug(orgId);
-    if (slug) revalidatePath(`/${slug}/gdpr/retention`);
+    if (slug) {
+      revalidatePath(`/${slug}/settings/gdpr`);
+      revalidatePath(`/${slug}/settings/gdpr/retention`);
+    }
 
     return { success: true, data: updated };
   } catch (error) {
@@ -568,7 +586,10 @@ export async function reviewRetentionFlag(
     }, { userId, organisationId: orgId });
 
     const slug = await getOrgSlug(orgId);
-    if (slug) revalidatePath(`/${slug}/gdpr/retention`);
+    if (slug) {
+      revalidatePath(`/${slug}/settings/gdpr`);
+      revalidatePath(`/${slug}/settings/gdpr/retention`);
+    }
 
     return { success: true, data: updated };
   } catch (error) {
@@ -642,7 +663,10 @@ export async function createDataExport(data: {
     }, { userId, organisationId: orgId });
 
     const slug = await getOrgSlug(orgId);
-    if (slug) revalidatePath(`/${slug}/gdpr/exports`);
+    if (slug) {
+      revalidatePath(`/${slug}/settings/gdpr`);
+      revalidatePath(`/${slug}/settings/gdpr/exports`);
+    }
 
     return { success: true, data: row };
   } catch (error) {
