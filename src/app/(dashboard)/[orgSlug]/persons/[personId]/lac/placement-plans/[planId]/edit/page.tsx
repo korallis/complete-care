@@ -13,7 +13,7 @@ type EditPlacementPlanPageProps = {
 
 export default async function EditPlacementPlanPage({
   params,
-: EditPlacementPlanPageProps) {
+}: EditPlacementPlanPageProps) {
   const { orgSlug, personId, planId } = await params;
 
   const session = await auth();
