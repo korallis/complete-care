@@ -41,5 +41,6 @@ export * from './clinical-alerts';
 export * from './rota';
 
 export * from './safeguarding';
+export * from './pbs';
 
 export * from './relations';

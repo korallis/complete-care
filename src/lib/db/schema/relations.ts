@@ -35,6 +35,7 @@ import { clinicalAlerts, personAlertThresholds } from './clinical-alerts';
 import { lacRecords, placementPlans, lacStatusChanges } from './lac';
 import { hospitalAdmissions, visitCancellations } from './rota';
 import { safeguardingConcerns, safeguardingReferrals } from './safeguarding';
+import { pbsPlans, abcIncidents, restrictivePractices } from './pbs';
 
 export const organisationsRelations = relations(organisations, ({ many }) => ({
   memberships: many(memberships),
@@ -91,6 +92,9 @@ export const organisationsRelations = relations(organisations, ({ many }) => ({
   visitCancellations: many(visitCancellations),
   safeguardingConcerns: many(safeguardingConcerns),
   safeguardingReferrals: many(safeguardingReferrals),
+  pbsPlans: many(pbsPlans),
+  abcIncidents: many(abcIncidents),
+  restrictivePractices: many(restrictivePractices),
 }));
 
 export const usersRelations = relations(users, ({ many }) => ({
@@ -190,6 +194,9 @@ export const personsRelations = relations(persons, ({ one, many }) => ({
   placementPlans: many(placementPlans),
   hospitalAdmissions: many(hospitalAdmissions),
   safeguardingConcerns: many(safeguardingConcerns),
+  pbsPlans: many(pbsPlans),
+  abcIncidents: many(abcIncidents),
+  restrictivePractices: many(restrictivePractices),
 }));
 
 export const staffProfilesRelations = relations(staffProfiles, ({ one, many }) => ({
@@ -961,3 +968,60 @@ export const safeguardingReferralsRelations = relations(safeguardingReferrals, (
     references: [users.id],
   }),
 }));
+
+// ---------------------------------------------------------------------------
+// PBS (Positive Behaviour Support) relations
+// ---------------------------------------------------------------------------
+
+export const pbsPlansRelations = relations(pbsPlans, ({ one, many }) => ({
+  organisation: one(organisations, {
+    fields: [pbsPlans.organisationId],
+    references: [organisations.id],
+  }),
+  person: one(persons, {
+    fields: [pbsPlans.personId],
+    references: [persons.id],
+  }),
+  createdByUser: one(users, {
+    fields: [pbsPlans.createdBy],
+    references: [users.id],
+  }),
+  abcIncidents: many(abcIncidents),
+}));
+
+export const abcIncidentsRelations = relations(abcIncidents, ({ one }) => ({
+  organisation: one(organisations, {
+    fields: [abcIncidents.organisationId],
+    references: [organisations.id],
+  }),
+  person: one(persons, {
+    fields: [abcIncidents.personId],
+    references: [persons.id],
+  }),
+  pbsPlan: one(pbsPlans, {
+    fields: [abcIncidents.pbsPlanId],
+    references: [pbsPlans.id],
+  }),
+  recordedByUser: one(users, {
+    fields: [abcIncidents.recordedBy],
+    references: [users.id],
+  }),
+}));
+
+export const restrictivePracticesRelations = relations(
+  restrictivePractices,
+  ({ one }) => ({
+    organisation: one(organisations, {
+      fields: [restrictivePractices.organisationId],
+      references: [organisations.id],
+    }),
+    person: one(persons, {
+      fields: [restrictivePractices.personId],
+      references: [persons.id],
+    }),
+    recordedByUser: one(users, {
+      fields: [restrictivePractices.recordedBy],
+      references: [users.id],
+    }),
+  }),
+);
