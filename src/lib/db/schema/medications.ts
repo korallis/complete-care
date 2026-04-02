@@ -3,6 +3,7 @@ import {
   uuid,
   text,
   timestamp,
+  boolean,
   index,
   jsonb,
 } from 'drizzle-orm/pg-core';
@@ -102,6 +103,14 @@ export const medications = pgTable(
     discontinuedReason: text('discontinued_reason'),
     /** Special instructions (e.g., "take with food", "crush before giving") */
     specialInstructions: text('special_instructions'),
+    /** Whether this is a controlled drug (Schedule 2-5) */
+    isControlledDrug: boolean('is_controlled_drug').notNull().default(false),
+    /** CD Schedule: 2 | 3 | 4 | 5 — null for non-CDs */
+    cdSchedule: text('cd_schedule'),
+    /** Therapeutic class for duplicate checking */
+    therapeuticClass: text('therapeutic_class'),
+    /** Active ingredient(s) for allergy cross-referencing */
+    activeIngredients: text('active_ingredients').array(),
     createdAt: timestamp('created_at').defaultNow().notNull(),
     updatedAt: timestamp('updated_at').defaultNow().notNull(),
   },
@@ -218,3 +227,101 @@ export const medicationAdministrations = pgTable(
 
 export type MedicationAdministration = typeof medicationAdministrations.$inferSelect;
 export type NewMedicationAdministration = typeof medicationAdministrations.$inferInsert;
+
+// ---------------------------------------------------------------------------
+// Allergies — per-resident allergy records for medication safety alerts
+// ---------------------------------------------------------------------------
+
+export const allergies = pgTable(
+  'allergies',
+  {
+    id: uuid('id').defaultRandom().primaryKey(),
+    organisationId: uuid('organisation_id')
+      .notNull()
+      .references(() => organisations.id, { onDelete: 'cascade' }),
+    personId: uuid('person_id')
+      .notNull()
+      .references(() => persons.id, { onDelete: 'cascade' }),
+    allergen: text('allergen').notNull(),
+    allergyType: text('allergy_type').notNull().default('drug'),
+    severity: text('severity').notNull().default('moderate'),
+    reaction: text('reaction'),
+    identifiedDate: timestamp('identified_date'),
+    status: text('status').notNull().default('active'),
+    recordedBy: uuid('recorded_by').references(() => users.id),
+    notes: text('notes'),
+    createdAt: timestamp('created_at').defaultNow().notNull(),
+    updatedAt: timestamp('updated_at').defaultNow().notNull(),
+  },
+  (t) => [
+    index('allergies_org_person_idx').on(t.organisationId, t.personId),
+    index('allergies_allergen_idx').on(t.organisationId, t.allergen),
+  ],
+);
+
+// ---------------------------------------------------------------------------
+// Drug Interactions — known interaction reference data
+// ---------------------------------------------------------------------------
+
+export const drugInteractions = pgTable(
+  'drug_interactions',
+  {
+    id: uuid('id').defaultRandom().primaryKey(),
+    organisationId: uuid('organisation_id')
+      .notNull()
+      .references(() => organisations.id, { onDelete: 'cascade' }),
+    drugA: text('drug_a').notNull(),
+    drugB: text('drug_b').notNull(),
+    severity: text('severity').notNull(),
+    description: text('description').notNull(),
+    recommendation: text('recommendation'),
+    source: text('source'),
+    createdAt: timestamp('created_at').defaultNow().notNull(),
+  },
+  (t) => [
+    index('drug_interactions_org_drugs_idx').on(t.organisationId, t.drugA, t.drugB),
+  ],
+);
+
+// ---------------------------------------------------------------------------
+// Allergy Alert Overrides — immutable audit trail
+// ---------------------------------------------------------------------------
+
+export const allergyAlertOverrides = pgTable(
+  'allergy_alert_overrides',
+  {
+    id: uuid('id').defaultRandom().primaryKey(),
+    organisationId: uuid('organisation_id')
+      .notNull()
+      .references(() => organisations.id, { onDelete: 'cascade' }),
+    personId: uuid('person_id').notNull(),
+    medicationId: uuid('medication_id')
+      .notNull()
+      .references(() => medications.id),
+    allergyId: uuid('allergy_id')
+      .notNull()
+      .references(() => allergies.id),
+    administrationId: uuid('administration_id').references(
+      () => medicationAdministrations.id,
+    ),
+    requestedBy: uuid('requested_by')
+      .notNull()
+      .references(() => users.id),
+    authorisedBy: uuid('authorised_by')
+      .notNull()
+      .references(() => users.id),
+    clinicalJustification: text('clinical_justification').notNull(),
+    matchedAllergen: text('matched_allergen').notNull(),
+    matchedMedicationDetail: text('matched_medication_detail').notNull(),
+    createdAt: timestamp('created_at').defaultNow().notNull(),
+  },
+  (t) => [
+    index('allergy_overrides_org_person_idx').on(t.organisationId, t.personId),
+    index('allergy_overrides_org_med_idx').on(t.organisationId, t.medicationId),
+  ],
+);
+
+export type Allergy = typeof allergies.$inferSelect;
+export type NewAllergy = typeof allergies.$inferInsert;
+export type DrugInteraction = typeof drugInteractions.$inferSelect;
+export type AllergyAlertOverride = typeof allergyAlertOverrides.$inferSelect;

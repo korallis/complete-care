@@ -44,5 +44,6 @@ export * from './safeguarding';
 export * from './pbs';
 export * from './mca-dols';
 export * from './shift-patterns';
+export * from './controlled-drugs';
 
 export * from './relations';

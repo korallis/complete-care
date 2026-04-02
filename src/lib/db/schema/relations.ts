@@ -34,7 +34,9 @@ import { carePackages, visitTypes, scheduledVisits } from './care-packages';
 import { clinicalAlerts, personAlertThresholds } from './clinical-alerts';
 import { lacRecords, placementPlans, lacStatusChanges } from './lac';
 import { hospitalAdmissions, visitCancellations } from './rota';
-import { safeguardingConcerns, safeguardingReferrals } from './safeguarding';
+import { safeguardingConcerns, concernCorrections, dslReviews, ladoReferrals, section47Investigations, mashReferrals, safeguardingChronology } from './safeguarding';
+import { allergies, drugInteractions, allergyAlertOverrides } from './medications';
+import { cdRegisters, cdRegisterEntries, transdermalPatches, cdStockReconciliations } from './controlled-drugs';
 import { pbsPlans, abcIncidents, restrictivePractices } from './pbs';
 import { mcaAssessments, bestInterestDecisions, lpaAdrtRecords, dolsApplications, dolsRestrictions } from './mca-dols';
 import { shiftPatterns, rotaPeriods, shiftAssignments, conflictOverrides } from './shift-patterns';
@@ -93,7 +95,19 @@ export const organisationsRelations = relations(organisations, ({ many }) => ({
   hospitalAdmissions: many(hospitalAdmissions),
   visitCancellations: many(visitCancellations),
   safeguardingConcerns: many(safeguardingConcerns),
-  safeguardingReferrals: many(safeguardingReferrals),
+  concernCorrections: many(concernCorrections),
+  dslReviews: many(dslReviews),
+  ladoReferrals: many(ladoReferrals),
+  section47Investigations: many(section47Investigations),
+  mashReferrals: many(mashReferrals),
+  safeguardingChronology: many(safeguardingChronology),
+  allergies: many(allergies),
+  drugInteractions: many(drugInteractions),
+  allergyAlertOverrides: many(allergyAlertOverrides),
+  cdRegisters: many(cdRegisters),
+  cdRegisterEntries: many(cdRegisterEntries),
+  transdermalPatches: many(transdermalPatches),
+  cdStockReconciliations: many(cdStockReconciliations),
   pbsPlans: many(pbsPlans),
   abcIncidents: many(abcIncidents),
   restrictivePractices: many(restrictivePractices),
@@ -959,29 +973,179 @@ export const safeguardingConcernsRelations = relations(safeguardingConcerns, ({ 
     fields: [safeguardingConcerns.organisationId],
     references: [organisations.id],
   }),
-  person: one(persons, {
-    fields: [safeguardingConcerns.personId],
+  child: one(persons, {
+    fields: [safeguardingConcerns.childId],
     references: [persons.id],
   }),
-  raisedBy: one(users, {
-    fields: [safeguardingConcerns.raisedById],
+  reportedBy: one(users, {
+    fields: [safeguardingConcerns.reportedById],
     references: [users.id],
   }),
-  referrals: many(safeguardingReferrals),
+  corrections: many(concernCorrections),
+  dslReviews: many(dslReviews),
 }));
 
-export const safeguardingReferralsRelations = relations(safeguardingReferrals, ({ one }) => ({
+export const concernCorrectionsRelations = relations(concernCorrections, ({ one }) => ({
   organisation: one(organisations, {
-    fields: [safeguardingReferrals.organisationId],
+    fields: [concernCorrections.organisationId],
     references: [organisations.id],
   }),
   concern: one(safeguardingConcerns, {
-    fields: [safeguardingReferrals.concernId],
+    fields: [concernCorrections.concernId],
     references: [safeguardingConcerns.id],
   }),
-  madeBy: one(users, {
-    fields: [safeguardingReferrals.madeById],
+  correctedBy: one(users, {
+    fields: [concernCorrections.correctedById],
     references: [users.id],
+  }),
+}));
+
+export const dslReviewsRelations = relations(dslReviews, ({ one }) => ({
+  organisation: one(organisations, {
+    fields: [dslReviews.organisationId],
+    references: [organisations.id],
+  }),
+  concern: one(safeguardingConcerns, {
+    fields: [dslReviews.concernId],
+    references: [safeguardingConcerns.id],
+  }),
+  reviewer: one(users, {
+    fields: [dslReviews.reviewerId],
+    references: [users.id],
+  }),
+}));
+
+export const ladoReferralsRelations = relations(ladoReferrals, ({ one }) => ({
+  organisation: one(organisations, {
+    fields: [ladoReferrals.organisationId],
+    references: [organisations.id],
+  }),
+  child: one(persons, {
+    fields: [ladoReferrals.childId],
+    references: [persons.id],
+  }),
+  createdBy: one(users, {
+    fields: [ladoReferrals.createdById],
+    references: [users.id],
+  }),
+}));
+
+export const section47InvestigationsRelations = relations(section47Investigations, ({ one }) => ({
+  organisation: one(organisations, {
+    fields: [section47Investigations.organisationId],
+    references: [organisations.id],
+  }),
+  child: one(persons, {
+    fields: [section47Investigations.childId],
+    references: [persons.id],
+  }),
+}));
+
+export const mashReferralsRelations = relations(mashReferrals, ({ one }) => ({
+  organisation: one(organisations, {
+    fields: [mashReferrals.organisationId],
+    references: [organisations.id],
+  }),
+  concern: one(safeguardingConcerns, {
+    fields: [mashReferrals.concernId],
+    references: [safeguardingConcerns.id],
+  }),
+}));
+
+export const safeguardingChronologyRelations = relations(safeguardingChronology, ({ one }) => ({
+  organisation: one(organisations, {
+    fields: [safeguardingChronology.organisationId],
+    references: [organisations.id],
+  }),
+  child: one(persons, {
+    fields: [safeguardingChronology.childId],
+    references: [persons.id],
+  }),
+}));
+
+// ---------------------------------------------------------------------------
+// Allergy & Drug Interaction relations
+// ---------------------------------------------------------------------------
+
+export const allergiesRelations = relations(allergies, ({ one }) => ({
+  organisation: one(organisations, {
+    fields: [allergies.organisationId],
+    references: [organisations.id],
+  }),
+  person: one(persons, {
+    fields: [allergies.personId],
+    references: [persons.id],
+  }),
+}));
+
+export const allergyAlertOverridesRelations = relations(allergyAlertOverrides, ({ one }) => ({
+  organisation: one(organisations, {
+    fields: [allergyAlertOverrides.organisationId],
+    references: [organisations.id],
+  }),
+  medication: one(medications, {
+    fields: [allergyAlertOverrides.medicationId],
+    references: [medications.id],
+  }),
+  allergy: one(allergies, {
+    fields: [allergyAlertOverrides.allergyId],
+    references: [allergies.id],
+  }),
+}));
+
+export const drugInteractionsRelations = relations(drugInteractions, ({ one }) => ({
+  organisation: one(organisations, {
+    fields: [drugInteractions.organisationId],
+    references: [organisations.id],
+  }),
+}));
+
+// ---------------------------------------------------------------------------
+// Controlled Drugs relations
+// ---------------------------------------------------------------------------
+
+export const cdRegistersRelations = relations(cdRegisters, ({ one, many }) => ({
+  organisation: one(organisations, {
+    fields: [cdRegisters.organisationId],
+    references: [organisations.id],
+  }),
+  medication: one(medications, {
+    fields: [cdRegisters.medicationId],
+    references: [medications.id],
+  }),
+  entries: many(cdRegisterEntries),
+}));
+
+export const cdRegisterEntriesRelations = relations(cdRegisterEntries, ({ one }) => ({
+  organisation: one(organisations, {
+    fields: [cdRegisterEntries.organisationId],
+    references: [organisations.id],
+  }),
+  register: one(cdRegisters, {
+    fields: [cdRegisterEntries.registerId],
+    references: [cdRegisters.id],
+  }),
+}));
+
+export const transdermalPatchesRelations = relations(transdermalPatches, ({ one }) => ({
+  organisation: one(organisations, {
+    fields: [transdermalPatches.organisationId],
+    references: [organisations.id],
+  }),
+  medication: one(medications, {
+    fields: [transdermalPatches.medicationId],
+    references: [medications.id],
+  }),
+}));
+
+export const cdStockReconciliationsRelations = relations(cdStockReconciliations, ({ one }) => ({
+  organisation: one(organisations, {
+    fields: [cdStockReconciliations.organisationId],
+    references: [organisations.id],
+  }),
+  register: one(cdRegisters, {
+    fields: [cdStockReconciliations.registerId],
+    references: [cdRegisters.id],
   }),
 }));
 
