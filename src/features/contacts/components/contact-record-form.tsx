@@ -41,17 +41,28 @@ export function ContactRecordForm({
   personId,
   approvedContacts,
   scheduleId,
+  defaultContactId,
   onSubmit,
   onCancel,
 }: {
   personId: string;
   approvedContacts: ApprovedContact[];
   scheduleId?: string;
+  defaultContactId?: string;
   onSubmit: (data: CreateContactRecordInput) => Promise<void>;
   onCancel: () => void;
 }) {
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  const [selectedContactId, setSelectedContactId] = useState(defaultContactId ?? '');
+  const selectedContact = approvedContacts.find(
+    (contact) => contact.id === selectedContactId,
+  );
+  const contactTypeOptions = selectedContact
+    ? CONTACT_TYPE_OPTIONS.filter((option) =>
+        selectedContact.allowedContactTypes.includes(option.value),
+      )
+    : CONTACT_TYPE_OPTIONS;
 
   async function handleSubmit(e: React.FormEvent<HTMLFormElement>) {
     e.preventDefault();
@@ -105,6 +116,9 @@ export function ContactRecordForm({
             id="approvedContactId"
             name="approvedContactId"
             required
+            value={selectedContactId}
+            onChange={(event) => setSelectedContactId(event.target.value)}
+            disabled={Boolean(scheduleId && defaultContactId)}
             className="w-full rounded-md border bg-background px-3 py-2 text-sm"
           >
             <option value="">Select contact...</option>
@@ -123,12 +137,13 @@ export function ContactRecordForm({
             Contact Type <span className="text-red-500">*</span>
           </label>
           <select
+            key={selectedContact?.id ?? 'contact-type-default'}
             id="contactType"
             name="contactType"
             required
             className="w-full rounded-md border bg-background px-3 py-2 text-sm"
           >
-            {CONTACT_TYPE_OPTIONS.map((opt) => (
+            {contactTypeOptions.map((opt) => (
               <option key={opt.value} value={opt.value}>
                 {opt.label}
               </option>

@@ -13,11 +13,13 @@
  * VAL-CHILD-015: Contact scheduling and recording with emotional presentation
  */
 
+import { revalidatePath } from 'next/cache';
 import { db } from '@/lib/db';
 import {
   approvedContacts,
   contactSchedules,
   contactRecords,
+  organisations,
 } from '@/lib/db/schema';
 import { eq, and, count, gte, lte } from 'drizzle-orm';
 import type { ActionResult } from '@/types';
@@ -36,6 +38,25 @@ import {
   updateContactScheduleStatusSchema,
   createContactRecordSchema,
 } from './schema';
+
+async function getOrgSlug(orgId: string): Promise<string | null> {
+  const [org] = await db
+    .select({ slug: organisations.slug })
+    .from(organisations)
+    .where(eq(organisations.id, orgId))
+    .limit(1);
+
+  return org?.slug ?? null;
+}
+
+async function revalidateContactsPath(
+  orgId: string,
+  personId: string,
+): Promise<void> {
+  const slug = await getOrgSlug(orgId);
+  if (!slug) return;
+  revalidatePath(`/${slug}/persons/${personId}/contacts`);
+}
 
 // ---------------------------------------------------------------------------
 // Approved Contacts CRUD
@@ -80,6 +101,8 @@ export async function createApprovedContact(
     after: contact,
   }, { userId, organisationId: orgId });
 
+  await revalidateContactsPath(orgId, data.personId);
+
   return { success: true, data: contact };
 }
 
@@ -122,6 +145,8 @@ export async function updateApprovedContact(
     before: existing,
     after: updated,
   }, { userId, organisationId: orgId });
+
+  await revalidateContactsPath(orgId, existing.personId);
 
   return { success: true, data: updated };
 }
@@ -238,6 +263,8 @@ export async function createContactSchedule(
     after: schedule,
   }, { userId, organisationId: orgId });
 
+  await revalidateContactsPath(orgId, data.personId);
+
   return { success: true, data: schedule };
 }
 
@@ -279,6 +306,8 @@ export async function updateContactScheduleStatus(
     before: { status: existing.status },
     after: { status },
   }, { userId, organisationId: orgId });
+
+  await revalidateContactsPath(orgId, existing.personId);
 
   return { success: true, data: updated };
 }
@@ -379,6 +408,8 @@ export async function createContactRecord(
     before: null,
     after: record,
   }, { userId, organisationId: orgId });
+
+  await revalidateContactsPath(orgId, data.personId);
 
   return { success: true, data: record };
 }
