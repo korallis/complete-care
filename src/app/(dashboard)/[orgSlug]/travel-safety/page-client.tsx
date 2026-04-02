@@ -24,11 +24,6 @@ import type {
   WelfareCheck,
 } from '@/lib/db/schema/visit-tasks';
 
-type StaffMember = {
-  id: string;
-  name: string | null;
-};
-
 type ClientOption = {
   id: string;
   fullName: string;
@@ -43,7 +38,6 @@ interface TravelSafetyPageClientProps {
   orgSlug: string;
   currentUserId: string;
   role: Role;
-  staffMembers: StaffMember[];
   clientOptions: ClientOption[];
   travelRecords: TravelRecord[];
   welfareChecks: WelfareCheck[];
@@ -143,7 +137,6 @@ export function TravelSafetyPageClient({
   orgSlug,
   currentUserId,
   role,
-  staffMembers,
   clientOptions,
   travelRecords,
   welfareChecks,

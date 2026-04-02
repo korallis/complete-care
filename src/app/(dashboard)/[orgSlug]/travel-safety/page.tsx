@@ -3,7 +3,7 @@ import { asc, eq } from 'drizzle-orm';
 import { notFound, redirect } from 'next/navigation';
 import { auth } from '@/auth';
 import { db } from '@/lib/db';
-import { memberships, persons, users } from '@/lib/db/schema';
+import { persons } from '@/lib/db/schema';
 import { hasPermission } from '@/lib/rbac/permissions';
 import { requirePermission } from '@/lib/rbac/server';
 import {
@@ -64,21 +64,15 @@ export default async function TravelSafetyPage({
 
   const { orgId, role } = await requirePermission('read', 'rota');
 
-  const [staffMembers, clientOptions] = await Promise.all([
-    db
-      .select({ id: users.id, name: users.name })
-      .from(memberships)
-      .innerJoin(users, eq(memberships.userId, users.id))
-      .where(eq(memberships.organisationId, orgId))
-      .orderBy(asc(users.name)),
+  const clientOptions = await (
     hasPermission(role, 'read', 'persons')
       ? db
           .select({ id: persons.id, fullName: persons.fullName })
           .from(persons)
           .where(eq(persons.organisationId, orgId))
           .orderBy(asc(persons.fullName))
-      : Promise.resolve([]),
-  ]);
+      : Promise.resolve([])
+  );
 
   const thirtyDaysAgo = new Date();
   thirtyDaysAgo.setDate(thirtyDaysAgo.getDate() - 30);
@@ -120,10 +114,6 @@ export default async function TravelSafetyPage({
         orgSlug={orgSlug}
         currentUserId={session.user.id}
         role={role}
-        staffMembers={staffMembers.map((member) => ({
-          id: member.id,
-          name: member.name,
-        }))}
         clientOptions={clientOptions}
         travelRecords={travelRecordsResult.data}
         welfareChecks={welfareChecksResult.data}
