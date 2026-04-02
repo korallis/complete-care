@@ -49,6 +49,7 @@ import { medicationStock, stockBatches, stockTransactions, reorderRequests, medi
 import { schoolRecords, personalEducationPlans, pepAttendees, educationAttendance, exclusionRecords, pupilPremiumPlusRecords, sdqAssessments } from './education';
 import { evvVisits, evvCheckEvents, evvGeofenceConfigs, evvAlerts, evvAlertConfigs } from './evv';
 import { familyInvitations, familyMembers, familyMessages, familyUpdates, familyPortalSettings, familyNotifications } from './family-portal';
+import { reg44Visits, reg44Reports, reg44Recommendations, reg40NotifiableEvents, pathwayPlans, transitionMilestones, independentLivingAssessments } from './reg44';
 
 export const organisationsRelations = relations(organisations, ({ many }) => ({
   memberships: many(memberships),
@@ -179,6 +180,13 @@ export const organisationsRelations = relations(organisations, ({ many }) => ({
   familyUpdates: many(familyUpdates),
   familyPortalSettings: many(familyPortalSettings),
   familyNotifications: many(familyNotifications),
+  reg44Visits: many(reg44Visits),
+  reg44Reports: many(reg44Reports),
+  reg44Recommendations: many(reg44Recommendations),
+  reg40NotifiableEvents: many(reg40NotifiableEvents),
+  pathwayPlans: many(pathwayPlans),
+  transitionMilestones: many(transitionMilestones),
+  independentLivingAssessments: many(independentLivingAssessments),
 }));
 
 export const usersRelations = relations(users, ({ many }) => ({
