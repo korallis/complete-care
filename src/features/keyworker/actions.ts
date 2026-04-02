@@ -645,7 +645,7 @@ export async function createVisitorLogEntry(
     const slug = await getOrgSlug(orgId);
     if (slug) {
       revalidatePath(`/${slug}/visitor-log`);
-      if (existing.personVisitedId) revalidatePath(`/${slug}/persons/${existing.personVisitedId}/keyworker`);
+      if (data.personVisitedId) revalidatePath(`/${slug}/persons/${data.personVisitedId}/keyworker`);
     }
 
     return { success: true, data: row };
@@ -692,7 +692,7 @@ export async function updateVisitorLogEntry(
     const slug = await getOrgSlug(orgId);
     if (slug) {
       revalidatePath(`/${slug}/visitor-log`);
-      if (data.personVisitedId) revalidatePath(`/${slug}/persons/${data.personVisitedId}/keyworker`);
+      if (existing.personVisitedId) revalidatePath(`/${slug}/persons/${existing.personVisitedId}/keyworker`);
     }
 
     return { success: true, data: updated };

@@ -217,14 +217,14 @@ export function SanctionForm({
         <button
           type="button"
           onClick={() => router.back()}
-          disabled={isSubmitting}
+          disabled={isSubmitting || isProhibited}
           className="inline-flex items-center rounded-lg border border-[oklch(0.88_0.005_160)] bg-white px-4 py-2 text-sm font-medium text-[oklch(0.35_0.04_160)] hover:bg-[oklch(0.97_0.003_160)] transition-colors disabled:opacity-50"
         >
           Cancel
         </button>
         <button
           type="submit"
-          disabled={isSubmitting}
+          disabled={isSubmitting || isProhibited}
           className={`inline-flex items-center gap-2 rounded-lg px-4 py-2 text-sm font-medium text-white transition-colors disabled:opacity-50 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-offset-2 ${
             isProhibited
               ? 'bg-red-600 hover:bg-red-700 focus-visible:ring-red-500'
