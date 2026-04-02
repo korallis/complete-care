@@ -109,8 +109,21 @@ export function MatchingAssessmentForm({
         <CardContent className="space-y-4">
           <div className="space-y-2">
             <Label htmlFor="riskToRating">Risk-to rating *</Label>
-            <Select name="riskToRating" required>
+            <Select name="riskToRating" required defaultValue="">
+              <option value="" disabled>Select risk level</option>
+              <option value="low">Low — manageable with standard practice</option>
+              <option value="medium">Medium — requires active monitoring</option>
+              <option value="high">High — significant concerns identified</option>
             </Select>
+          </div>
+          <div className="space-y-2">
+            <Label htmlFor="riskToNarrative">Risk-to narrative</Label>
+            <Textarea
+              id="riskToNarrative"
+              name="riskToNarrative"
+              placeholder="Describe the specific risks this child may pose to existing residents (aggression, CSE involvement, substance misuse, etc.)..."
+              rows={4}
+            />
           </div>
         </CardContent>
       </Card>
@@ -128,8 +141,21 @@ export function MatchingAssessmentForm({
         <CardContent className="space-y-4">
           <div className="space-y-2">
             <Label htmlFor="riskFromRating">Risk-from rating *</Label>
-            <Select name="riskFromRating" required>
+            <Select name="riskFromRating" required defaultValue="">
+              <option value="" disabled>Select risk level</option>
+              <option value="low">Low — minimal risk to referred child</option>
+              <option value="medium">Medium — requires planned management</option>
+              <option value="high">High — significant concerns require mitigation</option>
             </Select>
+          </div>
+          <div className="space-y-2">
+            <Label htmlFor="riskFromNarrative">Risk-from narrative</Label>
+            <Textarea
+              id="riskFromNarrative"
+              name="riskFromNarrative"
+              placeholder="Describe the specific risks existing residents may pose to this child..."
+              rows={4}
+            />
           </div>
         </CardContent>
       </Card>
@@ -203,13 +229,20 @@ export function MatchingAssessmentForm({
               <Label htmlFor="overallRiskRating">
                 Overall risk rating *
               </Label>
-              <Select name="overallRiskRating" required>
+              <Select name="overallRiskRating" required defaultValue="">
+                <option value="" disabled>Select overall risk</option>
+                <option value="low">Low</option>
+                <option value="medium">Medium</option>
+                <option value="high">High</option>
               </Select>
             </div>
             <div className="space-y-2">
               <Label htmlFor="recommendation">Recommendation *</Label>
-              <Select name="recommendation" required>
-                    Accept with conditions
+              <Select name="recommendation" required defaultValue="">
+                <option value="" disabled>Select recommendation</option>
+                <option value="accept">Accept</option>
+                <option value="accept_with_conditions">Accept with conditions</option>
+                <option value="decline">Decline</option>
               </Select>
             </div>
           </div>

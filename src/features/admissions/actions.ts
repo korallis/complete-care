@@ -9,7 +9,6 @@ import {
 } from '@/lib/db/schema/admissions';
 import { eq, and, desc } from 'drizzle-orm';
 import { requirePermission } from '@/lib/rbac';
-import { assertBelongsToOrg } from '@/lib/tenant';
 import { auditLog } from '@/lib/audit';
 import {
   createReferralSchema,
