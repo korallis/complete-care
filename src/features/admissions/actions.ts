@@ -191,19 +191,34 @@ export async function getReferral(id: string) {
   const transitions = await db
     .select()
     .from(referralTransitions)
-    .where(eq(referralTransitions.referralId, id))
+    .where(
+      and(
+        eq(referralTransitions.referralId, id),
+        eq(referralTransitions.organisationId, organisationId),
+      ),
+    )
     .orderBy(desc(referralTransitions.createdAt));
 
   const assessments = await db
     .select()
     .from(matchingAssessments)
-    .where(eq(matchingAssessments.referralId, id))
+    .where(
+      and(
+        eq(matchingAssessments.referralId, id),
+        eq(matchingAssessments.organisationId, organisationId),
+      ),
+    )
     .orderBy(desc(matchingAssessments.createdAt));
 
   const checklist = await db
     .select()
     .from(admissionChecklistItems)
-    .where(eq(admissionChecklistItems.referralId, id));
+    .where(
+      and(
+        eq(admissionChecklistItems.referralId, id),
+        eq(admissionChecklistItems.organisationId, organisationId),
+      ),
+    );
 
   return { referral, transitions, assessments, checklist };
 }
@@ -261,7 +276,12 @@ export async function createMatchingAssessment(input: unknown) {
   await db
     .update(referrals)
     .set({ status: 'assessment_complete', updatedAt: new Date() })
-    .where(eq(referrals.id, data.referralId));
+    .where(
+      and(
+        eq(referrals.id, data.referralId),
+        eq(referrals.organisationId, organisationId),
+      ),
+    );
 
   await recordTransition({
     organisationId,
@@ -317,7 +337,12 @@ export async function recordDecision(input: unknown) {
       acceptanceConditions: data.acceptanceConditions ?? null,
       updatedAt: now,
     })
-    .where(eq(referrals.id, data.referralId));
+    .where(
+      and(
+        eq(referrals.id, data.referralId),
+        eq(referrals.organisationId, organisationId),
+      ),
+    );
 
   await recordTransition({
     organisationId,
@@ -379,7 +404,12 @@ export async function updateChecklistItem(input: unknown) {
       notes: data.notes ?? item.notes,
       updatedAt: new Date(),
     })
-    .where(eq(admissionChecklistItems.id, data.id));
+    .where(
+      and(
+        eq(admissionChecklistItems.id, data.id),
+        eq(admissionChecklistItems.organisationId, organisationId),
+      ),
+    );
 
   await auditLog('update', 'admission_checklist_item', data.id, {
     before: { completed: item.completed },
@@ -448,7 +478,12 @@ export async function completeAdmission(input: unknown) {
       admittedBy: userId,
       updatedAt: now,
     })
-    .where(eq(referrals.id, data.referralId));
+    .where(
+      and(
+        eq(referrals.id, data.referralId),
+        eq(referrals.organisationId, organisationId),
+      ),
+    );
 
   await recordTransition({
     organisationId,
