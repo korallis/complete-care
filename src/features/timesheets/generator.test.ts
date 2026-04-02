@@ -117,6 +117,33 @@ describe('generatePayroll', () => {
     expect(payroll.rows[0].totalPay).toBe(198);
   });
 
+  it('excludes non-approved timesheet statuses from payroll totals', () => {
+    const entries: TimesheetEntry[] = [
+      makeEntry({ status: 'approved', totalHours: 8, overtimeHours: 0, payRate: 12 }),
+      makeEntry({
+        shiftDate: '2026-04-07',
+        status: 'submitted',
+        totalHours: 10,
+        overtimeHours: 2,
+        payRate: 30,
+      }),
+      makeEntry({
+        shiftDate: '2026-04-08',
+        status: 'rejected',
+        totalHours: 6,
+        overtimeHours: 0,
+        payRate: 40,
+      }),
+    ];
+
+    const payroll = generatePayroll(entries, '2026-04-06', '2026-04-12');
+
+    expect(payroll.staffCount).toBe(1);
+    expect(payroll.totalHours).toBe(8);
+    expect(payroll.totalOvertimeHours).toBe(0);
+    expect(payroll.totalAmount).toBe(96);
+  });
+
   it('handles multiple staff members', () => {
     const entries: TimesheetEntry[] = [
       makeEntry({ staffId: 'staff-1', staffName: 'Alice Smith', totalHours: 8, payRate: 12 }),
@@ -164,11 +191,11 @@ describe('payrollToCSV', () => {
 
   it('escapes staff names with quotes', () => {
     const entries: TimesheetEntry[] = [
-      makeEntry({ staffName: 'O\'Brien, Pat', totalHours: 8, payRate: 10 }),
+      makeEntry({ staffName: 'Pat "PJ" O\'Brien, Sr.', totalHours: 8, payRate: 10 }),
     ];
     const payroll = generatePayroll(entries, '2026-04-06', '2026-04-12');
 
     const csv = payrollToCSV(payroll);
-    expect(csv).toContain('"O\'Brien, Pat"');
+    expect(csv).toContain('"Pat ""PJ"" O\'Brien, Sr."');
   });
 });
