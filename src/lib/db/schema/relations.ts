@@ -46,6 +46,7 @@ import { approvedContacts, contactSchedules, contactRecords } from './contacts';
 import { goals, goalReviews, skillDomains, skills, skillAssessments, communityAccess, supportHours } from './outcomes';
 import { weightSchedules, weightRecords, waterlowAssessments, wounds, woundAssessments } from './weight-wounds';
 import { medicationStock, stockBatches, stockTransactions, reorderRequests, medicationErrors, handoverReports, topicalMar, topicalMarAdministrations, homelyRemedyProtocols, homelyRemedyAdministrations } from './stock-management';
+import { schoolRecords, personalEducationPlans, pepAttendees, educationAttendance, exclusionRecords, pupilPremiumPlusRecords, sdqAssessments } from './education';
 
 export const organisationsRelations = relations(organisations, ({ many }) => ({
   memberships: many(memberships),
@@ -158,6 +159,13 @@ export const organisationsRelations = relations(organisations, ({ many }) => ({
   topicalMarAdministrations: many(topicalMarAdministrations),
   homelyRemedyProtocols: many(homelyRemedyProtocols),
   homelyRemedyAdministrations: many(homelyRemedyAdministrations),
+  schoolRecords: many(schoolRecords),
+  personalEducationPlans: many(personalEducationPlans),
+  pepAttendees: many(pepAttendees),
+  educationAttendance: many(educationAttendance),
+  exclusionRecords: many(exclusionRecords),
+  pupilPremiumPlusRecords: many(pupilPremiumPlusRecords),
+  sdqAssessments: many(sdqAssessments),
 }));
 
 export const usersRelations = relations(users, ({ many }) => ({
