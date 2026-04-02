@@ -1,0 +1,216 @@
+{
+  "groupId": "children-core-missing-contacts",
+  "testedAt": "2026-04-02T11:01:02Z",
+  "isolation": {
+    "appUrl": "http://localhost:3200",
+    "namespace": "childcore-c-20260402",
+    "ownerAccount": "childcore-c-owner@example.test",
+    "organisation": {
+      "name": "Child Core C Home",
+      "assignedSlug": "childcore-c-home",
+      "actualSlug": "child-core-c-home",
+      "domain": "Children's homes"
+    },
+    "seededPerson": {
+      "id": "19af8676-07eb-4d6b-bc1c-711f232dc720",
+      "name": "Maya Carter"
+    }
+  },
+  "toolsUsed": [
+    "agent-browser",
+    "shared-dev-server-log"
+  ],
+  "assertions": [
+    {
+      "id": "VAL-CHILD-011",
+      "title": "Each child has a pre-completed Philomena Protocol profile ready for police sharing",
+      "status": "fail",
+      "steps": [
+        {
+          "action": "Open the created child profile and inspect the visible tabs/actions.",
+          "expected": "A user-facing Philomena profile entry point is discoverable from the child profile.",
+          "observed": "The child profile exposed Overview, Care Plans, Care Notes, Risk Assessments, Documents, Body Map, Care Package, Clinical, EMAR, Incidents, Keyworker, and Timeline only; no Philomena or missing-from-care entry point was visible."
+        },
+        {
+          "action": "Open the safeguarding dashboard and inspect available safeguarding workflows.",
+          "expected": "A Philomena or missing-from-care workflow is reachable from safeguarding.",
+          "observed": "The safeguarding page showed only Record Concern, MASH Referrals, LADO Referrals, and Section 47 Investigations; no Philomena or missing-from-care option was present."
+        },
+        {
+          "action": "Open the admissions list and new referral form.",
+          "expected": "The admission/referral flow should expose or prompt the Philomena profile required on admission.",
+          "observed": "Admissions and the new referral form contained no Philomena-related control, prompt, or handover/print action."
+        },
+        {
+          "action": "Attempt a plausible child route for the Philomena profile (`/persons/{personId}/philomena`).",
+          "expected": "The route should open the Philomena profile with printable police-handover details.",
+          "observed": "The route returned a 404 page (`This page could not be found`)."
+        }
+      ],
+      "evidence": {
+        "screenshots": [
+          "children-core/children-core-missing-contacts/person-profile-overview.png",
+          "children-core/children-core-missing-contacts/safeguarding-dashboard.png",
+          "children-core/children-core-missing-contacts/admissions-page.png",
+          "children-core/children-core-missing-contacts/admissions-new-referral.png",
+          "children-core/children-core-missing-contacts/philomena-route-attempt.png"
+        ],
+        "consoleErrors": "none",
+        "network": "GET /child-core-c-home/persons/19af8676-07eb-4d6b-bc1c-711f232dc720 -> 200; GET /child-core-c-home/safeguarding -> 200; GET /child-core-c-home/admissions -> 200; GET /child-core-c-home/admissions/new -> 200; GET /child-core-c-home/persons/19af8676-07eb-4d6b-bc1c-711f232dc720/philomena -> 404"
+      },
+      "issues": "No discoverable Philomena profile surface exists in the real UI, so the required profile fields, printable/exportable police handover page, and photo-age alert could not be reached or verified."
+    },
+    {
+      "id": "VAL-CHILD-012",
+      "title": "Missing episode recorded with timestamped escalation steps",
+      "status": "fail",
+      "steps": [
+        {
+          "action": "Inspect the child profile for any missing-episode action or section.",
+          "expected": "Staff should be able to start a Missing Episode record from the child profile or related child workflow.",
+          "observed": "No missing-episode action, button, tab, or chronology shortcut was visible on the child profile."
+        },
+        {
+          "action": "Inspect the safeguarding dashboard for a missing-from-care workflow.",
+          "expected": "Safeguarding should expose missing-episode recording and escalation controls.",
+          "observed": "Safeguarding exposed concern/referral flows only; no missing-episode recording, timer, or escalation path was available."
+        },
+        {
+          "action": "Inspect admissions and referral surfaces for a missing-from-care pathway tied to child admission/setup.",
+          "expected": "If missing workflows are admission-linked, they should be discoverable from the admissions surface.",
+          "observed": "Admissions surfaces contained no missing-from-care controls or escalation configuration."
+        },
+        {
+          "action": "Attempt a plausible child route for missing episodes (`/persons/{personId}/missing-from-care`).",
+          "expected": "The route should open a missing-episode list or creation flow.",
+          "observed": "The route returned a 404 page (`This page could not be found`)."
+        }
+      ],
+      "evidence": {
+        "screenshots": [
+          "children-core/children-core-missing-contacts/person-profile-overview.png",
+          "children-core/children-core-missing-contacts/safeguarding-dashboard.png",
+          "children-core/children-core-missing-contacts/admissions-page.png",
+          "children-core/children-core-missing-contacts/admissions-new-referral.png",
+          "children-core/children-core-missing-contacts/missing-route-attempt.png"
+        ],
+        "consoleErrors": "none",
+        "network": "GET /child-core-c-home/safeguarding -> 200; GET /child-core-c-home/admissions -> 200; GET /child-core-c-home/admissions/new -> 200; GET /child-core-c-home/persons/19af8676-07eb-4d6b-bc1c-711f232dc720/missing-from-care -> 404"
+      },
+      "issues": "The real UI does not expose a Missing Episode creation or escalation surface, so staff cannot record absence, trigger timestamped escalation steps, or record the child's return."
+    },
+    {
+      "id": "VAL-CHILD-013",
+      "title": "RHI created on child's return with 72-hour compliance deadline",
+      "status": "fail",
+      "steps": [
+        {
+          "action": "Inspect the child profile and safeguarding surfaces for any Return Home Interview task, countdown, or compliance card.",
+          "expected": "A user-facing RHI task/workflow should be discoverable after a missing episode or from safeguarding/child views.",
+          "observed": "No RHI entry point, task, countdown, or overdue indicator was visible on the child profile or safeguarding dashboard."
+        },
+        {
+          "action": "Inspect the admissions surfaces for any RHI or missing-return compliance workflow.",
+          "expected": "If linked from child admissions/setup, RHI controls should appear in the admissions flow.",
+          "observed": "Admissions and the new referral form contained no RHI or return-home workflow."
+        },
+        {
+          "action": "Attempt a plausible direct child route for RHI (`/persons/{personId}/rhi`).",
+          "expected": "The route should open the Return Home Interview task/form.",
+          "observed": "The route returned a 404 page (`This page could not be found`)."
+        }
+      ],
+      "evidence": {
+        "screenshots": [
+          "children-core/children-core-missing-contacts/person-profile-overview.png",
+          "children-core/children-core-missing-contacts/safeguarding-dashboard.png",
+          "children-core/children-core-missing-contacts/admissions-page.png",
+          "children-core/children-core-missing-contacts/admissions-new-referral.png",
+          "children-core/children-core-missing-contacts/rhi-route-attempt.png"
+        ],
+        "consoleErrors": "none",
+        "network": "GET /child-core-c-home/admissions -> 200; GET /child-core-c-home/admissions/new -> 200; GET /child-core-c-home/persons/19af8676-07eb-4d6b-bc1c-711f232dc720/rhi -> 404"
+      },
+      "issues": "No Return Home Interview task or route is exposed in the real UI, so the required auto-created RHI, 72-hour countdown, escalation to the Responsible Individual, and chronology linkage cannot be performed."
+    },
+    {
+      "id": "VAL-CHILD-014",
+      "title": "Approved contacts register with court order restrictions enforced",
+      "status": "fail",
+      "steps": [
+        {
+          "action": "Open the child contact-management route.",
+          "expected": "The approved contacts register should display contact rows or provide a working form to add contacts with relationship, type, supervision, restrictions, and court-order metadata.",
+          "observed": "The page loaded an empty placeholder register with tabs and an `Add Contact` button, but no existing contacts or fields for restrictions/court-order details were present."
+        },
+        {
+          "action": "Click `Add Contact` on the register.",
+          "expected": "A form or modal should open to create an approved contact and capture restrictions/court-order conditions.",
+          "observed": "No dialog opened (`dialogCount: 0`), the URL stayed on `/contacts`, and the page remained on the same empty-state message (`No approved contacts registered for this child.`)."
+        },
+        {
+          "action": "Switch to `Scheduled Visits` and probe scheduling from the register.",
+          "expected": "Scheduling should validate against approved contacts, block unapproved/restricted contacts, and allow manager override with recorded justification when required.",
+          "observed": "The Scheduled Visits tab was another empty shell; `Schedule Visit` opened no form and there was no blocked-alert, restriction check, court-order UI, or manager-override capture available anywhere on the page."
+        }
+      ],
+      "evidence": {
+        "screenshots": [
+          "children-core/children-core-missing-contacts/contacts-register-page.png",
+          "children-core/children-core-missing-contacts/contacts-scheduled-tab.png"
+        ],
+        "consoleErrors": "none",
+        "network": "GET /child-core-c-home/persons/19af8676-07eb-4d6b-bc1c-711f232dc720/contacts -> 200; no POST/PUT requests were emitted when `Add Contact` or `Schedule Visit` were clicked"
+      },
+      "issues": "The contact-management UI is only a placeholder shell: approved contacts cannot be added, court-order restrictions cannot be entered, and the required scheduling enforcement/manager override workflow is absent."
+    },
+    {
+      "id": "VAL-CHILD-015",
+      "title": "Contact visits scheduled and recorded with child's emotional presentation",
+      "status": "fail",
+      "steps": [
+        {
+          "action": "Switch to `Scheduled Visits` and inspect the available scheduling controls.",
+          "expected": "Staff should be able to schedule a contact visit with date/time/duration/contact type/supervision data.",
+          "observed": "The tab showed only an empty-state message and a `Schedule Visit` button; clicking the button opened no form (`dialogCount: 0`) and left the page unchanged."
+        },
+        {
+          "action": "Switch to `Contact Records` and inspect the recording workflow.",
+          "expected": "Staff should be able to record the completed contact with who attended, emotional presentation before/during/after, concerns, and disclosures.",
+          "observed": "The tab showed only an empty-state message and a `Record Contact` button; clicking the button opened no form (`dialogCount: 0`) and left the page unchanged."
+        },
+        {
+          "action": "Switch to `Compliance` and inspect the tracker.",
+          "expected": "The page should show achieved-vs-planned contact frequency (for example, `Weekly phone with mum: 4/4 this month`).",
+          "observed": "The Compliance tab rendered only the empty-state message `No approved contacts to track compliance for.` with no compliance metrics or planned-vs-achieved tracker."
+        }
+      ],
+      "evidence": {
+        "screenshots": [
+          "children-core/children-core-missing-contacts/contacts-scheduled-tab.png",
+          "children-core/children-core-missing-contacts/contacts-records-tab.png",
+          "children-core/children-core-missing-contacts/contacts-compliance-tab.png"
+        ],
+        "consoleErrors": "none",
+        "network": "GET /child-core-c-home/persons/19af8676-07eb-4d6b-bc1c-711f232dc720/contacts -> 200; no POST/PUT requests were emitted when `Schedule Visit` or `Record Contact` were clicked"
+      },
+      "issues": "The page exposes labels for scheduling, recording, and compliance only; the actual contact-visit workflow is not implemented in the user-facing UI."
+    }
+  ],
+  "frictions": [
+    {
+      "description": "The onboarding flow ignored the manually entered slug `childcore-c-home` and redirected the new organisation to `child-core-c-home`, so the supplied route hints initially 404'd until I followed the actual post-onboarding URL.",
+      "resolved": true,
+      "resolution": "Used the slug shown in the live dashboard URL (`child-core-c-home`) for all subsequent browser checks while keeping the same isolated org/account.",
+      "affectedAssertions": [
+        "VAL-CHILD-011",
+        "VAL-CHILD-012",
+        "VAL-CHILD-013",
+        "VAL-CHILD-014",
+        "VAL-CHILD-015"
+      ]
+    }
+  ],
+  "blockers": [],
+  "summary": "Tested 5 assertions: 0 passed, 5 failed. Missing-from-care/Philomena/RHI surfaces are absent from the real browser UI, and the child contact-management route is exposed only as an empty placeholder shell with inert action buttons."
+}

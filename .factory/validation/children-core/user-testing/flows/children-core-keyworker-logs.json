@@ -1,0 +1,294 @@
+{
+  "groupId": "children-core-keyworker-logs",
+  "testedAt": "2026-04-02T11:31:41.600254+00:00",
+  "isolation": {
+    "appUrl": "http://localhost:3200",
+    "namespace": "childcore-d-20260402",
+    "ownerAccount": "childcore-d-owner@example.test",
+    "orgTargetName": "Child Core D Home",
+    "requestedSlug": "childcore-d-home",
+    "actualOrgSlug": "child-core-d-home",
+    "personId": "7362b951-1b5f-4ae8-b271-fc7e460cb597",
+    "personName": "Mia Dawson"
+  },
+  "toolsUsed": [
+    "agent-browser",
+    "shared dev-server log"
+  ],
+  "assertions": [
+    {
+      "id": "VAL-CHILD-016",
+      "title": "Key Worker Session Templates and Action Tracking",
+      "status": "fail",
+      "steps": [
+        {
+          "action": "Open the keyworker session form for Mia Dawson.",
+          "expected": "Structured template includes emotional check-in, week review, care plan goal progress, education, health, family contact, wishes/feelings, and action tasks assignable to staff.",
+          "observed": "Form included check-in, week review, education, health, family/contact, wishes/feelings, and action description + due date only; no visible goal-progress section or assignee field."
+        },
+        {
+          "action": "Add an action and save the session.",
+          "expected": "Action is tracked as a task with assignee and due date.",
+          "observed": "Session saved and showed a pending-action badge, but the action had only description + due date and no staff assignment."
+        },
+        {
+          "action": "Review the manager dashboard after data exists.",
+          "expected": "Dashboard shows session compliance and overdue actions.",
+          "observed": "Dashboard remained a placeholder with 'Dashboard widgets will be populated as features are added in upcoming milestones.' and no session-compliance or overdue-action widget."
+        }
+      ],
+      "evidence": {
+        "screenshots": [
+          "children-core/children-core-keyworker-logs/session-form.png",
+          "children-core/children-core-keyworker-logs/session-form-filled.png",
+          "children-core/children-core-keyworker-logs/keyworker-after-session.png",
+          "children-core/children-core-keyworker-logs/dashboard-after-data.png"
+        ],
+        "consoleErrors": "none",
+        "network": "POST /child-core-d-home/persons/7362b951-1b5f-4ae8-b271-fc7e460cb597/keyworker/sessions/new -> 200; GET /child-core-d-home/dashboard -> 200"
+      },
+      "issues": "The session form is only partially structured, actions cannot be assigned to specific staff, and the dashboard exposes no session-compliance or overdue-action tracking."
+    },
+    {
+      "id": "VAL-CHILD-017",
+      "title": "Restraint Recording with Debrief Workflow",
+      "status": "fail",
+      "steps": [
+        {
+          "action": "Open the restraint form.",
+          "expected": "Form captures child/staff involved, antecedent, approved technique, start/end or duration, injury checks, post-incident observations, and sign-off workflow cues.",
+          "observed": "Form exposed date/time, duration, technique, reason, injury-check checkboxes, and free-text debrief boxes only; there were no child/staff involved fields, antecedent field, start/end times, post-incident observations, or sign-off controls."
+        },
+        {
+          "action": "Save a restraint record without entering debrief details.",
+          "expected": "Mandatory debrief workflow blocks completion or auto-creates separate debrief tasks for child and staff.",
+          "observed": "The record saved successfully with blank debriefs, then the keyworker page only showed a warning banner that a restraint record was missing debrief."
+        },
+        {
+          "action": "Look for management review / restraint register surfaces.",
+          "expected": "A management sign-off interface and restraint register are available.",
+          "observed": "No management sign-off action or dedicated restraint register surface was exposed in the tested UI."
+        }
+      ],
+      "evidence": {
+        "screenshots": [
+          "children-core/children-core-keyworker-logs/restraint-form.png",
+          "children-core/children-core-keyworker-logs/restraint-form-filled.png",
+          "children-core/children-core-keyworker-logs/keyworker-after-restraint.png"
+        ],
+        "consoleErrors": "none",
+        "network": "POST /child-core-d-home/persons/7362b951-1b5f-4ae8-b271-fc7e460cb597/keyworker/restraints/new -> 200; GET /child-core-d-home/persons/7362b951-1b5f-4ae8-b271-fc7e460cb597/keyworker -> 200"
+      },
+      "issues": "Debriefs are not mandatory, no debrief tasks are created, and the tested UI lacks management sign-off and restraint-register views."
+    },
+    {
+      "id": "VAL-CHILD-018",
+      "title": "Sanctions Log with Prohibited Measures Safeguards",
+      "status": "fail",
+      "steps": [
+        {
+          "action": "Open the sanctions form.",
+          "expected": "Form records sanction details and blocks prohibited sanctions with a clear 'Prohibited \u2014 cannot be used' message.",
+          "observed": "The form offered a checkbox labelled 'This is a prohibited measure' instead of blocking prohibited sanctions."
+        },
+        {
+          "action": "Attempt to record a prohibited sanction.",
+          "expected": "Submission is blocked.",
+          "observed": "The save button changed to 'Record prohibited measure' and the prohibited sanction saved successfully."
+        },
+        {
+          "action": "Review the saved sanction.",
+          "expected": "Only permitted sanctions appear in the sanctions log / Reg 44 view.",
+          "observed": "The keyworker page displayed a management-warning banner for the prohibited sanction, proving the UI allows prohibited entries rather than preventing them; no Reg 44 visitor view was discovered during the tested flow."
+        }
+      ],
+      "evidence": {
+        "screenshots": [
+          "children-core/children-core-keyworker-logs/sanction-form.png",
+          "children-core/children-core-keyworker-logs/sanction-prohibited-warning.png",
+          "children-core/children-core-keyworker-logs/keyworker-after-sanction.png"
+        ],
+        "consoleErrors": "none",
+        "network": "POST /child-core-d-home/persons/7362b951-1b5f-4ae8-b271-fc7e460cb597/keyworker/sanctions/new -> 200"
+      },
+      "issues": "Prohibited sanctions are warn-only and still recordable, which does not satisfy the required safeguard."
+    },
+    {
+      "id": "VAL-CHILD-019",
+      "title": "Visitor Log (Schedule 4 Compliance)",
+      "status": "fail",
+      "steps": [
+        {
+          "action": "Open the visitor log page.",
+          "expected": "The home-level visitor log is searchable/filterable and offers entry creation.",
+          "observed": "The page showed counts and an empty-state table, but no visible search, date-range, or filter controls in the tested owner session."
+        },
+        {
+          "action": "Open the new visitor entry surface.",
+          "expected": "A visitor-entry form captures visitor name, time in/out, reason, and who was visited.",
+          "observed": "Navigating to /child-core-d-home/visitor-log/new reached /child-core-d-home/permission-denied and rendered a 404 page instead of a usable form."
+        },
+        {
+          "action": "Verify inspector / Reg 44 access and populated logging.",
+          "expected": "The completed log is accessible to inspectors / Reg 44 visitors.",
+          "observed": "Because entry creation failed and no Reg 44-specific viewer surface was exposed in the tested flow, inspector access could not be validated."
+        }
+      ],
+      "evidence": {
+        "screenshots": [
+          "children-core/children-core-keyworker-logs/visitor-log-empty.png",
+          "children-core/children-core-keyworker-logs/visitor-log-form.png"
+        ],
+        "consoleErrors": "none",
+        "network": "GET /child-core-d-home/visitor-log -> 200; GET /child-core-d-home/visitor-log/new -> 200, then GET /child-core-d-home/permission-denied -> 404"
+      },
+      "issues": "The tested owner session could not open the new-visitor page and the visitor-log surface does not expose the required search/filter controls."
+    },
+    {
+      "id": "VAL-CHILD-020",
+      "title": "Children's Wishes and Feelings Recording",
+      "status": "fail",
+      "steps": [
+        {
+          "action": "Open and complete the wishes-and-feelings form.",
+          "expected": "Staff can record the child's own words, context, and any action taken.",
+          "observed": "The form captured date, category, method, the child's words, and action taken, and the entry saved successfully."
+        },
+        {
+          "action": "Look for a care-decision prompt referencing saved wishes/feelings.",
+          "expected": "Care decision forms prompt staff to reference relevant wishes-and-feelings records.",
+          "observed": "No care-decision prompt or referencing workflow surfaced anywhere in the tested wishes/keyworker flow."
+        },
+        {
+          "action": "Inspect the child's LAC surface for an auto-generated voice summary.",
+          "expected": "A child's voice summary is generated for LAC reviews.",
+          "observed": "The /lac page did not surface any wishes/feelings/voice summary content for the newly recorded entry."
+        }
+      ],
+      "evidence": {
+        "screenshots": [
+          "children-core/children-core-keyworker-logs/voice-form.png",
+          "children-core/children-core-keyworker-logs/voice-form-filled.png",
+          "children-core/children-core-keyworker-logs/keyworker-after-voice.png",
+          "children-core/children-core-keyworker-logs/lac-page.png"
+        ],
+        "consoleErrors": "none",
+        "network": "POST /child-core-d-home/persons/7362b951-1b5f-4ae8-b271-fc7e460cb597/keyworker/voice/new -> 200; GET /child-core-d-home/persons/7362b951-1b5f-4ae8-b271-fc7e460cb597/lac -> 200"
+      },
+      "issues": "Basic wishes capture exists, but there is no discovered care-decision linkage prompt and no visible auto-generated LAC review summary."
+    },
+    {
+      "id": "VAL-CHILD-021",
+      "title": "Children's Meetings Record",
+      "status": "fail",
+      "steps": [
+        {
+          "action": "Inspect the dashboard and person/keyworker surfaces for a meetings entry point.",
+          "expected": "A house-meetings workflow is discoverable from the children's-home UI.",
+          "observed": "No meetings navigation or meeting-record entry point was visible on the tested dashboard, person, or keyworker surfaces."
+        },
+        {
+          "action": "Navigate to a likely meetings route.",
+          "expected": "A meeting template captures attendance, agenda, discussion, decisions, and actions.",
+          "observed": "GET /child-core-d-home/meetings returned the app's 404 page."
+        },
+        {
+          "action": "Look for action-tracking / Reg 44 viewing surfaces for meetings.",
+          "expected": "Meeting actions and Reg 44 access are available.",
+          "observed": "No meeting record surface, action list, or Reg 44 viewing path was discovered in the tested UI."
+        }
+      ],
+      "evidence": {
+        "screenshots": [
+          "children-core/children-core-keyworker-logs/keyworker-empty.png",
+          "children-core/children-core-keyworker-logs/meetings-route-404.png"
+        ],
+        "consoleErrors": "none",
+        "network": "GET /child-core-d-home/meetings -> 404"
+      },
+      "issues": "No user-facing children's meetings surface was present in the tested application."
+    },
+    {
+      "id": "VAL-CHILD-022",
+      "title": "Children's Complaints Recording",
+      "status": "fail",
+      "steps": [
+        {
+          "action": "Inspect the children-facing/keyworker surfaces for a complaints entry point.",
+          "expected": "A dedicated complaint workflow is discoverable.",
+          "observed": "No complaint form or complaints log entry point was visible in the tested UI."
+        },
+        {
+          "action": "Check nearby surfaces for complaint-related controls.",
+          "expected": "Complaint raising includes advocacy prompts and staged resolution tracking.",
+          "observed": "The only complaint-related UI found was 'Complaints' as a category option on the wishes-and-feelings form; there was no dedicated staged complaint workflow or advocacy prompt."
+        },
+        {
+          "action": "Navigate to a likely complaints route.",
+          "expected": "A complaints page exists.",
+          "observed": "GET /child-core-d-home/complaints returned the app's 404 page."
+        }
+      ],
+      "evidence": {
+        "screenshots": [
+          "children-core/children-core-keyworker-logs/voice-form.png",
+          "children-core/children-core-keyworker-logs/complaints-route-404.png"
+        ],
+        "consoleErrors": "none",
+        "network": "GET /child-core-d-home/complaints -> 404"
+      },
+      "issues": "Complaint handling is not implemented as a dedicated user-facing workflow; the tested UI lacks advocacy prompts, staged statuses, satisfaction capture, and report output."
+    },
+    {
+      "id": "VAL-CHILD-023",
+      "title": "Daily Log / Running Record",
+      "status": "fail",
+      "steps": [
+        {
+          "action": "Open the daily care-note form.",
+          "expected": "Daily log captures activities, meals, mood, incidents, visitors, contacts, education attendance, bedtime, and handover context.",
+          "observed": "The care-note form captured note type, shift, mood, personal care, meals/nutrition, mobility, health, handover points, and narrative, but no dedicated fields for visitors, contacts, education attendance, or bedtime."
+        },
+        {
+          "action": "Save a daily note and review the timeline.",
+          "expected": "Entries are timestamped and attributed to the author.",
+          "observed": "The note saved successfully and appeared on the care-notes timeline with author and timestamp."
+        },
+        {
+          "action": "Look for an auto-generated handover summary / Reg 44 view.",
+          "expected": "The system generates handover summary output for the incoming shift and exposes the daily log to Reg 44 viewers.",
+          "observed": "The UI only provided a manual 'Handover Points' textarea; no generated summary control or Reg 44-specific log view surfaced in the tested flow."
+        }
+      ],
+      "evidence": {
+        "screenshots": [
+          "children-core/children-core-keyworker-logs/care-note-form.png",
+          "children-core/children-core-keyworker-logs/care-note-form-filled.png",
+          "children-core/children-core-keyworker-logs/care-notes-timeline.png"
+        ],
+        "consoleErrors": "none",
+        "network": "POST /child-core-d-home/persons/7362b951-1b5f-4ae8-b271-fc7e460cb597/care-notes/new -> 200; GET /child-core-d-home/persons/7362b951-1b5f-4ae8-b271-fc7e460cb597/care-notes -> 200"
+      },
+      "issues": "The care-notes surface is a partial running record only; it lacks several required children-home fields and provides manual handover text instead of an auto-generated handover summary."
+    }
+  ],
+  "frictions": [
+    {
+      "description": "Email verification required reading the shared dev-server log, and the first verification redirect left the browser on the verify-email page with stale session state.",
+      "resolved": true,
+      "resolution": "Recovered the token from the shared dev-server log, hit the verify endpoint, then cleared the isolated browser session cookies/localStorage and logged in again.",
+      "affectedAssertions": [
+        "VAL-CHILD-016",
+        "VAL-CHILD-017",
+        "VAL-CHILD-018",
+        "VAL-CHILD-019",
+        "VAL-CHILD-020",
+        "VAL-CHILD-021",
+        "VAL-CHILD-022",
+        "VAL-CHILD-023"
+      ]
+    }
+  ],
+  "blockers": [],
+  "summary": "Tested 8 assertions: 0 passed, 8 failed, 0 blocked. Partial keyworker, wishes, and care-note surfaces exist, but required compliance behaviours are incomplete and the meetings/complaints surfaces are absent."
+}

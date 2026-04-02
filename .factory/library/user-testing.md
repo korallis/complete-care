@@ -46,6 +46,8 @@ Testing surface, required testing skills/tools, and resource cost classification
 - For org-scoped API validation, the custom `/api/auth/login` path is not sufficient to establish `activeOrgId`/role context. Use the real Auth.js credentials callback/browser login flow (or an equivalent session established through it) before running org-scoped API checks.
 - If auth/onboarding controls stop hydrating (for example the register form falls back to a `GET /register?...` submission, billing routes throw missing vendor-chunk errors, or owner-only pages suddenly 500), restart the shared Next.js dev server before treating those symptoms as product failures. A clean `PORT=3200 bun run dev` restart cleared that stale-runtime state during the foundation round-3 rerun and restored the real browser flows.
 
+- Children's-home onboarding may normalize a requested organisation slug (for example `childcore-d-home` became `child-core-d-home` during this round). Flow validators should trust the actual post-onboarding URL/redirect rather than assuming the requested slug persisted exactly.
+
 ## Known Constraints
 
 - No Docker available — all services must run natively

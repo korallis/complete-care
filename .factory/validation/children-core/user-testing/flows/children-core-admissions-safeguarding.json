@@ -1,0 +1,265 @@
+{
+  "groupId": "children-core-admissions-safeguarding",
+  "testedAt": "2026-04-02T11:14:22.506556+00:00",
+  "isolation": {
+    "appUrl": "http://localhost:3200",
+    "namespace": "childcore-b-20260402",
+    "ownerEmail": "childcore-b-owner@example.test",
+    "secondaryEmail": "childcore-b-staff@example.test",
+    "orgName": "Child Core B Home",
+    "orgSlug": "childcore-b-home",
+    "childId": "1098b5fe-83fa-4dac-a50d-f16f25bb37b9",
+    "missionDir": "/Users/leebarry/.factory/missions/0151c86a-d61e-40f6-af14-f9e925a367f3"
+  },
+  "toolsUsed": [
+    "agent-browser",
+    "shared dev-server log"
+  ],
+  "assertions": [
+    {
+      "id": "VAL-CHILD-007",
+      "title": "Referral progresses through staged workflow with matching assessment",
+      "status": "fail",
+      "steps": [
+        {
+          "action": "Create referral 'Mason Reed' at /child-core-b-home/admissions/new and open the referral detail page.",
+          "expected": "Referral starts at Received and is traceable in the workflow timeline.",
+          "observed": "Mason Reed was created, listed on Admissions, and the timeline recorded None \u2192 Received with timestamp 02/04/2026 11:56:37."
+        },
+        {
+          "action": "Complete the matching/impact assessment for Mason Reed.",
+          "expected": "Referral moves to Assessment Complete with risk rating and recommendation saved on the referral record.",
+          "observed": "Assessment saved with risk-to medium, risk-from medium, overall medium, recommendation accept_with_conditions, and the timeline recorded Received \u2192 Assessment Complete at 11:57:56."
+        },
+        {
+          "action": "Record an acceptance decision, complete the admission checklist, and finish admission for Mason Reed.",
+          "expected": "Referral moves through Accepted to Admitted after checklist completion.",
+          "observed": "The decision was saved, all 10 checklist items could be completed, and the timeline recorded Assessment Complete \u2192 Accepted at 11:58:21 and Accepted \u2192 Admitted at 12:00:49."
+        },
+        {
+          "action": "Create referral 'Lily Shaw', complete a high-risk assessment, and decline it with a reason.",
+          "expected": "Declined referrals are archived with the reason preserved.",
+          "observed": "The decline reason was saved and the timeline recorded Assessment Complete \u2192 Declined at 12:02:43, but Lily Shaw remained on the main Admissions list with no archive/filter separation."
+        }
+      ],
+      "evidence": {
+        "screenshots": [
+          "children-core/children-core-admissions-safeguarding/referral-new-form-accepted.png",
+          "children-core/children-core-admissions-safeguarding/referrals-list-after-create.png",
+          "children-core/children-core-admissions-safeguarding/referral-mason-received.png",
+          "children-core/children-core-admissions-safeguarding/referral-matching-assessment-form.png",
+          "children-core/children-core-admissions-safeguarding/referral-mason-decision-form.png",
+          "children-core/children-core-admissions-safeguarding/referral-mason-checklist-complete.png",
+          "children-core/children-core-admissions-safeguarding/referral-mason-admitted.png",
+          "children-core/children-core-admissions-safeguarding/referral-mason-timeline.png",
+          "children-core/children-core-admissions-safeguarding/referral-lily-decision-form.png",
+          "children-core/children-core-admissions-safeguarding/referral-lily-declined.png",
+          "children-core/children-core-admissions-safeguarding/referral-lily-timeline.png",
+          "children-core/children-core-admissions-safeguarding/referrals-list-final.png"
+        ],
+        "consoleErrors": "none",
+        "network": "Shared dev-server log shows POST /child-core-b-home/admissions/new -> 200 for both referrals; POST /child-core-b-home/admissions/55c7ce0b-93f1-4285-a7e6-b4d3c0323523 -> 200 for assessment, decision, checklist toggles, and admission; POST /child-core-b-home/admissions/acbfd9b1-8611-4f95-a2da-23c539912898 -> 200 for assessment and decline."
+      },
+      "issues": "The decline path does not archive declined referrals; Lily Shaw remained on the main admissions list instead of moving to an archive view."
+    },
+    {
+      "id": "VAL-CHILD-008",
+      "title": "Any staff member can record a safeguarding concern with verbatim capture and body map",
+      "status": "fail",
+      "steps": [
+        {
+          "action": "Invite/register the secondary carer account and open /child-core-b-home/safeguarding/concerns/new for Ava Turner.",
+          "expected": "A non-privileged staff member can access a concern form with verbatim capture and a body-map annotation tool.",
+          "observed": "The invited carer could reach the form, which included a 'Child's Own Words (Verbatim)' field, but the body-map surface was only a toggle exposing a plain 'Body Map Record ID' text input rather than an annotation tool."
+        },
+        {
+          "action": "Enter valid concern details and submit the form multiple times (direct click and semantic button click).",
+          "expected": "The concern should be created immediately and become visible for DSL follow-up.",
+          "observed": "After filling a valid date/time, severity, description, verbatim account, presentation, category, location, witnesses, and immediate actions, clicking Submit Concern never navigated away or issued any POST request. The page stayed on the form with no console error."
+        },
+        {
+          "action": "Attempt to continue to DSL review / immutability verification from the submitted concern.",
+          "expected": "The saved concern should exist and be immutable after submission.",
+          "observed": "No concern record was created, so DSL visibility and immutability enforcement could not be exercised from the real UI."
+        }
+      ],
+      "evidence": {
+        "screenshots": [
+          "children-core/children-core-admissions-safeguarding/concern-form-initial.png",
+          "children-core/children-core-admissions-safeguarding/concern-form-bodymap-toggle.png",
+          "children-core/children-core-admissions-safeguarding/concern-form-filled.png",
+          "children-core/children-core-admissions-safeguarding/concern-submit-second-attempt.png",
+          "children-core/children-core-admissions-safeguarding/concern-submit-roleclick.png"
+        ],
+        "consoleErrors": "none",
+        "network": "agent-browser request log showed repeated GET /child-core-b-home/safeguarding/concerns/new?... -> 200, but no POST request was emitted on any submit attempt. The shared dev-server log likewise contains no POST for the concern route."
+      },
+      "issues": "The concern form is not submittable from the real UI, and the 'body map' surface is only a record-ID field rather than an annotation tool."
+    },
+    {
+      "id": "VAL-CHILD-009",
+      "title": "DSL reviews concern and records decision with onward referral tracking",
+      "status": "blocked",
+      "steps": [
+        {
+          "action": "Open /child-core-b-home/safeguarding/dsl-review as the owner account.",
+          "expected": "A DSL dashboard should list open concerns and allow decisions for internal monitoring, MASH, LADO, or police referral with referral tracking fields.",
+          "observed": "The route rendered only a placeholder panel stating that the DSL Review Dashboard will display open concerns once authentication is configured. No concern list, detail view, or decision form was present."
+        },
+        {
+          "action": "Verify chronology linkage for concern and referral decisions.",
+          "expected": "The reviewed concern and onward referral should appear in the child's safeguarding chronology.",
+          "observed": "The chronology route is also a placeholder, so concern-to-referral linkage could not be verified through the UI."
+        }
+      ],
+      "evidence": {
+        "screenshots": [
+          "children-core/children-core-admissions-safeguarding/dsl-review-dashboard.png",
+          "children-core/children-core-admissions-safeguarding/chronology-page.png"
+        ],
+        "consoleErrors": "none",
+        "network": "Shared dev-server log shows GET /child-core-b-home/safeguarding/dsl-review -> 200 and GET /child-core-b-home/safeguarding/chronology/1098b5fe-83fa-4dac-a50d-f16f25bb37b9 -> 200, but both routes only render placeholder content."
+      },
+      "issues": "Blocked because the DSL review user surface is not implemented beyond a placeholder, and no submitted concern exists for review because VAL-CHILD-008 failed."
+    },
+    {
+      "id": "VAL-CHILD-010",
+      "title": "LADO referrals (allegations against staff) and Section 47 enquiries tracked separately",
+      "status": "fail",
+      "steps": [
+        {
+          "action": "Log in as the invited carer and navigate directly to /child-core-b-home/safeguarding/lado.",
+          "expected": "Standard staff should be denied access to restricted LADO records.",
+          "observed": "The carer account loaded the LADO Referrals page successfully and saw the restricted-access placeholder content instead of an access-denied state."
+        },
+        {
+          "action": "Review the LADO and Section 47 routes for usable tracking workflows.",
+          "expected": "The UI should expose separate tracking for LADO allegations and Section 47 enquiries, including the required details and chronology linkage.",
+          "observed": "Both /safeguarding/lado and /safeguarding/section47 render placeholder panels only; there is no LADO referral form/list, no Section 47 tracking form/list, and no chronology integration surface."
+        }
+      ],
+      "evidence": {
+        "screenshots": [
+          "children-core/children-core-admissions-safeguarding/staff-lado-access.png",
+          "children-core/children-core-admissions-safeguarding/section47-page.png"
+        ],
+        "consoleErrors": "none",
+        "network": "Shared dev-server log shows GET /child-core-b-home/safeguarding/lado -> 200 for the staff account and GET /child-core-b-home/safeguarding/section47 -> 200 for the owner account, but both pages only expose placeholder content."
+      },
+      "issues": "Restricted-access enforcement is missing on the LADO route for standard staff, and neither the LADO nor Section 47 workflows are implemented beyond placeholder pages."
+    },
+    {
+      "id": "VAL-CHILD-024",
+      "title": "Risk assessment evaluates impact of new child on existing residents and vice versa",
+      "status": "pass",
+      "steps": [
+        {
+          "action": "Open Mason Reed's referral and inspect the Assessment tab before completion.",
+          "expected": "The assessment form should cover risk-to, risk-from, compatibility/capacity, and overall recommendation sections.",
+          "observed": "The form included risk-to and risk-from rating/narrative sections, occupancy and beds-available capacity fields, overall risk, recommendation, rationale, and optional conditions."
+        },
+        {
+          "action": "Submit a completed matching/impact assessment.",
+          "expected": "A risk rating and recommendation should be saved and linked to the referral record.",
+          "observed": "Submitting the assessment saved medium risk ratings and an accept_with_conditions recommendation, unlocked the Decision tab, and persisted a read-only 'Matching / impact risk assessment' panel on the referral."
+        }
+      ],
+      "evidence": {
+        "screenshots": [
+          "children-core/children-core-admissions-safeguarding/referral-matching-assessment-form.png",
+          "children-core/children-core-admissions-safeguarding/referral-mason-assessment-readonly.png"
+        ],
+        "consoleErrors": "none",
+        "network": "Shared dev-server log shows POST /child-core-b-home/admissions/55c7ce0b-93f1-4285-a7e6-b4d3c0323523 -> 200 when the assessment was submitted."
+      },
+      "issues": null
+    },
+    {
+      "id": "VAL-CHILD-025",
+      "title": "Child's safeguarding chronology auto-generated from all concern, referral, and incident records",
+      "status": "blocked",
+      "steps": [
+        {
+          "action": "Open /child-core-b-home/safeguarding/chronology/1098b5fe-83fa-4dac-a50d-f16f25bb37b9 for Ava Turner.",
+          "expected": "A read-only chronology should aggregate safeguarding events and expose Add Entry / Export PDF controls where applicable.",
+          "observed": "The route only displayed placeholder text saying chronology will display once authentication is configured. No entries, no manual-entry control, and no PDF export button were present."
+        },
+        {
+          "action": "Attempt to validate auto-generated entries from concerns/referrals.",
+          "expected": "Concern and referral events should appear chronologically for the child.",
+          "observed": "Chronology population could not be tested because the chronology surface is not implemented and the concern form in VAL-CHILD-008 never created a record."
+        }
+      ],
+      "evidence": {
+        "screenshots": [
+          "children-core/children-core-admissions-safeguarding/chronology-page.png"
+        ],
+        "consoleErrors": "none",
+        "network": "Shared dev-server log shows GET /child-core-b-home/safeguarding/chronology/1098b5fe-83fa-4dac-a50d-f16f25bb37b9 -> 200, but the page is placeholder-only."
+      },
+      "issues": "Blocked because the chronology page is not implemented beyond a placeholder and no concern record was created to feed it."
+    },
+    {
+      "id": "VAL-CROSS-004",
+      "title": "Safeguarding-to-action flow",
+      "status": "blocked",
+      "steps": [
+        {
+          "action": "As the invited carer, attempt the first step of the flow by submitting a safeguarding concern for Ava Turner.",
+          "expected": "A submitted concern should become immediately visible to the DSL and preserve the verbatim recording.",
+          "observed": "The form captured the verbatim text field but no submit attempt issued a POST request, so no concern was created."
+        },
+        {
+          "action": "As the owner, open the DSL dashboard and chronology routes to continue the flow.",
+          "expected": "The DSL should review the concern, track onward referrals, and maintain a full chronological history per child.",
+          "observed": "The DSL review page and chronology page both rendered placeholders only, so there was no real user surface for decisioning, referral tracking, or chronology review."
+        }
+      ],
+      "evidence": {
+        "screenshots": [
+          "children-core/children-core-admissions-safeguarding/concern-form-initial.png",
+          "children-core/children-core-admissions-safeguarding/concern-submit-roleclick.png",
+          "children-core/children-core-admissions-safeguarding/dsl-review-dashboard.png",
+          "children-core/children-core-admissions-safeguarding/chronology-page.png"
+        ],
+        "consoleErrors": "none",
+        "network": "No POST was observed for /child-core-b-home/safeguarding/concerns/new on submit attempts; downstream routes GET /child-core-b-home/safeguarding/dsl-review -> 200 and GET /child-core-b-home/safeguarding/chronology/1098b5fe-83fa-4dac-a50d-f16f25bb37b9 -> 200 returned placeholder pages only."
+      },
+      "issues": "Blocked by the non-functional concern submission surface and missing DSL review/chronology implementations."
+    }
+  ],
+  "frictions": [
+    {
+      "description": "The invited staff user could not accept the invitation in one continuous flow: after registration the app redirected the new user to /onboarding, so I had to verify the email, log in, and then reopen the invitation URL to join the organisation.",
+      "resolved": true,
+      "resolution": "Completed the invite by reusing the logged invitation URL after the staff account was verified and signed in.",
+      "affectedAssertions": [
+        "VAL-CHILD-008",
+        "VAL-CHILD-010"
+      ]
+    }
+  ],
+  "blockers": [
+    {
+      "description": "The safeguarding concern form never emitted a POST request or navigated away after valid submit attempts, preventing creation of the prerequisite concern record.",
+      "affectedAssertions": [
+        "VAL-CHILD-008",
+        "VAL-CHILD-009",
+        "VAL-CHILD-025",
+        "VAL-CROSS-004"
+      ],
+      "quickFixAttempted": "Retried with direct click, semantic button click, a filled datetime-local value, and with the body-map toggle both on and off; every attempt stayed on the form with no console error and no POST request."
+    },
+    {
+      "description": "The DSL review and chronology routes are placeholder-only surfaces, and the Section 47/LADO routes are also placeholders rather than working tracking flows.",
+      "affectedAssertions": [
+        "VAL-CHILD-009",
+        "VAL-CHILD-010",
+        "VAL-CHILD-025",
+        "VAL-CROSS-004"
+      ],
+      "quickFixAttempted": "Opened each route directly as the appropriate user role and confirmed the placeholder text rendered instead of real workflow UI."
+    }
+  ],
+  "summary": "Tested 7 assertions: 1 passed, 3 failed, and 3 were blocked by missing or non-functional safeguarding surfaces. Admissions workflow mostly works end-to-end, but declined referrals are not archived; safeguarding concern submission, DSL review, chronology, and restricted LADO/Section 47 tracking are incomplete."
+}

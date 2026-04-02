@@ -1,0 +1,126 @@
+{
+  "milestone": "children-core",
+  "round": 1,
+  "status": "fail",
+  "assertionsSummary": {
+    "total": 26,
+    "passed": 1,
+    "failed": 22,
+    "blocked": 3
+  },
+  "passedAssertions": [
+    "VAL-CHILD-024"
+  ],
+  "failedAssertions": [
+    {
+      "id": "VAL-CHILD-001",
+      "reason": "The dashboard does render the nine standards, but it does not expose the required compliant/partially-compliant/non-compliant states or an expanded evidence view with timestamps and authors."
+    },
+    {
+      "id": "VAL-CHILD-002",
+      "reason": "Evidence can only be entered from the standard page via a generic Record ID modal; the record detail page lacks the required linking action and the bidirectional linkage badge."
+    },
+    {
+      "id": "VAL-CHILD-003",
+      "reason": "The children's register route is present but only renders an empty state with no user-facing admission, departure, or filter workflow."
+    },
+    {
+      "id": "VAL-CHILD-004",
+      "reason": "The legal-status workflow is not testable through the real UI because the LAC overview is empty and the creation route returns 404."
+    },
+    {
+      "id": "VAL-CHILD-005",
+      "reason": "No social worker or IRO contact surface is rendered on the child profile, and the missing LAC creation route prevents populating or changing those details."
+    },
+    {
+      "id": "VAL-CHILD-006",
+      "reason": "The placement-plan list exists only as an empty state, the creation route is missing, and the dashboard does not expose the required 5-working-day countdown or review alerts."
+    },
+    {
+      "id": "VAL-CHILD-007",
+      "reason": "The decline path does not archive declined referrals; Lily Shaw remained on the main admissions list instead of moving to an archive view."
+    },
+    {
+      "id": "VAL-CHILD-008",
+      "reason": "The concern form is not submittable from the real UI, and the 'body map' surface is only a record-ID field rather than an annotation tool."
+    },
+    {
+      "id": "VAL-CHILD-010",
+      "reason": "Restricted-access enforcement is missing on the LADO route for standard staff, and neither the LADO nor Section 47 workflows are implemented beyond placeholder pages."
+    },
+    {
+      "id": "VAL-CHILD-011",
+      "reason": "No discoverable Philomena profile surface exists in the real UI, so the required profile fields, printable/exportable police handover page, and photo-age alert could not be reached or verified."
+    },
+    {
+      "id": "VAL-CHILD-012",
+      "reason": "The real UI does not expose a Missing Episode creation or escalation surface, so staff cannot record absence, trigger timestamped escalation steps, or record the child's return."
+    },
+    {
+      "id": "VAL-CHILD-013",
+      "reason": "No Return Home Interview task or route is exposed in the real UI, so the required auto-created RHI, 72-hour countdown, escalation to the Responsible Individual, and chronology linkage cannot be performed."
+    },
+    {
+      "id": "VAL-CHILD-014",
+      "reason": "The contact-management UI is only a placeholder shell: approved contacts cannot be added, court-order restrictions cannot be entered, and the required scheduling enforcement/manager override workflow is absent."
+    },
+    {
+      "id": "VAL-CHILD-015",
+      "reason": "The page exposes labels for scheduling, recording, and compliance only; the actual contact-visit workflow is not implemented in the user-facing UI."
+    },
+    {
+      "id": "VAL-CHILD-016",
+      "reason": "The session form is only partially structured, actions cannot be assigned to specific staff, and the dashboard exposes no session-compliance or overdue-action tracking."
+    },
+    {
+      "id": "VAL-CHILD-017",
+      "reason": "Debriefs are not mandatory, no debrief tasks are created, and the tested UI lacks management sign-off and restraint-register views."
+    },
+    {
+      "id": "VAL-CHILD-018",
+      "reason": "Prohibited sanctions are warn-only and still recordable, which does not satisfy the required safeguard."
+    },
+    {
+      "id": "VAL-CHILD-019",
+      "reason": "The tested owner session could not open the new-visitor page and the visitor-log surface does not expose the required search/filter controls."
+    },
+    {
+      "id": "VAL-CHILD-020",
+      "reason": "Basic wishes capture exists, but there is no discovered care-decision linkage prompt and no visible auto-generated LAC review summary."
+    },
+    {
+      "id": "VAL-CHILD-021",
+      "reason": "No user-facing children's meetings surface was present in the tested application."
+    },
+    {
+      "id": "VAL-CHILD-022",
+      "reason": "Complaint handling is not implemented as a dedicated user-facing workflow; the tested UI lacks advocacy prompts, staged statuses, satisfaction capture, and report output."
+    },
+    {
+      "id": "VAL-CHILD-023",
+      "reason": "The care-notes surface is a partial running record only; it lacks several required children-home fields and provides manual handover text instead of an auto-generated handover summary."
+    }
+  ],
+  "blockedAssertions": [
+    {
+      "id": "VAL-CHILD-009",
+      "blockedBy": "Blocked because the DSL review user surface is not implemented beyond a placeholder, and no submitted concern exists for review because VAL-CHILD-008 failed."
+    },
+    {
+      "id": "VAL-CHILD-025",
+      "blockedBy": "Blocked because the chronology page is not implemented beyond a placeholder and no concern record was created to feed it."
+    },
+    {
+      "id": "VAL-CROSS-004",
+      "blockedBy": "Blocked by the non-functional concern submission surface and missing DSL review/chronology implementations."
+    }
+  ],
+  "appliedUpdates": [
+    {
+      "target": "user-testing.md",
+      "description": "Documented that children's-home onboarding may normalize requested org slugs, so validators should follow the actual redirected slug after onboarding.",
+      "source": "flow-report"
+    }
+  ],
+  "previousRound": null
+}

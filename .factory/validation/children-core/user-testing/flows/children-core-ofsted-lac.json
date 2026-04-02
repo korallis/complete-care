@@ -1,0 +1,236 @@
+{
+  "groupId": "children-core-ofsted-lac",
+  "testedAt": "2026-04-02T11:27:30.974672+00:00",
+  "isolation": {
+    "appUrl": "http://localhost:3200",
+    "namespace": "childcore-a-20260402",
+    "ownerAccount": "childcore-a-owner@example.test",
+    "organisation": {
+      "name": "Child Core A Home",
+      "requestedSlug": "childcore-a-home",
+      "actualSlug": "childcore-a-home",
+      "domain": "Children's homes"
+    },
+    "child": {
+      "id": "dad70c1e-640f-47cb-a2d7-4418649829fe",
+      "name": "Ava Validation"
+    },
+    "carePlan": {
+      "id": "83f6867a-43a2-4054-aff0-58cfb578b869",
+      "title": "Placement support evidence plan"
+    },
+    "missionDir": "/Users/leebarry/.factory/missions/0151c86a-d61e-40f6-af14-f9e925a367f3"
+  },
+  "toolsUsed": [
+    "agent-browser",
+    "shared dev-server log"
+  ],
+  "assertions": [
+    {
+      "id": "VAL-CHILD-001",
+      "title": "Ofsted 9 Quality Standards checklist renders with evidence linking",
+      "status": "fail",
+      "steps": [
+        {
+          "action": "Open /childcore-a-home/ofsted and inspect the rendered standards.",
+          "expected": "All 9 Ofsted Quality Standards render with explicit compliance states and can be expanded from the dashboard.",
+          "observed": "The dashboard rendered 9 unique standard links, but each card showed percentage scores (for example 0% or 20%) instead of compliant / partially compliant / non-compliant labels."
+        },
+        {
+          "action": "Open the Care Planning standard from the dashboard.",
+          "expected": "Clicking a standard expands or reveals linked evidence items with timestamps and authors.",
+          "observed": "Clicking Regulation 14 navigated to a separate 'Standard Evidence' page that showed only one evidence row ('new' with a description and Fully Evidenced badge). No timestamp, author, or inline dashboard expansion was present."
+        }
+      ],
+      "evidence": {
+        "screenshots": [
+          "children-core/children-core-ofsted-lac/VAL-CHILD-001-dashboard.png",
+          "children-core/children-core-ofsted-lac/VAL-CHILD-001-standard-detail.png"
+        ],
+        "consoleErrors": "none",
+        "network": "Shared dev-server log shows GET /childcore-a-home/ofsted -> 200, GET /childcore-a-home/ofsted/standards/9571d42f-56c9-4aa2-a7d3-aaa9a8b77cf7 -> 200, and POST /childcore-a-home/ofsted/standards/9571d42f-56c9-4aa2-a7d3-aaa9a8b77cf7 -> 200 while the standard detail loaded. DOM inspection counted 9 unique standard IDs on the dashboard."
+      },
+      "issues": "The dashboard does render the nine standards, but it does not expose the required compliant/partially-compliant/non-compliant states or an expanded evidence view with timestamps and authors."
+    },
+    {
+      "id": "VAL-CHILD-002",
+      "title": "Staff can link an existing record as evidence against a Quality Standard",
+      "status": "fail",
+      "steps": [
+        {
+          "action": "Open the existing care-plan detail page for Ava Validation.",
+          "expected": "The record detail page should expose a 'Link to Quality Standard' control and show any linked standards on the record itself.",
+          "observed": "The care-plan page showed Version history, Export PDF, Edit plan, and Submit for review actions, but no 'Link to Quality Standard' control or linkage badge anywhere on the record."
+        },
+        {
+          "action": "Open the existing Regulation 14 detail page and inspect the available linking workflow.",
+          "expected": "If linking is supported, the UI should link from the record detail and remain bidirectional.",
+          "observed": "A 'Link Evidence' modal exists only on the standard-detail page. It accepts a raw Record ID and description, but the originating care-plan record still shows no standard badge or backlink after the evidence is present under the standard."
+        }
+      ],
+      "evidence": {
+        "screenshots": [
+          "children-core/children-core-ofsted-lac/VAL-CHILD-002-care-plan-detail.png",
+          "children-core/children-core-ofsted-lac/VAL-CHILD-002-link-modal.png",
+          "children-core/children-core-ofsted-lac/VAL-CHILD-001-dashboard.png"
+        ],
+        "consoleErrors": "none",
+        "network": "Shared dev-server log shows GET /childcore-a-home/persons/dad70c1e-640f-47cb-a2d7-4418649829fe/care-plans/83f6867a-43a2-4054-aff0-58cfb578b869 -> 200 and GET/POST /childcore-a-home/ofsted/standards/9571d42f-56c9-4aa2-a7d3-aaa9a8b77cf7 -> 200. No request originated from the care-plan detail page to link a Quality Standard because no such control is rendered there."
+      },
+      "issues": "Evidence can only be entered from the standard page via a generic Record ID modal; the record detail page lacks the required linking action and the bidirectional linkage badge."
+    },
+    {
+      "id": "VAL-CHILD-003",
+      "title": "Children's register records admission and departure per Schedule 4",
+      "status": "fail",
+      "steps": [
+        {
+          "action": "Open /childcore-a-home/ofsted/register and inspect the register state.",
+          "expected": "The register should show admitted children with Schedule 4 fields and support departure updates.",
+          "observed": "The page showed '0 current residents · 0 total entries' and the empty-state message 'No children registered yet.'"
+        },
+        {
+          "action": "Inspect the page controls for adding entries or filtering current vs departed children.",
+          "expected": "The UI should expose append-only entry management plus current/departed filters.",
+          "observed": "DOM inspection found no buttons, selects, or inputs on the page, so there is no UI to add an admission, record a departure, or filter current vs departed records."
+        }
+      ],
+      "evidence": {
+        "screenshots": [
+          "children-core/children-core-ofsted-lac/VAL-CHILD-003-register.png"
+        ],
+        "consoleErrors": "none",
+        "network": "Shared dev-server log shows GET /childcore-a-home/ofsted/register -> 200. The rendered page exposed no form or filter controls."
+      },
+      "issues": "The children's register route is present but only renders an empty state with no user-facing admission, departure, or filter workflow."
+    },
+    {
+      "id": "VAL-CHILD-004",
+      "title": "Each child's legal status is recorded and tracked with change history",
+      "status": "fail",
+      "steps": [
+        {
+          "action": "Open Ava Validation's LAC page at /childcore-a-home/persons/dad70c1e-640f-47cb-a2d7-4418649829fe/lac.",
+          "expected": "The child profile should show a current legal status in the header, plus access to status history and editing.",
+          "observed": "The page only showed a 'No LAC record' empty state with Placement plans / New LAC record actions; no legal status header or history was visible."
+        },
+        {
+          "action": "Follow the visible New LAC record route directly.",
+          "expected": "A working creation/edit form should allow legal status capture, later changes, and audit history generation.",
+          "observed": "Opening /childcore-a-home/persons/dad70c1e-640f-47cb-a2d7-4418649829fe/lac/new returned a 404 page, so no legal-status form, change-history surface, or exportable record exists in the real UI."
+        }
+      ],
+      "evidence": {
+        "screenshots": [
+          "children-core/children-core-ofsted-lac/VAL-CHILD-004-lac-page.png",
+          "children-core/children-core-ofsted-lac/VAL-CHILD-004-lac-new-direct-404.png"
+        ],
+        "consoleErrors": "none",
+        "network": "Shared dev-server log shows GET /childcore-a-home/persons/dad70c1e-640f-47cb-a2d7-4418649829fe/lac -> 200 and repeated GET /childcore-a-home/persons/dad70c1e-640f-47cb-a2d7-4418649829fe/lac/new -> 404."
+      },
+      "issues": "The legal-status workflow is not testable through the real UI because the LAC overview is empty and the creation route returns 404."
+    },
+    {
+      "id": "VAL-CHILD-005",
+      "title": "Social worker and IRO contact details stored and accessible from child profile",
+      "status": "fail",
+      "steps": [
+        {
+          "action": "Inspect Ava Validation's LAC page on desktop.",
+          "expected": "The child profile should show social worker and IRO contact cards plus change/audit history.",
+          "observed": "The desktop page showed only the LAC empty state and no contact cards, audit trail entries, or contact actions."
+        },
+        {
+          "action": "Reopen the same page in an iPhone 14 viewport.",
+          "expected": "The mobile profile should expose tap-to-call / tap-to-email actions from the contact card.",
+          "observed": "The mobile view still showed only the empty state with New LAC record / Create LAC record links and no social worker or IRO contact card."
+        }
+      ],
+      "evidence": {
+        "screenshots": [
+          "children-core/children-core-ofsted-lac/VAL-CHILD-004-lac-page.png",
+          "children-core/children-core-ofsted-lac/VAL-CHILD-005-lac-mobile.png",
+          "children-core/children-core-ofsted-lac/VAL-CHILD-004-lac-new-direct-404.png"
+        ],
+        "consoleErrors": "none",
+        "network": "Shared dev-server log shows GET /childcore-a-home/persons/dad70c1e-640f-47cb-a2d7-4418649829fe/lac -> 200 and GET /childcore-a-home/persons/dad70c1e-640f-47cb-a2d7-4418649829fe/lac/new -> 404. Because the contact-record creation route is missing, no contact or audit mutation request can be issued from the real UI."
+      },
+      "issues": "No social worker or IRO contact surface is rendered on the child profile, and the missing LAC creation route prevents populating or changing those details."
+    },
+    {
+      "id": "VAL-CHILD-006",
+      "title": "Placement plan created within 5 working days, with review cycle tracking",
+      "status": "fail",
+      "steps": [
+        {
+          "action": "Open Ava Validation's placement-plan list at /childcore-a-home/persons/dad70c1e-640f-47cb-a2d7-4418649829fe/lac/placement-plans.",
+          "expected": "The page should allow creation of a placement plan with the required domain sections and review-cycle tracking.",
+          "observed": "The route loaded, but only showed 'No placement plans yet' plus a Create placement plan link. No existing plan, countdown, review reminder, or overdue alert was visible."
+        },
+        {
+          "action": "Follow the Create placement plan action.",
+          "expected": "A working placement-plan form should open so the plan can be created within the 5-working-day window.",
+          "observed": "The create route changed to /lac/placement-plans/new, but that URL resolves to a non-functional blank 404 surface with no interactive elements."
+        },
+        {
+          "action": "Inspect the organisation dashboard for the promised placement-plan deadline/countdown signal.",
+          "expected": "The manager dashboard should show a countdown or alert for plans due within 5 working days and overdue reviews.",
+          "observed": "The dashboard text contained no placement-plan countdown, due-by notice, or overdue-review alert; it remained the generic widget placeholder dashboard."
+        }
+      ],
+      "evidence": {
+        "screenshots": [
+          "children-core/children-core-ofsted-lac/VAL-CHILD-006-placement-plans.png",
+          "children-core/children-core-ofsted-lac/VAL-CHILD-006-placement-plan-new-404.png",
+          "children-core/children-core-ofsted-lac/VAL-CHILD-006-dashboard.png"
+        ],
+        "consoleErrors": "none",
+        "network": "Shared dev-server log shows GET /childcore-a-home/persons/dad70c1e-640f-47cb-a2d7-4418649829fe/lac/placement-plans -> 200, repeated GET /childcore-a-home/persons/dad70c1e-640f-47cb-a2d7-4418649829fe/lac/placement-plans/new -> 404, and GET /childcore-a-home/dashboard -> 200 with no placement-plan-specific follow-up requests."
+      },
+      "issues": "The placement-plan list exists only as an empty state, the creation route is missing, and the dashboard does not expose the required 5-working-day countdown or review alerts."
+    }
+  ],
+  "frictions": [
+    {
+      "description": "This retry reused an existing namespace account and organisation, but the prior password was unknown.",
+      "resolved": true,
+      "resolution": "Used the real Forgot Password flow, recovered the reset link from the shared dev-server log, and signed back in as childcore-a-owner@example.test before validating the assigned assertions.",
+      "affectedAssertions": [
+        "VAL-CHILD-001",
+        "VAL-CHILD-002",
+        "VAL-CHILD-003",
+        "VAL-CHILD-004",
+        "VAL-CHILD-005",
+        "VAL-CHILD-006"
+      ]
+    },
+    {
+      "description": "The in-app links to the missing /lac/new and /lac/placement-plans/new routes did not always replace the visible page content immediately during client-side navigation.",
+      "resolved": true,
+      "resolution": "Opened the target URLs directly to capture the actual 404 states for the missing LAC and placement-plan creation surfaces.",
+      "affectedAssertions": [
+        "VAL-CHILD-004",
+        "VAL-CHILD-005",
+        "VAL-CHILD-006"
+      ]
+    }
+  ],
+  "blockers": [
+    {
+      "description": "The LAC creation surface is missing: /childcore-a-home/persons/dad70c1e-640f-47cb-a2d7-4418649829fe/lac/new returns 404.",
+      "affectedAssertions": [
+        "VAL-CHILD-004",
+        "VAL-CHILD-005"
+      ],
+      "quickFixAttempted": "Tried the visible 'New LAC record' and 'Create LAC record' links from the LAC overview, then opened the route directly; every attempt resolved to the missing route."
+    },
+    {
+      "description": "The placement-plan creation surface is missing: /childcore-a-home/persons/dad70c1e-640f-47cb-a2d7-4418649829fe/lac/placement-plans/new returns 404.",
+      "affectedAssertions": [
+        "VAL-CHILD-006"
+      ],
+      "quickFixAttempted": "Used the visible 'Create placement plan' CTA on the empty-state page and then opened the route directly; both paths ended at the same non-functional 404 surface."
+    }
+  ],
+  "summary": "Tested 6 assertions: 0 passed, 6 failed. The Ofsted dashboard renders nine standards but does not show the required evidence metadata/expansion behavior, evidence linking is not available from record detail pages, the children's register is read-only empty state only, and the LAC plus placement-plan creation routes are missing from the real browser UI."
+}
