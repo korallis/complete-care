@@ -14,11 +14,10 @@ export function SdqFormWrapper({ orgSlug, personId }: SdqFormWrapperProps) {
     formData: FormData,
   ) {
     'use server';
-    const result = await createSdqAssessment(
-      { organisationId: orgSlug, personId },
-      formData,
-    );
-    return { success: result.success, error: result.error };
+    const result = await createSdqAssessment(personId, formData);
+    return result.success
+      ? { success: true }
+      : { success: false, error: result.error };
   }
 
   return <SdqForm onSubmit={handleSubmit} />;

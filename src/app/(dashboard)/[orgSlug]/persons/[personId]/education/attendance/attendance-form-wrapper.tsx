@@ -19,11 +19,10 @@ export function AttendanceFormWrapper({
     formData: FormData,
   ) {
     'use server';
-    const result = await recordAttendance(
-      { organisationId: orgSlug, personId },
-      formData,
-    );
-    return { success: result.success, error: result.error };
+    const result = await recordAttendance(personId, formData);
+    return result.success
+      ? { success: true }
+      : { success: false, error: result.error };
   }
 
   return <AttendanceForm schoolRecordId={schoolRecordId} onSubmit={handleSubmit} />;

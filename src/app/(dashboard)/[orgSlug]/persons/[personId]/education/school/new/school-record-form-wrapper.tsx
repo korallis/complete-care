@@ -17,11 +17,10 @@ export function SchoolRecordFormWrapper({
     formData: FormData,
   ) {
     'use server';
-    const result = await createSchoolRecord(
-      { organisationId: orgSlug, personId },
-      formData,
-    );
-    return { success: result.success, error: result.error };
+    const result = await createSchoolRecord(personId, formData);
+    return result.success
+      ? { success: true }
+      : { success: false, error: result.error };
   }
 
   return <SchoolRecordForm onSubmit={handleSubmit} />;

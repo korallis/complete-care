@@ -14,11 +14,10 @@ export function PpPlusFormWrapper({ orgSlug, personId }: PpPlusFormWrapperProps)
     formData: FormData,
   ) {
     'use server';
-    const result = await createPupilPremiumPlusRecord(
-      { organisationId: orgSlug, personId },
-      formData,
-    );
-    return { success: result.success, error: result.error };
+    const result = await createPupilPremiumPlusRecord(personId, formData);
+    return result.success
+      ? { success: true }
+      : { success: false, error: result.error };
   }
 
   return <PpPlusForm onSubmit={handleSubmit} />;

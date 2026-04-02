@@ -16,8 +16,7 @@ export function AiQueriesClient() {
     <NlQueryInput
       suggestedQueries={suggestedQueries}
       onExecute={async (query) => {
-        // TODO: Pass actual org ID from auth context
-        const res = await executeNlQuery('placeholder-org-id', query);
+        const res = await executeNlQuery(query);
         return { result: res.result, error: res.error };
       }}
     />

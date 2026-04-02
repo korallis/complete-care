@@ -15,11 +15,10 @@ export function PepFormWrapper({ orgSlug, personId, schools }: PepFormWrapperPro
     formData: FormData,
   ) {
     'use server';
-    const result = await createPep(
-      { organisationId: orgSlug, personId },
-      formData,
-    );
-    return { success: result.success, error: result.error };
+    const result = await createPep(personId, formData);
+    return result.success
+      ? { success: true }
+      : { success: false, error: result.error };
   }
 
   return <PepForm schools={schools} onSubmit={handleSubmit} />;

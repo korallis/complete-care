@@ -19,11 +19,10 @@ export function ExclusionFormWrapper({
     formData: FormData,
   ) {
     'use server';
-    const result = await createExclusionRecord(
-      { organisationId: orgSlug, personId },
-      formData,
-    );
-    return { success: result.success, error: result.error };
+    const result = await createExclusionRecord(personId, formData);
+    return result.success
+      ? { success: true }
+      : { success: false, error: result.error };
   }
 
   return <ExclusionForm schoolRecordId={schoolRecordId} onSubmit={handleSubmit} />;
