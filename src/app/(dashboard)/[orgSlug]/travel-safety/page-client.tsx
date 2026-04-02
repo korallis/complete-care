@@ -10,6 +10,10 @@ import {
   TravelTimeCard,
   WelfareCheckPanel,
 } from '@/features/travel-safety/components';
+import type {
+  RiskLevel,
+  WelfareResolution,
+} from '@/features/travel-safety/constants';
 import type { Role } from '@/lib/rbac/permissions';
 import { hasPermission } from '@/lib/rbac/permissions';
 import type {
@@ -74,7 +78,7 @@ interface TravelSafetyPageClientProps {
     id: string;
     organisationId: string;
     respondedBy: string;
-    resolution: 'safe' | 'false_alarm' | 'emergency_services_contacted' | 'unable_to_contact';
+    resolution: WelfareResolution;
     resolutionNotes?: string;
   }) => Promise<PageActionResult<{ id: string }>>;
   onUpsertClientEnvironment: (input: {
@@ -85,7 +89,7 @@ interface TravelSafetyPageClientProps {
     keySafeLocation?: string;
     accessInstructions?: string;
     riskNotes?: string;
-    riskLevel: 'low' | 'medium' | 'high' | 'critical';
+    riskLevel: RiskLevel;
     parkingInfo?: string;
     environmentNotes?: string;
     emergencyContactName?: string;
@@ -379,7 +383,7 @@ export function TravelSafetyPageClient({
         keySafeLocation: data.keySafeLocation,
         accessInstructions: data.accessInstructions,
         riskNotes: data.riskNotes,
-        riskLevel: data.riskLevel as 'low' | 'medium' | 'high' | 'critical',
+        riskLevel: data.riskLevel as RiskLevel,
         parkingInfo: data.parkingInfo,
         environmentNotes: data.environmentNotes,
         emergencyContactName: data.emergencyContactName,
