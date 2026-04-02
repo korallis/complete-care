@@ -3,6 +3,7 @@ import { beforeEach, describe, expect, it, vi } from 'vitest';
 const {
   insertQueue,
   insertValuesCalls,
+  mockAssertBelongsToOrg,
   mockAuditLog,
   mockDb,
   mockRequirePermission,
@@ -69,6 +70,7 @@ const {
     mockDb,
     mockRequirePermission: vi.fn(),
     mockAuditLog: vi.fn(),
+    mockAssertBelongsToOrg: vi.fn(),
   };
 });
 
@@ -78,6 +80,7 @@ vi.mock('@/lib/rbac', () => ({
   UnauthorizedError: class UnauthorizedError extends Error {},
 }));
 vi.mock('@/lib/audit', () => ({ auditLog: mockAuditLog }));
+vi.mock('@/lib/tenant', () => ({ assertBelongsToOrg: mockAssertBelongsToOrg }));
 
 import {
   acknowledgeExpiryAlert,
@@ -138,11 +141,14 @@ describe('emar stock actions', () => {
           id: stockId,
           organisationId,
           medicationName: 'Paracetamol',
+          medicationCode: 'PARA500',
           form: 'tablet',
           strength: '500mg',
           currentQuantity: 120,
           reorderPoint: 30,
+          reorderQuantity: 100,
           isControlledDrug: false,
+          pharmacySupplier: 'Community Pharmacy',
         },
       ],
       [
@@ -187,6 +193,7 @@ describe('emar stock actions', () => {
           requestedById: activeUserId,
         },
       ],
+      [{ id: 'txn-receipt-1' }],
       [
         {
           id: reportId,
@@ -230,7 +237,6 @@ describe('emar stock actions', () => {
           pharmacySupplier: 'Community Pharmacy',
         },
       ],
-      [],
       [
         {
           id: stockId,
@@ -248,10 +254,20 @@ describe('emar stock actions', () => {
           id: batchId,
           organisationId,
           medicationStockId: stockId,
-          quantity: 80,
+          quantity: 120,
         },
       ],
       [],
+      [
+        {
+          id: stockId,
+          organisationId,
+          currentQuantity: 25,
+          reorderPoint: 30,
+          reorderQuantity: 100,
+          isControlledDrug: false,
+        },
+      ],
       [
         {
           id: reorderId,
@@ -286,6 +302,8 @@ describe('emar stock actions', () => {
           isControlledDrug: false,
         },
       ],
+      undefined,
+      undefined,
       undefined,
       undefined,
       [
@@ -431,7 +449,12 @@ describe('emar stock actions', () => {
       quantity: -95,
       performedById: activeUserId,
     });
-    expect(updateSetCalls[1]).toMatchObject({ currentQuantity: 200 });
+    expect(insertValuesCalls[6]).toMatchObject({
+      medicationStockId: stockId,
+      quantity: 20,
+      reorderRequestId: reorderId,
+    });
+    expect(updateSetCalls[3]).toMatchObject({ currentQuantity: 25 });
     expect(mockAuditLog).toHaveBeenCalled();
   });
 
@@ -523,7 +546,7 @@ describe('emar stock actions', () => {
     });
 
     expect(updateSetCalls[0]).toMatchObject({ expiryAlertAcknowledged: true });
-    expect(updateSetCalls[2]).toMatchObject({ pharmacyNotified: true });
-    expect(updateSetCalls[3]).toMatchObject({ outgoingStaffId: activeUserId, isCompleted: true });
+    expect(updateSetCalls[1]).toMatchObject({ pharmacyNotified: true });
+    expect(updateSetCalls[2]).toMatchObject({ outgoingStaffId: activeUserId, isCompleted: true });
   });
 });
