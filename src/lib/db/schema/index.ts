@@ -50,5 +50,6 @@ export * from './missing-from-care';
 export * from './contacts';
 export * from './outcomes';
 export * from './weight-wounds';
+export * from './stock-management';
 
 export * from './relations';

@@ -45,6 +45,7 @@ import { philomenaProfiles, missingEpisodes, missingEpisodeTimeline, returnHomeI
 import { approvedContacts, contactSchedules, contactRecords } from './contacts';
 import { goals, goalReviews, skillDomains, skills, skillAssessments, communityAccess, supportHours } from './outcomes';
 import { weightSchedules, weightRecords, waterlowAssessments, wounds, woundAssessments } from './weight-wounds';
+import { medicationStock, stockBatches, stockTransactions, reorderRequests, medicationErrors, handoverReports, topicalMar, topicalMarAdministrations, homelyRemedyProtocols, homelyRemedyAdministrations } from './stock-management';
 
 export const organisationsRelations = relations(organisations, ({ many }) => ({
   memberships: many(memberships),
@@ -147,6 +148,16 @@ export const organisationsRelations = relations(organisations, ({ many }) => ({
   waterlowAssessments: many(waterlowAssessments),
   wounds: many(wounds),
   woundAssessments: many(woundAssessments),
+  medicationStock: many(medicationStock),
+  stockBatches: many(stockBatches),
+  stockTransactions: many(stockTransactions),
+  reorderRequests: many(reorderRequests),
+  medicationErrors: many(medicationErrors),
+  handoverReports: many(handoverReports),
+  topicalMar: many(topicalMar),
+  topicalMarAdministrations: many(topicalMarAdministrations),
+  homelyRemedyProtocols: many(homelyRemedyProtocols),
+  homelyRemedyAdministrations: many(homelyRemedyAdministrations),
 }));
 
 export const usersRelations = relations(users, ({ many }) => ({
