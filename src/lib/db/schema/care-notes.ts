@@ -53,6 +53,15 @@ export type NutritionData = {
   fluidsNote?: string;
 };
 
+export type ChildrenHomeDetails = {
+  activities?: string;
+  incidents?: string;
+  visitors?: string;
+  contacts?: string;
+  educationAttendance?: string;
+  bedtime?: string;
+};
+
 export type CareNoteShift =
   | 'morning'
   | 'afternoon'
@@ -97,6 +106,8 @@ export const careNotes = pgTable(
     mobility: text('mobility'),
     /** Free-text health observations */
     health: text('health'),
+    /** Children-home specific running-record details */
+    childrenHomeDetails: jsonb('children_home_details').$type<ChildrenHomeDetails>(),
     /** Handover points for next shift */
     handover: text('handover'),
 

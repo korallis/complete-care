@@ -22,6 +22,7 @@ import {
   SHIFT_LABELS,
   PORTION_LABELS,
   NOTE_TYPE_LABELS,
+  buildChildrenHomeHandoverSummary,
   getMoodVariant,
   getShiftLabel,
   formatNoteDate,
@@ -54,6 +55,7 @@ describe('care_notes table schema', () => {
     expect(columns).toContain('nutrition');
     expect(columns).toContain('mobility');
     expect(columns).toContain('health');
+    expect(columns).toContain('childrenHomeDetails');
     expect(columns).toContain('handover');
   });
 
@@ -106,6 +108,13 @@ describe('createCareNoteSchema', () => {
       },
       mobility: 'Walked to dining room with frame',
       health: 'No concerns',
+      childrenHomeDetails: {
+        activities: 'House meeting and homework club',
+        visitors: 'Mother visited after school',
+        contacts: 'Call with social worker',
+        educationAttendance: 'Attended all lessons',
+        bedtime: 'Settled by 21:30',
+      },
       handover: 'Medication at 2pm',
     });
     expect(result.success).toBe(true);
@@ -192,6 +201,26 @@ describe('createCareNoteSchema', () => {
       });
       expect(result.success).toBe(true);
     }
+  });
+});
+
+describe('buildChildrenHomeHandoverSummary', () => {
+  it('builds a summary from children-home fields', () => {
+    const summary = buildChildrenHomeHandoverSummary({
+      shift: 'evening',
+      mood: 'content',
+      health: 'No concerns',
+      childrenHomeDetails: {
+        activities: 'Went to football',
+        bedtime: 'Asleep by 21:15',
+      },
+      handover: 'Check school bag before morning transport',
+    });
+
+    expect(summary).toContain('Shift: Evening');
+    expect(summary).toContain('Activities: Went to football');
+    expect(summary).toContain('Bedtime: Asleep by 21:15');
+    expect(summary).toContain('Additional handover note: Check school bag');
   });
 });
 

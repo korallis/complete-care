@@ -51,7 +51,12 @@ describe('createSessionSchema', () => {
       family: 'Contact with mother this week',
       wishesAndFeelings: 'Wants to see their dog',
       actions: [
-        { action: 'Contact school about SEND support', deadline: '2024-07-01', completed: false },
+        {
+          action: 'Contact school about SEND support',
+          assignedTo: 'Jane Manager',
+          deadline: '2024-07-01',
+          completed: false,
+        },
       ],
     });
     expect(result.success).toBe(true);
@@ -76,7 +81,7 @@ describe('createSessionSchema', () => {
   it('rejects an action with empty action text', () => {
     const result = createSessionSchema.safeParse({
       ...validSession,
-      actions: [{ action: '', deadline: VALID_DATE, completed: false }],
+      actions: [{ action: '', assignedTo: 'Jane Manager', deadline: VALID_DATE, completed: false }],
     });
     expect(result.success).toBe(false);
   });
@@ -84,7 +89,15 @@ describe('createSessionSchema', () => {
   it('rejects an action with invalid deadline format', () => {
     const result = createSessionSchema.safeParse({
       ...validSession,
-      actions: [{ action: 'Do something', deadline: 'tomorrow', completed: false }],
+      actions: [{ action: 'Do something', assignedTo: 'Jane Manager', deadline: 'tomorrow', completed: false }],
+    });
+    expect(result.success).toBe(false);
+  });
+
+  it('rejects an action without an assignee', () => {
+    const result = createSessionSchema.safeParse({
+      ...validSession,
+      actions: [{ action: 'Do something', assignedTo: '', deadline: VALID_DATE, completed: false }],
     });
     expect(result.success).toBe(false);
   });
@@ -207,21 +220,13 @@ describe('createSanctionSchema', () => {
     expect(result.success).toBe(true);
   });
 
-  it('accepts a prohibited sanction with isProhibited flag', () => {
+  it('rejects a prohibited sanction with isProhibited flag', () => {
     const result = createSanctionSchema.safeParse({
       ...validSanction,
       isProhibited: true,
       justification: 'This was incorrect and has been flagged',
     });
-    expect(result.success).toBe(true);
-  });
-
-  it('defaults isProhibited to false', () => {
-    const result = createSanctionSchema.safeParse(validSanction);
-    expect(result.success).toBe(true);
-    if (result.success) {
-      expect(result.data.isProhibited).toBe(false);
-    }
+    expect(result.success).toBe(false);
   });
 
   it('rejects an invalid sanction type', () => {

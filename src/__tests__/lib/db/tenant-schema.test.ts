@@ -358,6 +358,7 @@ describe('careNotes schema', () => {
       nutrition: null,
       mobility: null,
       health: null,
+      childrenHomeDetails: null,
       handover: null,
       shiftPeriod: '07:00-14:00',
       createdAt: new Date(),

@@ -16,7 +16,11 @@ import {
   formatNoteDate,
   formatNoteTime,
 } from '@/features/care-notes/schema';
-import type { PersonalCareItem, NutritionData } from '@/lib/db/schema/care-notes';
+import type {
+  ChildrenHomeDetails,
+  PersonalCareItem,
+  NutritionData,
+} from '@/lib/db/schema/care-notes';
 
 // ---------------------------------------------------------------------------
 // Sub-components for structured data
@@ -99,6 +103,35 @@ function NutritionDisplay({ data }: { data: NutritionData }) {
   );
 }
 
+function ChildrenHomeDetailsDisplay({ data }: { data: ChildrenHomeDetails }) {
+  const sections = [
+    { label: 'Activities', value: data.activities },
+    { label: 'Incidents', value: data.incidents },
+    { label: 'Visitors', value: data.visitors },
+    { label: 'Contacts', value: data.contacts },
+    { label: 'Education', value: data.educationAttendance },
+    { label: 'Bedtime', value: data.bedtime },
+  ].filter((section) => section.value);
+
+  if (sections.length === 0) return null;
+
+  return (
+    <div className="space-y-1">
+      <h4 className="text-xs font-semibold text-[oklch(0.45_0_0)] uppercase tracking-wide">
+        Running Record
+      </h4>
+      <div className="space-y-1">
+        {sections.map((section) => (
+          <p key={section.label} className="text-xs text-[oklch(0.5_0_0)]">
+            <span className="font-medium text-[oklch(0.35_0_0)]">{section.label}:</span>{' '}
+            {section.value}
+          </p>
+        ))}
+      </div>
+    </div>
+  );
+}
+
 // ---------------------------------------------------------------------------
 // Main card
 // ---------------------------------------------------------------------------
@@ -174,10 +207,13 @@ export function CareNoteCard({ note }: CareNoteCardProps) {
             <p className="text-xs text-[oklch(0.5_0_0)]">{note.health}</p>
           </div>
         )}
+        {note.childrenHomeDetails && (
+          <ChildrenHomeDetailsDisplay data={note.childrenHomeDetails as ChildrenHomeDetails} />
+        )}
         {note.handover && (
           <div className="space-y-1">
             <h4 className="text-xs font-semibold text-[oklch(0.45_0_0)] uppercase tracking-wide">
-              Handover Points
+              Handover Summary
             </h4>
             <p className="text-xs text-[oklch(0.5_0_0)]">{note.handover}</p>
           </div>

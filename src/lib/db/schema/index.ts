@@ -67,5 +67,7 @@ export * from './reg45';
 export * from './eol-care';
 export * from './evv';
 export * from './keyworker';
+export * from './meetings';
+export * from './complaints';
 
 export * from './relations';

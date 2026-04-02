@@ -18,7 +18,11 @@ import { requirePermission, UnauthorizedError } from '@/lib/rbac';
 import { assertBelongsToOrg } from '@/lib/tenant';
 import { auditLog } from '@/lib/audit';
 import type { ActionResult } from '@/types';
-import { createCareNoteSchema, careNoteFilterSchema } from './schema';
+import {
+  buildChildrenHomeHandoverSummary,
+  createCareNoteSchema,
+  careNoteFilterSchema,
+} from './schema';
 import type { CreateCareNoteInput } from './schema';
 
 // Re-export for external use
@@ -54,6 +58,7 @@ export type CareNoteListItem = {
   nutrition: CareNote['nutrition'];
   mobility: string | null;
   health: string | null;
+  childrenHomeDetails: CareNote['childrenHomeDetails'];
   handover: string | null;
   createdAt: Date;
 };
@@ -124,6 +129,7 @@ export async function listCareNotes(
         nutrition: careNotes.nutrition,
         mobility: careNotes.mobility,
         health: careNotes.health,
+        childrenHomeDetails: careNotes.childrenHomeDetails,
         handover: careNotes.handover,
         createdAt: careNotes.createdAt,
       })
@@ -190,6 +196,14 @@ export async function createCareNote(
     }
 
     const data = parsed.data;
+    const handoverSummary = buildChildrenHomeHandoverSummary({
+      shift: data.shift,
+      mood: data.mood,
+      health: data.health,
+      mobility: data.mobility,
+      handover: data.handover,
+      childrenHomeDetails: data.childrenHomeDetails,
+    });
 
     // 2. Verify person belongs to this org (tenant isolation)
     const [person] = await db
@@ -230,7 +244,8 @@ export async function createCareNote(
         nutrition: data.nutrition ?? null,
         mobility: data.mobility ?? null,
         health: data.health ?? null,
-        handover: data.handover ?? null,
+        childrenHomeDetails: data.childrenHomeDetails ?? null,
+        handover: handoverSummary || null,
       })
       .returning();
 
@@ -242,6 +257,8 @@ export async function createCareNote(
         noteType: data.noteType,
         shift: data.shift,
         mood: data.mood,
+        childrenHomeDetails: data.childrenHomeDetails ?? null,
+        handoverGenerated: Boolean(handoverSummary),
       },
     }, { userId, organisationId: orgId });
 

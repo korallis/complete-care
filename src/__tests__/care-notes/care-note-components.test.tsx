@@ -75,6 +75,10 @@ const mockNote: CareNoteListItem = {
   },
   mobility: 'Walked to the garden with frame assistance',
   health: 'Blood pressure normal',
+  childrenHomeDetails: {
+    activities: 'Football and house meeting',
+    bedtime: 'Settled by 21:30',
+  },
   handover: 'Medication at 2pm',
   createdAt: new Date('2025-06-15T09:30:00Z'),
 };
@@ -92,6 +96,7 @@ const mockMinimalNote: CareNoteListItem = {
   nutrition: null,
   mobility: null,
   health: null,
+  childrenHomeDetails: null,
   handover: null,
   createdAt: new Date('2025-06-15T14:00:00Z'),
 };
@@ -149,8 +154,14 @@ describe('CareNoteCard', () => {
 
   it('renders handover when present', () => {
     render(<CareNoteCard note={mockNote} />);
-    expect(screen.getByText('Handover Points')).toBeTruthy();
+    expect(screen.getByText('Handover Summary')).toBeTruthy();
     expect(screen.getByText('Medication at 2pm')).toBeTruthy();
+  });
+
+  it('renders running-record details when present', () => {
+    render(<CareNoteCard note={mockNote} />);
+    expect(screen.getByText('Running Record')).toBeTruthy();
+    expect(screen.getByText(/Football and house meeting/)).toBeTruthy();
   });
 
   it('does not render structured sections for minimal note', () => {
@@ -159,7 +170,7 @@ describe('CareNoteCard', () => {
     expect(screen.queryByText('Nutrition')).toBeNull();
     expect(screen.queryByText('Mobility')).toBeNull();
     expect(screen.queryByText('Health Observations')).toBeNull();
-    expect(screen.queryByText('Handover Points')).toBeNull();
+    expect(screen.queryByText('Handover Summary')).toBeNull();
   });
 
   it('renders "Unknown author" when authorName is null', () => {
