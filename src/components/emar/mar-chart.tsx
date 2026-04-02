@@ -31,6 +31,8 @@ type MarChartProps = {
   data: MarChartData;
   orgSlug: string;
   personId: string;
+  currentUserId: string;
+  staffMembers: { id: string; name: string }[];
   canAdminister: boolean;
   onRecordAdministration: (personId: string, input: RecordAdministrationInput) => Promise<{
     success: boolean;
@@ -109,6 +111,8 @@ export function MarChart({
   data,
   orgSlug,
   personId,
+  currentUserId,
+  staffMembers,
   canAdminister,
   onRecordAdministration,
 }: MarChartProps) {
@@ -349,6 +353,8 @@ export function MarChart({
           scheduledTime={selectedCell.scheduledTime}
           existingAdministration={selectedCell.administration}
           personId={personId}
+          currentUserId={currentUserId}
+          staffMembers={staffMembers}
           onSubmit={onRecordAdministration}
           onClose={() => setSelectedCell(null)}
         />

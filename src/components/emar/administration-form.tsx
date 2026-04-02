@@ -25,6 +25,8 @@ type AdministrationFormProps = {
   scheduledTime: string;
   existingAdministration?: MedicationAdministration | null;
   personId: string;
+  currentUserId: string;
+  staffMembers: { id: string; name: string }[];
   onSubmit: (personId: string, input: RecordAdministrationInput) => Promise<{
     success: boolean;
     error?: string;
@@ -41,6 +43,8 @@ export function AdministrationForm({
   scheduledTime,
   existingAdministration,
   personId,
+  currentUserId,
+  staffMembers,
   onSubmit,
   onClose,
 }: AdministrationFormProps) {
@@ -49,11 +53,18 @@ export function AdministrationForm({
     existingAdministration?.status ?? 'given',
   );
   const [reason, setReason] = useState(existingAdministration?.reason ?? '');
+  const [witnessId, setWitnessId] = useState(existingAdministration?.witnessId ?? '');
   const [witnessName, setWitnessName] = useState(existingAdministration?.witnessName ?? '');
   const [notes, setNotes] = useState(existingAdministration?.notes ?? '');
 
   const needsReason = STATUSES_REQUIRING_REASON.includes(
     status as typeof STATUSES_REQUIRING_REASON[number],
+  );
+  const needsWitness =
+    medication.isControlledDrug &&
+    (status === 'given' || status === 'self_administered');
+  const availableWitnesses = staffMembers.filter(
+    (staff) => staff.id !== currentUserId,
   );
 
   function handleSubmit(e: React.FormEvent) {
@@ -64,7 +75,16 @@ export function AdministrationForm({
       return;
     }
 
+     if (needsWitness && !witnessId) {
+      toast.error('A second witness is required for controlled drug administration');
+      return;
+    }
+
     startTransition(async () => {
+      const selectedWitness = availableWitnesses.find(
+        (staff) => staff.id === witnessId,
+      );
+
       const input: RecordAdministrationInput = {
         medicationId: medication.id,
         scheduledTime,
@@ -73,7 +93,8 @@ export function AdministrationForm({
           : null,
         status: status as typeof ADMINISTRATION_STATUSES[number],
         reason: reason || null,
-        witnessName: witnessName || null,
+        witnessId: needsWitness ? witnessId : null,
+        witnessName: needsWitness ? selectedWitness?.name ?? null : witnessName || null,
         notes: notes || null,
       };
 
@@ -163,19 +184,41 @@ export function AdministrationForm({
           )}
 
           {/* Witness */}
-          <div>
-            <label htmlFor="admin-witness" className="block text-xs font-medium text-[oklch(0.45_0.03_160)] mb-1.5">
-              Witness name <span className="text-[oklch(0.65_0_0)]">(if required)</span>
-            </label>
-            <input
-              id="admin-witness"
-              type="text"
-              value={witnessName}
-              onChange={(e) => setWitnessName(e.target.value)}
-              placeholder="e.g., Jane Doe"
-              className="w-full rounded-lg border border-[oklch(0.88_0.005_160)] bg-[oklch(0.99_0.001_160)] px-3.5 py-2.5 text-sm text-[oklch(0.22_0.04_160)] placeholder:text-[oklch(0.7_0_0)] focus:border-[oklch(0.5_0.1_160)] focus:outline-none focus:ring-2 focus:ring-[oklch(0.5_0.1_160)/0.15] transition-colors"
-            />
-          </div>
+          {needsWitness ? (
+            <div>
+              <label htmlFor="admin-witness-id" className="block text-xs font-medium text-[oklch(0.45_0.03_160)] mb-1.5">
+                Second witness <span className="text-red-500" aria-hidden="true">*</span>
+              </label>
+              <select
+                id="admin-witness-id"
+                value={witnessId}
+                onChange={(e) => setWitnessId(e.target.value)}
+                className="w-full rounded-lg border border-[oklch(0.88_0.005_160)] bg-[oklch(0.99_0.001_160)] px-3.5 py-2.5 text-sm text-[oklch(0.22_0.04_160)] focus:border-[oklch(0.5_0.1_160)] focus:outline-none focus:ring-2 focus:ring-[oklch(0.5_0.1_160)/0.15] transition-colors"
+                required
+              >
+                <option value="">Select witness...</option>
+                {availableWitnesses.map((staff) => (
+                  <option key={staff.id} value={staff.id}>
+                    {staff.name}
+                  </option>
+                ))}
+              </select>
+            </div>
+          ) : (
+            <div>
+              <label htmlFor="admin-witness" className="block text-xs font-medium text-[oklch(0.45_0.03_160)] mb-1.5">
+                Witness name <span className="text-[oklch(0.65_0_0)]">(if required)</span>
+              </label>
+              <input
+                id="admin-witness"
+                type="text"
+                value={witnessName}
+                onChange={(e) => setWitnessName(e.target.value)}
+                placeholder="e.g., Jane Doe"
+                className="w-full rounded-lg border border-[oklch(0.88_0.005_160)] bg-[oklch(0.99_0.001_160)] px-3.5 py-2.5 text-sm text-[oklch(0.22_0.04_160)] placeholder:text-[oklch(0.7_0_0)] focus:border-[oklch(0.5_0.1_160)] focus:outline-none focus:ring-2 focus:ring-[oklch(0.5_0.1_160)/0.15] transition-colors"
+              />
+            </div>
+          )}
 
           {/* Notes */}
           <div>
