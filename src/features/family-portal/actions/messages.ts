@@ -135,7 +135,13 @@ export async function getMessages(
     .limit(limit)
     .offset(offset);
 
-  return { success: true as const, data: allMessages };
+  return {
+    success: true as const,
+    data: allMessages.map((message) => ({
+      ...message,
+      senderType: message.senderType as 'family' | 'staff',
+    })),
+  };
 }
 
 /**

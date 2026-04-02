@@ -16,6 +16,7 @@ export {
   UpdateCard,
   CareInformation,
   InvitationForm,
+  PortalContextBar,
 } from './components';
 
 // Domain view utilities

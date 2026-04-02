@@ -40,6 +40,7 @@ export function DashboardTabs({ orgSlug, personId }: DashboardTabsProps) {
     { id: 'complaints', label: 'Complaints', href: `${basePath}/complaints` },
     { id: 'lac', label: 'LAC', href: `${basePath}/lac` },
     { id: 'contacts', label: 'Contacts', href: `${basePath}/contacts` },
+    { id: 'consent', label: 'Consent', href: `${basePath}/consent` },
     { id: 'missing', label: 'Missing', href: `${basePath}/missing` },
     { id: 'timeline', label: 'Timeline', href: `${basePath}/timeline` },
   ];

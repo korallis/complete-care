@@ -1,18 +1,51 @@
 'use server';
 
+import { checkPhotoConsent } from '@/features/consent/manager';
+import type { Consent } from '@/features/consent/types';
 import { db } from '@/lib/db';
 import {
-  familyUpdates,
+  consentRecords,
   familyPortalSettings,
-} from '@/lib/db/schema/family-portal';
+  familyUpdates,
+} from '@/lib/db/schema';
 import { users } from '@/lib/db/schema/users';
-import { eq, and, desc } from 'drizzle-orm';
+import { and, desc, eq } from 'drizzle-orm';
+import {
+  filterUpdatesForFamilyPortal,
+  requiresPhotoConsent,
+} from '../lib/update-visibility';
 import {
   createUpdateSchema,
   reviewUpdateSchema,
   type CreateUpdateInput,
   type ReviewUpdateInput,
 } from '../types';
+
+function toConsentRecord(record: {
+  id: string;
+  personId: string;
+  consentType: string;
+  status: string;
+  grantedDate: string;
+  withdrawnDate: string | null;
+  givenBy: string;
+  relationship: string;
+  conditions: string | null;
+  reviewDate: string | null;
+}): Consent {
+  return {
+    id: record.id,
+    personId: record.personId,
+    consentType: record.consentType as Consent['consentType'],
+    status: record.status as Consent['status'],
+    grantedDate: record.grantedDate,
+    withdrawnDate: record.withdrawnDate,
+    givenBy: record.givenBy,
+    relationship: record.relationship as Consent['relationship'],
+    conditions: record.conditions,
+    reviewDate: record.reviewDate,
+  };
+}
 
 /**
  * Create a photo/update to share with family members.
@@ -28,7 +61,40 @@ export async function createUpdate(
     return { success: false as const, error: parsed.error.flatten().fieldErrors };
   }
 
-  // Check if approval is required
+  if (requiresPhotoConsent(parsed.data)) {
+    const consentRows = await db
+      .select({
+        id: consentRecords.id,
+        personId: consentRecords.personId,
+        consentType: consentRecords.consentType,
+        status: consentRecords.status,
+        grantedDate: consentRecords.grantedDate,
+        withdrawnDate: consentRecords.withdrawnDate,
+        givenBy: consentRecords.givenBy,
+        relationship: consentRecords.relationship,
+        conditions: consentRecords.conditions,
+        reviewDate: consentRecords.reviewDate,
+      })
+      .from(consentRecords)
+      .where(
+        and(
+          eq(consentRecords.organisationId, organisationId),
+          eq(consentRecords.personId, parsed.data.personId),
+          eq(consentRecords.consentType, 'photography'),
+        ),
+      )
+      .orderBy(desc(consentRecords.grantedDate));
+
+    const photoEligibility = checkPhotoConsent(
+      consentRows.map(toConsentRecord),
+      parsed.data.personId,
+    );
+
+    if (!photoEligibility.allowed) {
+      return { success: false as const, error: photoEligibility.reason };
+    }
+  }
+
   const [settings] = await db
     .select()
     .from(familyPortalSettings)
@@ -131,7 +197,38 @@ export async function getPublishedUpdates(
     .limit(limit)
     .offset(offset);
 
-  return { success: true as const, data: updates };
+  const consentRows = await db
+    .select({
+      id: consentRecords.id,
+      personId: consentRecords.personId,
+      consentType: consentRecords.consentType,
+      status: consentRecords.status,
+      grantedDate: consentRecords.grantedDate,
+      withdrawnDate: consentRecords.withdrawnDate,
+      givenBy: consentRecords.givenBy,
+      relationship: consentRecords.relationship,
+      conditions: consentRecords.conditions,
+      reviewDate: consentRecords.reviewDate,
+    })
+    .from(consentRecords)
+    .where(
+      and(
+        eq(consentRecords.organisationId, organisationId),
+        eq(consentRecords.personId, personId),
+        eq(consentRecords.consentType, 'photography'),
+      ),
+    )
+    .orderBy(desc(consentRecords.grantedDate));
+
+  const photoEligibility = checkPhotoConsent(
+    consentRows.map(toConsentRecord),
+    personId,
+  );
+
+  return {
+    success: true as const,
+    data: filterUpdatesForFamilyPortal(updates, photoEligibility.allowed),
+  };
 }
 
 /**

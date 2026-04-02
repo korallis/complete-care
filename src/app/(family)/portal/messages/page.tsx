@@ -1,35 +1,136 @@
 import type { Metadata } from 'next';
+import { redirect } from 'next/navigation';
+import {
+  MessageThread,
+  PortalContextBar,
+  PortalHeader,
+} from '@/features/family-portal';
+import { getMessages, sendMessage } from '@/features/family-portal/actions/messages';
+import { getFamilyPortalContext } from '@/features/family-portal/server';
 
 export const metadata: Metadata = {
   title: 'Messages',
 };
 
-/**
- * Family portal messages page.
- * Displays message thread with care team and allows sending new messages.
- * Will be connected to auth session to load messages for the logged-in family member.
- */
-export default function FamilyMessagesPage() {
+interface FamilyMessagesPageProps {
+  searchParams: Promise<{ personId?: string; status?: string; error?: string }>;
+}
+
+function buildPath(
+  personId: string,
+  params: Record<string, string | undefined>,
+) {
+  const search = new URLSearchParams({ personId });
+
+  for (const [key, value] of Object.entries(params)) {
+    if (value) {
+      search.set(key, value);
+    }
+  }
+
+  return `/portal/messages?${search.toString()}`;
+}
+
+export default async function FamilyMessagesPage({
+  searchParams,
+}: FamilyMessagesPageProps) {
+  const { personId, status, error } = await searchParams;
+  const context = await getFamilyPortalContext(personId);
+
+  if (!context) {
+    redirect('/login');
+  }
+
+  if (!context.currentPerson) {
+    return (
+      <div className="rounded-lg border bg-card p-6 text-sm text-muted-foreground">
+        No approved family links are available yet.
+      </div>
+    );
+  }
+
+  const currentPerson = context.currentPerson;
+
+  const messagesResult = await getMessages(
+    currentPerson.organisationId,
+    currentPerson.personId,
+    'family',
+  );
+
+  async function handleSendMessage(formData: FormData) {
+    'use server';
+
+    const freshContext = await getFamilyPortalContext(currentPerson.personId);
+    if (!freshContext?.currentPerson) {
+      redirect('/login');
+    }
+
+    const result = await sendMessage(
+      freshContext.currentPerson.organisationId,
+      freshContext.userId,
+      'family',
+      {
+        personId: freshContext.currentPerson.personId,
+        content: String(formData.get('message') ?? ''),
+      },
+    );
+
+    const failedResult = result as { success: false; error?: unknown };
+    const errorMessage =
+      !result.success && typeof failedResult.error === 'string'
+        ? failedResult.error
+        : 'Unable to send message';
+
+    redirect(
+      buildPath(freshContext.currentPerson.personId, {
+        status: result.success ? 'message-sent' : undefined,
+        error: result.success ? undefined : errorMessage,
+      }),
+    );
+  }
+
   return (
     <div className="space-y-6">
-      <div>
-        <h1 className="text-2xl font-bold tracking-tight">Messages</h1>
-        <p className="text-sm text-muted-foreground">
-          Communicate securely with the care team.
-        </p>
-      </div>
+      <PortalHeader
+        personName={currentPerson.personName}
+        relationship={currentPerson.relationship}
+        domainLabel={currentPerson.domainLabel}
+      />
 
-      {/* Message thread — rendered by MessageThread component when data is available */}
+      <PortalContextBar
+        linkedPersons={context.linkedPersons}
+        currentPersonId={currentPerson.personId}
+        currentPath="/portal/messages"
+      />
+
+      {(status || error) && (
+        <div
+          className={`rounded-lg border px-4 py-3 text-sm ${
+            error
+              ? 'border-red-200 bg-red-50 text-red-700'
+              : 'border-emerald-200 bg-emerald-50 text-emerald-700'
+          }`}
+        >
+          {(typeof error === 'string' && error) || status?.replace(/-/g, ' ')}
+        </div>
+      )}
+
       <div className="rounded-lg border bg-card p-6">
-        <div className="flex items-center justify-center py-8">
+        <div className="mb-4">
+          <h1 className="text-2xl font-bold tracking-tight">Messages</h1>
           <p className="text-sm text-muted-foreground">
-            No messages yet. Start a conversation with the care team.
+            Communicate securely with the care team about{' '}
+            {currentPerson.personName}.
           </p>
         </div>
+
+        <MessageThread
+          messages={messagesResult.success ? messagesResult.data : []}
+          currentUserId={context.userId}
+        />
       </div>
 
-      {/* Message input */}
-      <form className="flex gap-2">
+      <form action={handleSendMessage} className="flex gap-2">
         <input
           type="text"
           name="message"
@@ -43,6 +144,13 @@ export default function FamilyMessagesPage() {
           Send
         </button>
       </form>
+
+      {context.messageApprovalRequired && (
+        <p className="text-sm text-muted-foreground">
+          Family messages require staff approval before they are visible in the
+          shared thread.
+        </p>
+      )}
     </div>
   );
 }

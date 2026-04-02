@@ -4,3 +4,4 @@ export { MessageThread } from './message-thread';
 export { UpdateCard } from './update-card';
 export { CareInformation } from './care-information';
 export { InvitationForm } from './invitation-form';
+export { PortalContextBar } from './portal-context-bar';
