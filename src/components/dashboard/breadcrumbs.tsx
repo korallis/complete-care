@@ -33,6 +33,11 @@ const SEGMENT_LABELS: Record<string, string> = {
   organisation: 'Organisation',
   billing: 'Billing',
   team: 'Team',
+  gdpr: 'GDPR',
+  sars: 'SARs',
+  erasure: 'Erasure',
+  retention: 'Retention',
+  exports: 'Exports',
   new: 'New',
   edit: 'Edit',
 };
