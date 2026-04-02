@@ -11,6 +11,7 @@
  */
 
 import { useState } from 'react';
+import Link from 'next/link';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
@@ -322,12 +323,12 @@ export function DemoBookingForm() {
 
         <p className="text-xs text-[oklch(0.55_0.01_160)] text-center">
           By submitting this form you agree to our{' '}
-          <a
+          <Link
             href="/privacy"
             className="underline underline-offset-2 hover:text-[oklch(0.32_0.02_160)]"
           >
             privacy policy
-          </a>
+          </Link>
           .
         </p>
       </form>

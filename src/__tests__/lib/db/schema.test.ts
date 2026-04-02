@@ -83,8 +83,14 @@ describe('organisations schema', () => {
       name: 'Test Org',
       slug: 'test-org',
       plan: 'free',
+      orgType: null,
       domains: [],
       stripeCustomerId: null,
+      stripeSubscriptionId: null,
+      stripePriceId: null,
+      subscriptionStatus: 'free',
+      currentPeriodEnd: null,
+      maxUsers: 5,
       createdAt: new Date(),
       updatedAt: new Date(),
     };
@@ -262,6 +268,7 @@ describe('auditLogs schema', () => {
       entityType: 'person',
       entityId: 'person-uuid',
       changes: { before: null, after: { name: 'Alice' } },
+      ipAddress: null,
       createdAt: new Date(),
     };
     expect(log.action).toBe('create');
@@ -270,6 +277,7 @@ describe('auditLogs schema', () => {
       action: 'update',
       entityType: 'care_plan',
       entityId: 'plan-uuid',
+      ipAddress: null,
     };
     expect(newLog.action).toBe('update');
   });

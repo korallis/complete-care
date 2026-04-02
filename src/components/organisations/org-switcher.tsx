@@ -6,6 +6,7 @@
  */
 
 import { useState, useTransition } from 'react';
+import Link from 'next/link';
 import { useRouter } from 'next/navigation';
 import { useSession } from 'next-auth/react';
 import type { SessionMembership } from '@/types/auth';
@@ -67,7 +68,7 @@ export function OrgSwitcher({
             />
             <div className="absolute left-0 top-full mt-1.5 z-20 min-w-[200px] rounded-xl border border-[oklch(0.9_0.005_150)] bg-white shadow-[0_8px_30px_-4px_oklch(0.3_0.04_160/0.15)]">
               <div className="py-1.5">
-                <a
+                <Link
                   href="/new-organisation"
                   className="flex items-center gap-2 px-3 py-2 text-sm text-[oklch(0.38_0.05_160)] hover:bg-[oklch(0.97_0.005_150)] transition-colors"
                 >
@@ -85,7 +86,7 @@ export function OrgSwitcher({
                     <path d="M12 5v14M5 12h14" />
                   </svg>
                   Create new organisation
-                </a>
+                </Link>
               </div>
             </div>
           </>
@@ -202,7 +203,7 @@ export function OrgSwitcher({
 
             {/* Create new org link */}
             <div className="border-t border-[oklch(0.93_0.005_150)] py-1.5">
-              <a
+              <Link
                 href="/new-organisation"
                 className="flex items-center gap-2 px-3 py-2 text-sm text-[oklch(0.38_0.05_160)] hover:bg-[oklch(0.97_0.005_150)] transition-colors"
               >
@@ -220,7 +221,7 @@ export function OrgSwitcher({
                   <path d="M12 5v14M5 12h14" />
                 </svg>
                 Create new organisation
-              </a>
+              </Link>
             </div>
           </div>
         </>

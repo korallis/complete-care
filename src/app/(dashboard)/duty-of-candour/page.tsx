@@ -1,4 +1,5 @@
 import type { Metadata } from 'next';
+import Link from 'next/link';
 
 export const metadata: Metadata = {
   title: 'Duty of Candour',
@@ -14,12 +15,12 @@ export default function DutyOfCandourPage() {
             CQC Regulation 20 — Record and track notifiable safety incidents through the required workflow.
           </p>
         </div>
-        <a
+        <Link
           href="/duty-of-candour/new"
           className="inline-flex items-center justify-center rounded-md bg-primary px-4 py-2 text-sm font-medium text-primary-foreground hover:bg-primary/90"
         >
           Record Incident
-        </a>
+        </Link>
       </div>
 
       {/* Summary cards */}

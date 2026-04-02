@@ -8,6 +8,7 @@
  */
 
 import { useEffect } from 'react';
+import Link from 'next/link';
 import { AlertTriangle, RefreshCw, Home } from 'lucide-react';
 
 interface ErrorFallbackProps {
@@ -63,13 +64,13 @@ export function ErrorFallback({
           <RefreshCw className="h-3.5 w-3.5" aria-hidden="true" />
           Try again
         </button>
-        <a
+        <Link
           href="/dashboard"
           className="flex items-center gap-2 rounded-lg border border-red-200 bg-white px-4 py-2 text-sm font-medium text-red-700 hover:bg-red-50 transition-colors"
         >
           <Home className="h-3.5 w-3.5" aria-hidden="true" />
           Go to dashboard
-        </a>
+        </Link>
       </div>
     </div>
   );

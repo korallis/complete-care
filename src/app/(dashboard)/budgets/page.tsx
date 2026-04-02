@@ -1,4 +1,5 @@
 import type { Metadata } from 'next';
+import Link from 'next/link';
 import { BudgetOverview } from '@/features/personal-budgets';
 
 export const metadata: Metadata = {
@@ -15,12 +16,12 @@ export default function BudgetsPage() {
             Budget allocation, spend tracking, and support hour variance reporting.
           </p>
         </div>
-        <a
+        <Link
           href="/budgets/new"
           className="inline-flex items-center justify-center rounded-md bg-primary px-4 py-2 text-sm font-medium text-primary-foreground hover:bg-primary/90"
         >
           New Budget
-        </a>
+        </Link>
       </div>
 
       {/* Summary cards */}

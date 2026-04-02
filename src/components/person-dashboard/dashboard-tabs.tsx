@@ -36,6 +36,8 @@ export function DashboardTabs({ orgSlug, personId }: DashboardTabsProps) {
     { id: 'emar', label: 'EMAR', href: `${basePath}/emar` },
     { id: 'incidents', label: 'Incidents', href: `${basePath}/incidents` },
     { id: 'keyworker', label: 'Keyworker', href: `${basePath}/keyworker` },
+    { id: 'meetings', label: 'Meetings', href: `${basePath}/meetings` },
+    { id: 'complaints', label: 'Complaints', href: `${basePath}/complaints` },
     { id: 'lac', label: 'LAC', href: `${basePath}/lac` },
     { id: 'contacts', label: 'Contacts', href: `${basePath}/contacts` },
     { id: 'missing', label: 'Missing', href: `${basePath}/missing` },

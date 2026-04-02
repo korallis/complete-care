@@ -1488,6 +1488,35 @@ export const returnHomeInterviewsRelations = relations(returnHomeInterviews, ({ 
   episode: one(missingEpisodes, { fields: [returnHomeInterviews.episodeId], references: [missingEpisodes.id] }),
 }));
 
+export const evvVisitsRelations = relations(evvVisits, ({ one, many }) => ({
+  organisation: one(organisations, { fields: [evvVisits.organisationId], references: [organisations.id] }),
+  carer: one(users, { fields: [evvVisits.carerId], references: [users.id] }),
+  checkEvents: many(evvCheckEvents),
+  alerts: many(evvAlerts),
+}));
+
+export const evvCheckEventsRelations = relations(evvCheckEvents, ({ one }) => ({
+  organisation: one(organisations, { fields: [evvCheckEvents.organisationId], references: [organisations.id] }),
+  visit: one(evvVisits, { fields: [evvCheckEvents.visitId], references: [evvVisits.id] }),
+  carer: one(users, { fields: [evvCheckEvents.carerId], references: [users.id] }),
+}));
+
+export const evvGeofenceConfigsRelations = relations(evvGeofenceConfigs, ({ one }) => ({
+  organisation: one(organisations, { fields: [evvGeofenceConfigs.organisationId], references: [organisations.id] }),
+  client: one(persons, { fields: [evvGeofenceConfigs.clientId], references: [persons.id] }),
+}));
+
+export const evvAlertsRelations = relations(evvAlerts, ({ one }) => ({
+  organisation: one(organisations, { fields: [evvAlerts.organisationId], references: [organisations.id] }),
+  visit: one(evvVisits, { fields: [evvAlerts.visitId], references: [evvVisits.id] }),
+  resolvedByUser: one(users, { fields: [evvAlerts.resolvedBy], references: [users.id] }),
+}));
+
+export const evvAlertConfigsRelations = relations(evvAlertConfigs, ({ one }) => ({
+  organisation: one(organisations, { fields: [evvAlertConfigs.organisationId], references: [organisations.id] }),
+  escalationContact: one(users, { fields: [evvAlertConfigs.escalationContactId], references: [users.id] }),
+}));
+
 // ---------------------------------------------------------------------------
 // Contact Management relations
 // ---------------------------------------------------------------------------

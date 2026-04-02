@@ -1,4 +1,5 @@
 import type { Metadata } from 'next';
+import Link from 'next/link';
 
 export const metadata: Metadata = {
   title: 'Reg 45 Quality Reviews',
@@ -14,12 +15,12 @@ export default function Reg45Page() {
             Quality reviews by the Responsible Individual covering Reg 44 findings, care quality, and recommendations.
           </p>
         </div>
-        <a
+        <Link
           href="/reg45/new"
           className="inline-flex items-center justify-center rounded-md bg-primary px-4 py-2 text-sm font-medium text-primary-foreground hover:bg-primary/90"
         >
           New Report
-        </a>
+        </Link>
       </div>
 
       {/* Report list placeholder */}
