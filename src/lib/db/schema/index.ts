@@ -59,5 +59,6 @@ export * from './behaviour';
 export * from './scheduling';
 export * from './timesheets';
 export * from './consent';
+export * from './visit-tasks';
 
 export * from './relations';
