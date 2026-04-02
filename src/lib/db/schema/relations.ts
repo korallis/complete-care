@@ -50,6 +50,8 @@ import { schoolRecords, personalEducationPlans, pepAttendees, educationAttendanc
 import { evvVisits, evvCheckEvents, evvGeofenceConfigs, evvAlerts, evvAlertConfigs } from './evv';
 import { familyInvitations, familyMembers, familyMessages, familyUpdates, familyPortalSettings, familyNotifications } from './family-portal';
 import { reg44Visits, reg44Reports, reg44Recommendations, reg40NotifiableEvents, pathwayPlans, transitionMilestones, independentLivingAssessments } from './reg44';
+import { subjectAccessRequests, dataRetentionPolicies, dataRetentionFlags, erasureRequests, dataExports, dataImports } from './gdpr';
+import { baselineAssessments, progressRecords, positiveBehaviours, behaviourIncidents, statementsOfPurpose } from './behaviour';
 
 export const organisationsRelations = relations(organisations, ({ many }) => ({
   memberships: many(memberships),
@@ -187,6 +189,17 @@ export const organisationsRelations = relations(organisations, ({ many }) => ({
   pathwayPlans: many(pathwayPlans),
   transitionMilestones: many(transitionMilestones),
   independentLivingAssessments: many(independentLivingAssessments),
+  subjectAccessRequests: many(subjectAccessRequests),
+  dataRetentionPolicies: many(dataRetentionPolicies),
+  dataRetentionFlags: many(dataRetentionFlags),
+  erasureRequests: many(erasureRequests),
+  dataExports: many(dataExports),
+  dataImports: many(dataImports),
+  baselineAssessments: many(baselineAssessments),
+  progressRecords: many(progressRecords),
+  positiveBehaviours: many(positiveBehaviours),
+  behaviourIncidents: many(behaviourIncidents),
+  statementsOfPurpose: many(statementsOfPurpose),
 }));
 
 export const usersRelations = relations(users, ({ many }) => ({

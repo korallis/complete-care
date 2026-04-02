@@ -54,5 +54,7 @@ export * from './stock-management';
 export * from './education';
 export * from './family-portal';
 export * from './reg44';
+export * from './gdpr';
+export * from './behaviour';
 
 export * from './relations';
