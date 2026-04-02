@@ -16,6 +16,7 @@ import {
   philomenaProfiles,
   missingEpisodes,
   missingEpisodeTimeline,
+  persons,
   returnHomeInterviews,
 } from '@/lib/db/schema';
 import type { ActionResult } from '@/types';
@@ -35,6 +36,61 @@ import {
   calculateRhiDeadline,
   DEFAULT_ESCALATION_THRESHOLDS,
 } from './schema';
+
+async function getPersonForOrg(
+  personId: string,
+  organisationId: string,
+) {
+  const [person] = await db
+    .select({
+      id: persons.id,
+      organisationId: persons.organisationId,
+    })
+    .from(persons)
+    .where(
+      and(
+        eq(persons.id, personId),
+        eq(persons.organisationId, organisationId),
+      ),
+    )
+    .limit(1);
+
+  return person ?? null;
+}
+
+async function getEpisodeForOrg(
+  episodeId: string,
+  organisationId: string,
+) {
+  const [episode] = await db
+    .select()
+    .from(missingEpisodes)
+    .where(eq(missingEpisodes.id, episodeId))
+    .limit(1);
+
+  if (!episode) return null;
+
+  assertBelongsToOrg(episode.organisationId, organisationId);
+
+  return episode;
+}
+
+async function getRhiForOrg(
+  rhiId: string,
+  organisationId: string,
+) {
+  const [rhi] = await db
+    .select()
+    .from(returnHomeInterviews)
+    .where(eq(returnHomeInterviews.id, rhiId))
+    .limit(1);
+
+  if (!rhi) return null;
+
+  assertBelongsToOrg(rhi.organisationId, organisationId);
+
+  return rhi;
+}
 
 // ---------------------------------------------------------------------------
 // Philomena Profile actions
@@ -165,6 +221,11 @@ export async function createMissingEpisode(
 
   const { userId, orgId: organisationId } = await requirePermission('create', 'persons');
   const data = parsed.data;
+
+  const person = await getPersonForOrg(data.personId, organisationId);
+  if (!person) {
+    return { success: false, error: 'Person not found' };
+  }
 
   // Look up existing Philomena profile for this child
   const existingProfile = await getPhilomenaProfileByOrg(
@@ -321,17 +382,8 @@ export async function recordReturn(
   const { userId, orgId: organisationId } = await requirePermission('update', 'persons');
   const data = parsed.data;
 
-  // Fetch the episode to get personId
-  const [episode] = await db
-    .select()
-    .from(missingEpisodes)
-    .where(
-      and(
-        eq(missingEpisodes.id, data.episodeId),
-        eq(missingEpisodes.organisationId, organisationId),
-      ),
-    )
-    .limit(1);
+  // Fetch the episode to get personId and enforce tenant isolation
+  const episode = await getEpisodeForOrg(data.episodeId, organisationId);
 
   if (!episode) {
     return { success: false, error: 'Episode not found' };
@@ -451,6 +503,11 @@ export async function completeRhi(
   const { userId, orgId: organisationId } = await requirePermission('update', 'persons');
   const { id, ...data } = parsed.data;
 
+  const existingRhi = await getRhiForOrg(id, organisationId);
+  if (!existingRhi) {
+    return { success: false, error: 'Return Home Interview not found' };
+  }
+
   await db
     .update(returnHomeInterviews)
     .set({
@@ -461,14 +518,10 @@ export async function completeRhi(
       completedAt: new Date(),
       updatedAt: new Date(),
     })
-    .where(
-      and(
-        eq(returnHomeInterviews.id, id),
-        eq(returnHomeInterviews.organisationId, organisationId),
-      ),
-    );
+    .where(eq(returnHomeInterviews.id, id));
 
   await auditLog('update', 'return_home_interview', id, {
+    before: existingRhi,
     after: { ...data, status: 'completed' },
   }, { userId, organisationId });
 
@@ -486,6 +539,11 @@ export async function escalateRhi(
   const { userId, orgId: organisationId } = await requirePermission('update', 'persons');
   const { id } = parsed.data;
 
+  const existingRhi = await getRhiForOrg(id, organisationId);
+  if (!existingRhi) {
+    return { success: false, error: 'Return Home Interview not found' };
+  }
+
   await db
     .update(returnHomeInterviews)
     .set({
@@ -494,14 +552,10 @@ export async function escalateRhi(
       escalatedAt: new Date(),
       updatedAt: new Date(),
     })
-    .where(
-      and(
-        eq(returnHomeInterviews.id, id),
-        eq(returnHomeInterviews.organisationId, organisationId),
-      ),
-    );
+    .where(eq(returnHomeInterviews.id, id));
 
   await auditLog('update', 'return_home_interview', id, {
+    before: existingRhi,
     after: { status: 'escalated', escalatedToRi: true },
   }, { userId, organisationId });
 
@@ -622,16 +676,5 @@ export async function getMissingEpisodeById(episodeId: string) {
 
 export async function getRhiById(rhiId: string) {
   const { orgId } = await requirePermission('read', 'persons');
-  const [rhi] = await db
-    .select()
-    .from(returnHomeInterviews)
-    .where(
-      and(
-        eq(returnHomeInterviews.id, rhiId),
-        eq(returnHomeInterviews.organisationId, orgId),
-      ),
-    )
-    .limit(1);
-
-  return rhi ?? null;
+  return getRhiForOrg(rhiId, orgId);
 }

@@ -13,6 +13,7 @@ import { db } from '@/lib/db';
 import {
   documents,
   bodyMapEntries,
+  incidents,
   organisations,
   users,
   persons,
@@ -50,6 +51,21 @@ async function getOrgSlug(orgId: string): Promise<string | null> {
     .where(eq(organisations.id, orgId))
     .limit(1);
   return org?.slug ?? null;
+}
+
+async function getIncidentForOrg(incidentId: string, orgId: string) {
+  const [incident] = await db
+    .select({ id: incidents.id })
+    .from(incidents)
+    .where(
+      and(
+        eq(incidents.id, incidentId),
+        eq(incidents.organisationId, orgId),
+      ),
+    )
+    .limit(1);
+
+  return incident ?? null;
 }
 
 // ============================================================================
@@ -520,6 +536,13 @@ export async function createBodyMapEntry(
       return { success: false, error: 'Person not found' };
     }
 
+    if (data.linkedIncidentId) {
+      const incident = await getIncidentForOrg(data.linkedIncidentId, orgId);
+      if (!incident) {
+        return { success: false, error: 'Linked incident not found' };
+      }
+    }
+
     // 3. Get creator name for denormalised display
     const [user] = await db
       .select({ name: users.name })
@@ -555,6 +578,7 @@ export async function createBodyMapEntry(
         entryType: data.entryType,
         side: data.side,
         dateObserved: data.dateObserved,
+        linkedIncidentId: data.linkedIncidentId ?? null,
       },
     }, { userId, organisationId: orgId });
 
