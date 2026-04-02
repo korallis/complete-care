@@ -56,5 +56,8 @@ export * from './family-portal';
 export * from './reg44';
 export * from './gdpr';
 export * from './behaviour';
+export * from './scheduling';
+export * from './timesheets';
+export * from './consent';
 
 export * from './relations';

@@ -52,6 +52,9 @@ import { familyInvitations, familyMembers, familyMessages, familyUpdates, family
 import { reg44Visits, reg44Reports, reg44Recommendations, reg40NotifiableEvents, pathwayPlans, transitionMilestones, independentLivingAssessments } from './reg44';
 import { subjectAccessRequests, dataRetentionPolicies, dataRetentionFlags, erasureRequests, dataExports, dataImports } from './gdpr';
 import { baselineAssessments, progressRecords, positiveBehaviours, behaviourIncidents, statementsOfPurpose } from './behaviour';
+import { staffAvailability, staffQualifications, schedulingRules, scheduleRuns, scheduleAssignments } from './scheduling';
+import { timesheets, payrollExports } from './timesheets';
+import { consentRecords, photos } from './consent';
 
 export const organisationsRelations = relations(organisations, ({ many }) => ({
   memberships: many(memberships),
@@ -200,6 +203,15 @@ export const organisationsRelations = relations(organisations, ({ many }) => ({
   positiveBehaviours: many(positiveBehaviours),
   behaviourIncidents: many(behaviourIncidents),
   statementsOfPurpose: many(statementsOfPurpose),
+  staffAvailability: many(staffAvailability),
+  staffQualifications: many(staffQualifications),
+  schedulingRules: many(schedulingRules),
+  scheduleRuns: many(scheduleRuns),
+  scheduleAssignments: many(scheduleAssignments),
+  timesheets: many(timesheets),
+  payrollExports: many(payrollExports),
+  consentRecords: many(consentRecords),
+  photos: many(photos),
 }));
 
 export const usersRelations = relations(users, ({ many }) => ({
