@@ -67,6 +67,10 @@ import {
   type TransitionChronologyEntry,
 } from './helpers';
 
+type AssessmentSkills = NonNullable<
+  typeof independentLivingAssessments.$inferInsert['skills']
+>;
+
 async function getOrgSlug(orgId: string): Promise<string | null> {
   const [org] = await db
     .select({ slug: organisations.slug })
@@ -87,7 +91,10 @@ async function revalidateReg44Paths(orgId: string) {
   revalidatePath(`/${slug}/reg44/transition`);
 }
 
-async function getPersonInOrg(personId: string, orgId: string) {
+async function getPersonInOrg(
+  personId: string,
+  orgId: string,
+): Promise<typeof persons.$inferSelect | null> {
   const [person] = await db
     .select()
     .from(persons)
@@ -109,7 +116,7 @@ function normaliseDateString(value: string | Date | null | undefined) {
   return value.toISOString().slice(0, 10);
 }
 
-function computeAssessmentScore(input: CreateAssessmentInput['skills']) {
+function computeAssessmentScore(input: AssessmentSkills) {
   return calculateAssessmentReadiness(input).overall;
 }
 
@@ -232,7 +239,7 @@ export async function createReg44Visit(
 
 export async function updateReg44Visit(
   id: string,
-  input: UpdateVisitInput,
+  input: Omit<UpdateVisitInput, 'id'>,
 ): Promise<ActionResult<typeof reg44Visits.$inferSelect>> {
   try {
     const { orgId, userId } = await requirePermission('manage', 'ofsted');
@@ -324,7 +331,7 @@ export async function createReg44Report(
 
 export async function updateReg44Report(
   id: string,
-  input: UpdateReportInput,
+  input: Omit<UpdateReportInput, 'id'>,
 ): Promise<ActionResult<typeof reg44Reports.$inferSelect>> {
   try {
     const { orgId, userId } = await requirePermission('manage', 'ofsted');
@@ -401,7 +408,7 @@ export async function createReg44Recommendation(
 
 export async function updateReg44Recommendation(
   id: string,
-  input: UpdateRecommendationInput,
+  input: Omit<UpdateRecommendationInput, 'id'>,
 ): Promise<ActionResult<typeof reg44Recommendations.$inferSelect>> {
   try {
     const { orgId, userId } = await requirePermission('manage', 'ofsted');
@@ -476,7 +483,7 @@ export async function createReg40NotifiableEvent(
 
 export async function updateReg40NotifiableEvent(
   id: string,
-  input: UpdateNotifiableEventInput,
+  input: Omit<UpdateNotifiableEventInput, 'id'>,
 ): Promise<ActionResult<typeof reg40NotifiableEvents.$inferSelect>> {
   try {
     const { orgId, userId } = await requirePermission('manage', 'ofsted');
@@ -591,7 +598,7 @@ export async function createPathwayPlan(
 
 export async function updatePathwayPlan(
   id: string,
-  input: UpdatePathwayPlanInput,
+  input: Omit<UpdatePathwayPlanInput, 'id'>,
 ): Promise<ActionResult<typeof pathwayPlans.$inferSelect>> {
   try {
     const { orgId, userId } = await requirePermission('update', 'care_plans');
@@ -675,7 +682,7 @@ export async function createTransitionMilestone(
 
 export async function updateTransitionMilestone(
   id: string,
-  input: UpdateMilestoneInput,
+  input: Omit<UpdateMilestoneInput, 'id'>,
 ): Promise<ActionResult<typeof transitionMilestones.$inferSelect>> {
   try {
     const { orgId, userId } = await requirePermission('update', 'care_plans');
@@ -750,8 +757,10 @@ export async function createIndependentLivingAssessment(
         assessmentDate: parsed.data.assessmentDate,
         assessorName: parsed.data.assessorName,
         assessorId: parsed.data.assessorId ?? userId,
-        skills: parsed.data.skills,
-        overallScore: parsed.data.overallScore ?? computeAssessmentScore(parsed.data.skills),
+        skills: parsed.data.skills as AssessmentSkills,
+        overallScore:
+          parsed.data.overallScore ??
+          computeAssessmentScore(parsed.data.skills as AssessmentSkills),
         comments: parsed.data.comments ?? null,
         isBaseline: parsed.data.isBaseline,
       })
@@ -768,7 +777,7 @@ export async function createIndependentLivingAssessment(
 
 export async function updateIndependentLivingAssessment(
   id: string,
-  input: UpdateAssessmentInput,
+  input: Omit<UpdateAssessmentInput, 'id'>,
 ): Promise<ActionResult<typeof independentLivingAssessments.$inferSelect>> {
   try {
     const { orgId, userId } = await requirePermission('update', 'assessments');
@@ -785,7 +794,7 @@ export async function updateIndependentLivingAssessment(
     if (!existing) return { success: false, error: 'Assessment not found' };
     assertBelongsToOrg(existing.organisationId, orgId);
 
-    const skills = parsed.data.skills ?? existing.skills;
+    const skills = (parsed.data.skills ?? existing.skills) as AssessmentSkills;
     const [row] = await db
       .update(independentLivingAssessments)
       .set({

@@ -211,7 +211,7 @@ describe('Reg 44 Validation Schemas', () => {
   describe('createPathwayPlanSchema', () => {
     it('accepts valid pathway plan', () => {
       const result = createPathwayPlanSchema.safeParse({
-        youngPersonName: 'Alex Johnson',
+        personId: '550e8400-e29b-41d4-a716-446655440000',
         dateOfBirth: '2009-06-15',
         personalAdviser: 'Sarah Williams',
         planStartDate: '2026-04-01',
@@ -230,9 +230,8 @@ describe('Reg 44 Validation Schemas', () => {
       expect(result.success).toBe(true);
     });
 
-    it('requires youngPersonName', () => {
+    it('requires personId', () => {
       const result = createPathwayPlanSchema.safeParse({
-        youngPersonName: '',
         planStartDate: '2026-04-01',
         sections: {},
       });
@@ -241,7 +240,7 @@ describe('Reg 44 Validation Schemas', () => {
 
     it('requires planStartDate', () => {
       const result = createPathwayPlanSchema.safeParse({
-        youngPersonName: 'Alex',
+        personId: '550e8400-e29b-41d4-a716-446655440000',
         planStartDate: '',
         sections: {},
       });

@@ -85,6 +85,13 @@
       "when": 1775137735799,
       "tag": "0011_lane-c-recovery",
       "breakpoints": true
+    },
+    {
+      "idx": 12,
+      "version": "7",
+      "when": 1775140500000,
+      "tag": "0012_reg44_transition_person_link",
+      "breakpoints": true
     }
   ]
 }

@@ -89,7 +89,7 @@ export function buildPathwayPlanAlerts(input: {
   const now = input.now ?? new Date();
   const age = calculateAge(input.person?.dateOfBirth, now);
   const accommodationText = input.plan.sections?.accommodation?.toLowerCase?.() ?? '';
-  const securedWords = ['secured', 'signed', 'confirmed', 'move-in', 'supported lodgings'];
+  const securedWords = ['secured', 'signed', 'confirmed', 'move-in'];
   const hasAccommodationSecured = securedWords.some((word) => accommodationText.includes(word));
 
   if (age !== null && age >= 17 && age < 18 && !hasAccommodationSecured) {
