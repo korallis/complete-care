@@ -75,6 +75,14 @@ export default async function KeyworkerPage({ params }: KeyworkerPageProps) {
   const restraintsNeedingDebrief = restraintsData.restraints.filter(
     (r) => !r.childDebrief && !r.staffDebrief,
   ).length;
+  const restraintsPendingSignOff = restraintsData.restraints.filter(
+    (r) => !!r.childDebrief && !!r.staffDebrief && !r.managementReview,
+  ).length;
+  const overdueActions = sessionsData.sessions.flatMap((session) =>
+    Array.isArray(session.actions)
+      ? session.actions.filter((action) => !action.completed && action.deadline < new Date().toISOString().slice(0, 10))
+      : [],
+  ).length;
 
   return (
     <div className="space-y-8">
@@ -138,8 +146,28 @@ export default async function KeyworkerPage({ params }: KeyworkerPageProps) {
         </div>
       )}
 
+
+      {restraintsPendingSignOff > 0 && (
+        <div className="flex items-start gap-3 rounded-xl border border-blue-200 bg-blue-50 px-4 py-3">
+          <svg
+            className="mt-0.5 h-5 w-5 text-blue-600 shrink-0"
+            fill="none"
+            viewBox="0 0 24 24"
+            stroke="currentColor"
+            strokeWidth="2"
+            aria-hidden="true"
+          >
+            <path strokeLinecap="round" strokeLinejoin="round" d="M9 12.75 11.25 15 15 9.75M21 12a9 9 0 1 1-18 0 9 9 0 0 1 18 0Z" />
+          </svg>
+          <p className="text-sm text-blue-800">
+            <span className="font-semibold">{restraintsPendingSignOff} restraint record{restraintsPendingSignOff !== 1 ? 's' : ''}</span>
+            {' '}ready for manager sign-off after debrief completion.
+          </p>
+        </div>
+      )}
+
       {/* Stats summary */}
-      <div className="grid grid-cols-2 gap-3 sm:grid-cols-4">
+      <div className="grid grid-cols-2 gap-3 sm:grid-cols-5">
         <div className="rounded-xl border border-[oklch(0.91_0.005_160)] bg-white p-4 text-center">
           <p className="text-2xl font-bold text-[oklch(0.22_0.04_160)]">
             {sessionsData.totalCount}
@@ -163,6 +191,12 @@ export default async function KeyworkerPage({ params }: KeyworkerPageProps) {
             {voiceData.totalCount}
           </p>
           <p className="text-xs text-[oklch(0.55_0_0)] mt-1">Voice entries</p>
+        </div>
+        <div className="rounded-xl border border-[oklch(0.91_0.005_160)] bg-white p-4 text-center">
+          <p className={`text-2xl font-bold ${overdueActions > 0 ? 'text-red-600' : 'text-[oklch(0.22_0.04_160)]'}`}>
+            {overdueActions}
+          </p>
+          <p className="text-xs text-[oklch(0.55_0_0)] mt-1">Overdue actions</p>
         </div>
       </div>
 

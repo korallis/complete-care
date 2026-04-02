@@ -28,6 +28,7 @@ const TIME_REGEX = /^\d{2}:\d{2}$/;
 
 const sessionActionSchema = z.object({
   action: z.string().min(1, 'Action is required').max(500),
+  assignedTo: z.string().min(1, 'Assignee is required').max(255),
   deadline: z
     .string()
     .regex(DATE_REGEX, 'Deadline must be in YYYY-MM-DD format'),
@@ -126,6 +127,14 @@ export const createSanctionSchema = z.object({
   sanctionType: z.enum(SANCTION_TYPES),
   isProhibited: z.boolean().default(false),
   justification: z.string().max(5000).optional().nullable(),
+}).superRefine((value, ctx) => {
+  if (value.isProhibited) {
+    ctx.addIssue({
+      code: z.ZodIssueCode.custom,
+      path: ['isProhibited'],
+      message: 'Prohibited sanctions cannot be recorded. Select a permitted measure instead.',
+    });
+  }
 });
 
 export type CreateSanctionInput = z.infer<typeof createSanctionSchema>;
@@ -200,3 +209,16 @@ export const updateVoiceSchema = z.object({
 });
 
 export type UpdateVoiceInput = z.infer<typeof updateVoiceSchema>;
+
+export const visitorLogFilterSchema = z.object({
+  personVisitedId: z.string().uuid().optional(),
+  relationship: z.enum(VISITOR_RELATIONSHIPS).optional(),
+  visitorName: z.string().max(255).optional(),
+  dateFrom: z.string().regex(DATE_REGEX, 'Date must be in YYYY-MM-DD format').optional(),
+  dateTo: z.string().regex(DATE_REGEX, 'Date must be in YYYY-MM-DD format').optional(),
+  signedInOnly: z.boolean().optional(),
+  page: z.coerce.number().int().min(1).default(1),
+  pageSize: z.coerce.number().int().min(1).max(100).default(20),
+});
+
+export type VisitorLogFilter = z.infer<typeof visitorLogFilterSchema>;

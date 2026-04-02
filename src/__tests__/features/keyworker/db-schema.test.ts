@@ -89,7 +89,7 @@ describe('keyworkerSessions schema', () => {
       health: null,
       family: null,
       wishesAndFeelings: null,
-      actions: [],
+      actions: [{ action: 'Follow up with school', assignedTo: 'Jane Manager', deadline: '2024-06-20', completed: false }],
       createdAt: new Date(),
       updatedAt: new Date(),
     };

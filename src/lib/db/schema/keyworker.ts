@@ -17,6 +17,7 @@ import { users } from './users';
  */
 export type SessionAction = {
   action: string;
+  assignedTo: string;
   deadline: string; // ISO YYYY-MM-DD
   completed: boolean;
 };

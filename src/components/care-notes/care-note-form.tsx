@@ -13,7 +13,10 @@ import { useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { toast } from 'sonner';
 import { z } from 'zod';
-import { createCareNoteSchema } from '@/features/care-notes/schema';
+import {
+  buildChildrenHomeHandoverSummary,
+  createCareNoteSchema,
+} from '@/features/care-notes/schema';
 import type { CreateCareNoteInput } from '@/features/care-notes/schema';
 import {
   MOOD_OPTIONS,
@@ -25,7 +28,7 @@ import {
   NOTE_TYPE_OPTIONS,
   NOTE_TYPE_LABELS,
 } from '@/features/care-notes/schema';
-import type { CareNote } from '@/lib/db/schema/care-notes';
+import type { CareNote, ChildrenHomeDetails } from '@/lib/db/schema/care-notes';
 
 /** Input type for the form (before Zod defaults are applied) */
 type FormInput = z.input<typeof createCareNoteSchema>;
@@ -143,10 +146,17 @@ export function CareNoteForm({ personId, orgSlug, onSubmit }: CareNoteFormProps)
   const [dressed, setDressed] = useState(false);
   const [oralCare, setOralCare] = useState(false);
   const [personalCareNotes, setPersonalCareNotes] = useState('');
+  const [activities, setActivities] = useState('');
+  const [incidentSummary, setIncidentSummary] = useState('');
+  const [visitorSummary, setVisitorSummary] = useState('');
+  const [contactSummary, setContactSummary] = useState('');
+  const [educationAttendance, setEducationAttendance] = useState('');
+  const [bedtime, setBedtime] = useState('');
 
   const {
     register,
     handleSubmit,
+    watch,
     formState: { errors },
   } = useForm<FormInput>({
     resolver: zodResolver(createCareNoteSchema),
@@ -156,6 +166,12 @@ export function CareNoteForm({ personId, orgSlug, onSubmit }: CareNoteFormProps)
       content: '',
     },
   });
+
+  const watchedShift = watch('shift');
+  const watchedMood = watch('mood');
+  const watchedHealth = watch('health');
+  const watchedMobility = watch('mobility');
+  const watchedHandover = watch('handover');
 
   function doSubmit(formData: FormInput) {
     setServerError(null);
@@ -204,10 +220,30 @@ export function CareNoteForm({ personId, orgSlug, onSubmit }: CareNoteFormProps)
         }
       : undefined;
 
+    const hasChildrenHomeDetails =
+      activities ||
+      incidentSummary ||
+      visitorSummary ||
+      contactSummary ||
+      educationAttendance ||
+      bedtime;
+
+    const childrenHomeDetails: ChildrenHomeDetails | undefined = hasChildrenHomeDetails
+      ? {
+          activities: activities || undefined,
+          incidents: incidentSummary || undefined,
+          visitors: visitorSummary || undefined,
+          contacts: contactSummary || undefined,
+          educationAttendance: educationAttendance || undefined,
+          bedtime: bedtime || undefined,
+        }
+      : undefined;
+
     const input = {
       ...formData,
       personalCare,
       nutrition,
+      childrenHomeDetails,
     } as CreateCareNoteInput;
 
     startTransition(async () => {
@@ -221,6 +257,22 @@ export function CareNoteForm({ personId, orgSlug, onSubmit }: CareNoteFormProps)
       }
     });
   }
+
+  const handoverPreview = buildChildrenHomeHandoverSummary({
+    shift: watchedShift,
+    mood: watchedMood,
+    health: watchedHealth,
+    mobility: watchedMobility,
+    handover: watchedHandover,
+    childrenHomeDetails: {
+      activities: activities || undefined,
+      incidents: incidentSummary || undefined,
+      visitors: visitorSummary || undefined,
+      contacts: contactSummary || undefined,
+      educationAttendance: educationAttendance || undefined,
+      bedtime: bedtime || undefined,
+    },
+  });
 
   return (
     <form
@@ -437,21 +489,80 @@ export function CareNoteForm({ personId, orgSlug, onSubmit }: CareNoteFormProps)
         />
       </div>
 
+      {/* Children's home running record */}
+      <fieldset className="space-y-3">
+        <legend className="text-sm font-medium text-[oklch(0.3_0_0)]">
+          Children&apos;s home running record
+        </legend>
+        <div className="grid gap-3 sm:grid-cols-2">
+          <textarea
+            value={activities}
+            onChange={(e) => setActivities(e.target.value)}
+            rows={2}
+            placeholder="Activities and engagement..."
+            className="flex w-full rounded-md border border-input bg-background px-3 py-2 text-sm ring-offset-background placeholder:text-muted-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 resize-y min-h-[72px]"
+          />
+          <textarea
+            value={incidentSummary}
+            onChange={(e) => setIncidentSummary(e.target.value)}
+            rows={2}
+            placeholder="Incidents or concerns..."
+            className="flex w-full rounded-md border border-input bg-background px-3 py-2 text-sm ring-offset-background placeholder:text-muted-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 resize-y min-h-[72px]"
+          />
+          <textarea
+            value={visitorSummary}
+            onChange={(e) => setVisitorSummary(e.target.value)}
+            rows={2}
+            placeholder="Visitors to the home..."
+            className="flex w-full rounded-md border border-input bg-background px-3 py-2 text-sm ring-offset-background placeholder:text-muted-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 resize-y min-h-[72px]"
+          />
+          <textarea
+            value={contactSummary}
+            onChange={(e) => setContactSummary(e.target.value)}
+            rows={2}
+            placeholder="Family contact or calls..."
+            className="flex w-full rounded-md border border-input bg-background px-3 py-2 text-sm ring-offset-background placeholder:text-muted-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 resize-y min-h-[72px]"
+          />
+          <textarea
+            value={educationAttendance}
+            onChange={(e) => setEducationAttendance(e.target.value)}
+            rows={2}
+            placeholder="Education attendance or progress..."
+            className="flex w-full rounded-md border border-input bg-background px-3 py-2 text-sm ring-offset-background placeholder:text-muted-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 resize-y min-h-[72px]"
+          />
+          <textarea
+            value={bedtime}
+            onChange={(e) => setBedtime(e.target.value)}
+            rows={2}
+            placeholder="Bedtime and evening routine..."
+            className="flex w-full rounded-md border border-input bg-background px-3 py-2 text-sm ring-offset-background placeholder:text-muted-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 resize-y min-h-[72px]"
+          />
+        </div>
+      </fieldset>
+
       {/* Handover */}
       <div className="space-y-2">
         <label
           htmlFor="handover"
           className="text-sm font-medium text-[oklch(0.3_0_0)]"
         >
-          Handover Points
+          Additional handover note
         </label>
         <textarea
           id="handover"
           {...register('handover')}
           rows={2}
-          placeholder="Key points for the next shift..."
+          placeholder="Anything the auto-generated summary should emphasise..."
           className="flex w-full rounded-md border border-input bg-background px-3 py-2 text-sm ring-offset-background placeholder:text-muted-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 resize-y min-h-[60px]"
         />
+        {handoverPreview && (
+          <div className="rounded-md border border-[oklch(0.9_0.01_160)] bg-[oklch(0.985_0.003_160)] p-3">
+            <p className="mb-1 text-xs font-semibold uppercase tracking-wide text-[oklch(0.45_0_0)]">
+              Auto-generated handover summary
+            </p>
+            <p className="text-sm text-[oklch(0.35_0_0)]">{handoverPreview}</p>
+          </div>
+        )}
       </div>
 
       {/* Narrative */}

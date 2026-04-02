@@ -5,6 +5,7 @@ import { auth } from '@/auth';
 import { listVisitorLog } from '@/features/keyworker/actions';
 import { hasPermission } from '@/lib/rbac/permissions';
 import { VisitorLogList } from '@/features/keyworker/components/visitor-log-list';
+import { VISITOR_RELATIONSHIP_LABELS, VISITOR_RELATIONSHIPS } from '@/features/keyworker/constants';
 import type { Role } from '@/lib/rbac/permissions';
 
 export const metadata: Metadata = {
@@ -13,10 +14,12 @@ export const metadata: Metadata = {
 
 interface VisitorLogPageProps {
   params: Promise<{ orgSlug: string }>;
+  searchParams?: Promise<{ q?: string; relationship?: string; dateFrom?: string; dateTo?: string; status?: string }>;
 }
 
-export default async function VisitorLogPage({ params }: VisitorLogPageProps) {
+export default async function VisitorLogPage({ params, searchParams }: VisitorLogPageProps) {
   const { orgSlug } = await params;
+  const filters = (await searchParams) ?? {};
 
   const session = await auth();
   if (!session?.user?.id) redirect('/login');
@@ -38,7 +41,15 @@ export default async function VisitorLogPage({ params }: VisitorLogPageProps) {
   const role = (session.user.role ?? activeMembership.role ?? 'viewer') as Role;
   const canCreate = hasPermission(role, 'create', 'compliance');
 
-  const { entries, totalCount } = await listVisitorLog({ page: 1, pageSize: 50 });
+  const { entries, totalCount } = await listVisitorLog({
+    visitorName: filters.q,
+    relationship: filters.relationship,
+    dateFrom: filters.dateFrom,
+    dateTo: filters.dateTo,
+    signedInOnly: filters.status === 'signed-in',
+    page: 1,
+    pageSize: 50,
+  });
 
   // Count current visitors (no departure time)
   const currentVisitors = entries.filter((e) => !e.departureTime).length;
@@ -103,6 +114,43 @@ export default async function VisitorLogPage({ params }: VisitorLogPageProps) {
           <p className="text-xs text-[oklch(0.55_0_0)] mt-1">ID not checked</p>
         </div>
       </div>
+
+      <form className="mb-6 grid gap-3 rounded-xl border border-[oklch(0.91_0.005_160)] bg-white p-4 sm:grid-cols-5">
+        <div className="sm:col-span-2">
+          <label htmlFor="q" className="mb-1 block text-xs font-medium text-[oklch(0.55_0_0)]">Search visitor</label>
+          <input id="q" name="q" defaultValue={filters.q ?? ''} placeholder="Name or partial name" className="block h-10 w-full rounded-lg border border-[oklch(0.88_0.005_160)] bg-white px-3 py-2 text-sm" />
+        </div>
+        <div>
+          <label htmlFor="relationship" className="mb-1 block text-xs font-medium text-[oklch(0.55_0_0)]">Visitor type</label>
+          <select id="relationship" name="relationship" defaultValue={filters.relationship ?? ''} className="block h-10 w-full rounded-lg border border-[oklch(0.88_0.005_160)] bg-white px-3 py-2 text-sm">
+            <option value="">All types</option>
+            {VISITOR_RELATIONSHIPS.map((relationship) => (
+              <option key={relationship} value={relationship}>{VISITOR_RELATIONSHIP_LABELS[relationship]}</option>
+            ))}
+          </select>
+        </div>
+        <div>
+          <label htmlFor="dateFrom" className="mb-1 block text-xs font-medium text-[oklch(0.55_0_0)]">From</label>
+          <input id="dateFrom" name="dateFrom" type="date" defaultValue={filters.dateFrom ?? ''} className="block h-10 w-full rounded-lg border border-[oklch(0.88_0.005_160)] bg-white px-3 py-2 text-sm" />
+        </div>
+        <div>
+          <label htmlFor="dateTo" className="mb-1 block text-xs font-medium text-[oklch(0.55_0_0)]">To</label>
+          <input id="dateTo" name="dateTo" type="date" defaultValue={filters.dateTo ?? ''} className="block h-10 w-full rounded-lg border border-[oklch(0.88_0.005_160)] bg-white px-3 py-2 text-sm" />
+        </div>
+        <div>
+          <label htmlFor="status" className="mb-1 block text-xs font-medium text-[oklch(0.55_0_0)]">Presence</label>
+          <select id="status" name="status" defaultValue={filters.status ?? ''} className="block h-10 w-full rounded-lg border border-[oklch(0.88_0.005_160)] bg-white px-3 py-2 text-sm">
+            <option value="">All</option>
+            <option value="signed-in">Currently in home</option>
+          </select>
+        </div>
+        <div className="flex items-end gap-2 sm:col-span-5">
+          <button type="submit" className="inline-flex items-center rounded-lg bg-[oklch(0.3_0.08_160)] px-4 py-2 text-sm font-medium text-white">Apply filters</button>
+          {(filters.q || filters.relationship || filters.dateFrom || filters.dateTo || filters.status) && (
+            <Link href={`/${orgSlug}/visitor-log`} className="inline-flex items-center rounded-lg border border-[oklch(0.88_0.005_160)] bg-white px-4 py-2 text-sm font-medium text-[oklch(0.35_0.04_160)]">Clear</Link>
+          )}
+        </div>
+      </form>
 
       {/* Visitor log */}
       <VisitorLogList entries={entries} />

@@ -5,10 +5,6 @@
 
 import { z } from 'zod';
 
-// ---------------------------------------------------------------------------
-// Enum constants
-// ---------------------------------------------------------------------------
-
 export const MOOD_OPTIONS = [
   'happy',
   'content',
@@ -40,10 +36,6 @@ export const NOTE_TYPE_OPTIONS = [
   'safeguarding',
   'medical',
 ] as const;
-
-// ---------------------------------------------------------------------------
-// Labels for UI display
-// ---------------------------------------------------------------------------
 
 export const MOOD_LABELS: Record<string, string> = {
   happy: 'Happy',
@@ -77,10 +69,6 @@ export const NOTE_TYPE_LABELS: Record<string, string> = {
   medical: 'Medical',
 };
 
-// ---------------------------------------------------------------------------
-// Sub-schemas
-// ---------------------------------------------------------------------------
-
 export const personalCareSchema = z.object({
   washed: z.boolean().default(false),
   dressed: z.boolean().default(false),
@@ -101,9 +89,16 @@ export const nutritionSchema = z.object({
   fluidsNote: z.string().max(500).optional(),
 });
 
-// ---------------------------------------------------------------------------
-// Create care note schema
-// ---------------------------------------------------------------------------
+export const childrenHomeDetailsSchema = z.object({
+  activities: z.string().max(2000).optional(),
+  incidents: z.string().max(2000).optional(),
+  visitors: z.string().max(2000).optional(),
+  contacts: z.string().max(2000).optional(),
+  educationAttendance: z.string().max(2000).optional(),
+  bedtime: z.string().max(1000).optional(),
+});
+
+export type ChildrenHomeDetails = z.infer<typeof childrenHomeDetailsSchema>;
 
 export const createCareNoteSchema = z.object({
   personId: z.string().uuid('Invalid person ID'),
@@ -118,14 +113,11 @@ export const createCareNoteSchema = z.object({
   nutrition: nutritionSchema.optional(),
   mobility: z.string().max(2000).optional(),
   health: z.string().max(2000).optional(),
+  childrenHomeDetails: childrenHomeDetailsSchema.optional(),
   handover: z.string().max(2000).optional(),
 });
 
 export type CreateCareNoteInput = z.infer<typeof createCareNoteSchema>;
-
-// ---------------------------------------------------------------------------
-// Timeline filter schema (for query params)
-// ---------------------------------------------------------------------------
 
 export const careNoteFilterSchema = z.object({
   personId: z.string().uuid().optional(),
@@ -146,11 +138,6 @@ export const careNoteFilterSchema = z.object({
 
 export type CareNoteFilter = z.infer<typeof careNoteFilterSchema>;
 
-// ---------------------------------------------------------------------------
-// Helpers
-// ---------------------------------------------------------------------------
-
-/** Returns a colour class for the mood badge */
 export function getMoodVariant(
   mood: string,
 ): 'default' | 'secondary' | 'destructive' | 'outline' {
@@ -169,13 +156,11 @@ export function getMoodVariant(
   }
 }
 
-/** Returns the shift label, or empty string if no shift */
 export function getShiftLabel(shift: string | null | undefined): string {
   if (!shift) return '';
   return SHIFT_LABELS[shift] ?? shift;
 }
 
-/** Format a date for display in the timeline */
 export function formatNoteDate(date: Date | string): string {
   const d = typeof date === 'string' ? new Date(date) : date;
   return d.toLocaleDateString('en-GB', {
@@ -186,11 +171,47 @@ export function formatNoteDate(date: Date | string): string {
   });
 }
 
-/** Format a time for display */
 export function formatNoteTime(date: Date | string): string {
   const d = typeof date === 'string' ? new Date(date) : date;
   return d.toLocaleTimeString('en-GB', {
     hour: '2-digit',
     minute: '2-digit',
   });
+}
+
+export function buildChildrenHomeHandoverSummary(input: {
+  shift?: string;
+  mood?: string;
+  health?: string;
+  mobility?: string;
+  handover?: string;
+  childrenHomeDetails?: ChildrenHomeDetails;
+}): string {
+  const sections = [
+    input.shift ? `Shift: ${SHIFT_LABELS[input.shift] ?? input.shift}` : null,
+    input.mood ? `Presentation: ${MOOD_LABELS[input.mood] ?? input.mood}` : null,
+    input.childrenHomeDetails?.activities
+      ? `Activities: ${input.childrenHomeDetails.activities}`
+      : null,
+    input.childrenHomeDetails?.incidents
+      ? `Incidents: ${input.childrenHomeDetails.incidents}`
+      : null,
+    input.childrenHomeDetails?.visitors
+      ? `Visitors: ${input.childrenHomeDetails.visitors}`
+      : null,
+    input.childrenHomeDetails?.contacts
+      ? `Contacts: ${input.childrenHomeDetails.contacts}`
+      : null,
+    input.childrenHomeDetails?.educationAttendance
+      ? `Education: ${input.childrenHomeDetails.educationAttendance}`
+      : null,
+    input.childrenHomeDetails?.bedtime
+      ? `Bedtime: ${input.childrenHomeDetails.bedtime}`
+      : null,
+    input.health ? `Health: ${input.health}` : null,
+    input.mobility ? `Mobility: ${input.mobility}` : null,
+    input.handover ? `Additional handover note: ${input.handover}` : null,
+  ].filter(Boolean);
+
+  return sections.join(' | ');
 }
