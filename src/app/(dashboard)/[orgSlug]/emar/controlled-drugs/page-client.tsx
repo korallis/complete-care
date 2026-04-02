@@ -2,76 +2,101 @@
 
 /**
  * Client component for the CD Register page.
- * Renders the register table, transaction form, and patch tracker.
+ * Renders register switching, the transaction form, and patch tracking.
  */
 
-import { useState } from 'react';
+import { useMemo, useState } from 'react';
 import {
   CdRegisterTable,
   CdTransactionForm,
   PatchTracker,
   type CdRegisterRow,
 } from '@/features/emar/components/controlled-drugs';
+import type {
+  ControlledDrugPatchView,
+  ControlledDrugRegisterView,
+  ControlledDrugStaffMember,
+} from '@/features/emar/actions/controlled-drugs';
 import { calculateBalance } from '@/features/emar/lib/cd-register';
-import type { CdTransactionType } from '@/features/emar/types';
+import type {
+  CdTransactionType,
+  PatchDisposalMethod,
+  PatchSite,
+} from '@/features/emar/types';
 
 interface CdRegisterPageClientProps {
   currentUserId: string;
-  staffMembers: { id: string; name: string }[];
+  staffMembers: ControlledDrugStaffMember[];
+  registers: ControlledDrugRegisterView[];
+  onRecordCdTransaction: (data: {
+    registerId: string;
+    transactionType: CdTransactionType;
+    quantityIn: number;
+    quantityOut: number;
+    transactionDate: Date;
+    performedBy: string;
+    witnessedBy: string;
+    sourceOrDestination?: string;
+    batchNumber?: string;
+    disposalMethod?: string;
+    notes?: string;
+  }) => Promise<{ success: boolean; error?: string; data?: { entryId: string; newBalance: number } }>;
+  onRecordPatchApplication: (data: {
+    registerId: string;
+    medicationId: string;
+    personId: string;
+    applicationSite: PatchSite;
+    applicationSiteDetail?: string;
+    appliedAt: Date;
+    scheduledRemovalAt?: Date;
+    appliedBy: string;
+    applicationWitnessedBy: string;
+    notes?: string;
+  }) => Promise<{ success: boolean; error?: string; data?: { patchId: string } }>;
+  onRecordPatchRemoval: (data: {
+    patchId: string;
+    removedAt: Date;
+    removedBy: string;
+    removalWitnessedBy: string;
+    disposalMethod: PatchDisposalMethod;
+    notes?: string;
+  }) => Promise<{ success: boolean; error?: string; data?: { patchId: string } }>;
 }
 
-// Demonstration entries — in production, fetched from DB
-const initialEntries: CdRegisterRow[] = [
-  {
-    id: '1',
-    transactionDate: new Date('2026-03-25T09:00:00'),
-    transactionType: 'receipt',
-    quantityIn: 28,
-    quantityOut: 0,
-    balanceAfter: 28,
-    performedByName: 'Sarah Johnson',
-    witnessedByName: 'James Williams',
-    sourceOrDestination: 'Boots Pharmacy',
-    batchNumber: 'BN-2026-0412',
-    notes: 'Monthly supply received',
-  },
-  {
-    id: '2',
-    transactionDate: new Date('2026-03-26T08:15:00'),
-    transactionType: 'administration',
-    quantityIn: 0,
-    quantityOut: 1,
-    balanceAfter: 27,
-    performedByName: 'Sarah Johnson',
-    witnessedByName: 'Emily Brown',
-    sourceOrDestination: null,
-    batchNumber: null,
-    notes: null,
-  },
-  {
-    id: '3',
-    transactionDate: new Date('2026-03-27T08:10:00'),
-    transactionType: 'administration',
-    quantityIn: 0,
-    quantityOut: 1,
-    balanceAfter: 26,
-    performedByName: 'James Williams',
-    witnessedByName: 'Sarah Johnson',
-    sourceOrDestination: null,
-    batchNumber: null,
-    notes: null,
-  },
-];
+type RegisterState = ControlledDrugRegisterView;
 
 export function CdRegisterPageClient({
   currentUserId,
   staffMembers,
+  registers,
+  onRecordCdTransaction,
+  onRecordPatchApplication,
+  onRecordPatchRemoval,
 }: CdRegisterPageClientProps) {
-  const [entries, setEntries] = useState<CdRegisterRow[]>(initialEntries);
-  const [currentBalance, setCurrentBalance] = useState(26);
+  const [registerState, setRegisterState] = useState<RegisterState[]>(registers);
+  const [selectedRegisterId, setSelectedRegisterId] = useState<string | null>(
+    registers[0]?.id ?? null,
+  );
   const [activeTab, setActiveTab] = useState<'register' | 'patches'>('register');
 
-  const staffName = staffMembers.find((s) => s.id === currentUserId)?.name ?? 'Unknown';
+  const selectedRegister = useMemo(
+    () => registerState.find((register) => register.id === selectedRegisterId) ?? null,
+    [registerState, selectedRegisterId],
+  );
+
+  const staffName =
+    staffMembers.find((staff) => staff.id === currentUserId)?.name ?? 'Unknown';
+
+  function updateRegister(
+    registerId: string,
+    updater: (register: RegisterState) => RegisterState,
+  ) {
+    setRegisterState((current) =>
+      current.map((register) =>
+        register.id === registerId ? updater(register) : register,
+      ),
+    );
+  }
 
   async function handleTransaction(data: {
     registerId: string;
@@ -86,37 +111,157 @@ export function CdRegisterPageClient({
     disposalMethod?: string;
     notes?: string;
   }) {
-    const newBalance = calculateBalance(
-      currentBalance,
-      data.transactionType,
-      data.quantityIn,
-      data.quantityOut,
-    );
+    const result = await onRecordCdTransaction(data);
+    if (!result.success) {
+      throw new Error(result.error ?? 'Failed to record controlled drug transaction');
+    }
 
     const witnessName =
-      staffMembers.find((s) => s.id === data.witnessedBy)?.name ?? 'Unknown';
+      staffMembers.find((staff) => staff.id === data.witnessedBy)?.name ?? 'Unknown';
+    const newBalance =
+      result.data?.newBalance ??
+      calculateBalance(0, data.transactionType, data.quantityIn, data.quantityOut);
 
-    const newEntry: CdRegisterRow = {
-      id: crypto.randomUUID(),
-      transactionDate: data.transactionDate,
-      transactionType: data.transactionType,
-      quantityIn: data.quantityIn,
-      quantityOut: data.quantityOut,
-      balanceAfter: newBalance,
-      performedByName: staffName,
-      witnessedByName: witnessName,
-      sourceOrDestination: data.sourceOrDestination ?? null,
-      batchNumber: data.batchNumber ?? null,
-      notes: data.notes ?? null,
-    };
+    updateRegister(data.registerId, (register) => {
+      const entry: CdRegisterRow = {
+        id: result.data?.entryId ?? crypto.randomUUID(),
+        transactionDate: data.transactionDate,
+        transactionType: data.transactionType,
+        quantityIn: data.quantityIn,
+        quantityOut: data.quantityOut,
+        balanceAfter: newBalance,
+        performedByName: staffName,
+        witnessedByName: witnessName,
+        sourceOrDestination: data.sourceOrDestination ?? null,
+        batchNumber: data.batchNumber ?? null,
+        notes: data.notes ?? null,
+      };
 
-    setEntries((prev) => [...prev, newEntry]);
-    setCurrentBalance(newBalance);
+      return {
+        ...register,
+        currentBalance: newBalance,
+        entries: [entry, ...register.entries],
+      };
+    });
+  }
+
+  async function handlePatchApplication(data: {
+    registerId: string;
+    medicationId: string;
+    personId: string;
+    applicationSite: PatchSite;
+    applicationSiteDetail?: string;
+    appliedAt: Date;
+    scheduledRemovalAt?: Date;
+    appliedBy: string;
+    applicationWitnessedBy: string;
+    notes?: string;
+  }) {
+    const result = await onRecordPatchApplication(data);
+    if (!result.success) {
+      throw new Error(result.error ?? 'Failed to record patch application');
+    }
+
+    const witnessName =
+      staffMembers.find((staff) => staff.id === data.applicationWitnessedBy)?.name ??
+      'Unknown';
+
+    updateRegister(data.registerId, (register) => {
+      const patch: ControlledDrugPatchView = {
+        id: result.data?.patchId ?? crypto.randomUUID(),
+        applicationSite: data.applicationSite,
+        appliedAt: data.appliedAt,
+        removedAt: null,
+        scheduledRemovalAt: data.scheduledRemovalAt ?? null,
+        appliedByName: staffName,
+        applicationWitnessName: witnessName,
+        removedByName: null,
+        removalWitnessName: null,
+        disposalMethod: null,
+        status: 'active',
+      };
+
+      return {
+        ...register,
+        patches: [patch, ...register.patches],
+        rotationHistory: [...register.rotationHistory, data.applicationSite],
+      };
+    });
+  }
+
+  async function handlePatchRemoval(data: {
+    patchId: string;
+    removedAt: Date;
+    removedBy: string;
+    removalWitnessedBy: string;
+    disposalMethod: PatchDisposalMethod;
+    notes?: string;
+  }) {
+    const result = await onRecordPatchRemoval(data);
+    if (!result.success) {
+      throw new Error(result.error ?? 'Failed to record patch removal');
+    }
+
+    const witnessName =
+      staffMembers.find((staff) => staff.id === data.removalWitnessedBy)?.name ?? 'Unknown';
+
+    setRegisterState((current) =>
+      current.map((register) => ({
+        ...register,
+        patches: register.patches.map((patch) =>
+          patch.id === data.patchId
+            ? {
+                ...patch,
+                removedAt: data.removedAt,
+                removedByName: staffName,
+                removalWitnessName: witnessName,
+                disposalMethod: data.disposalMethod,
+                status: 'removed',
+              }
+            : patch,
+        ),
+      })),
+    );
+  }
+
+  if (registerState.length === 0 || !selectedRegister) {
+    return (
+      <div className="rounded-xl border border-dashed border-slate-200 bg-white p-10 text-center shadow-sm">
+        <h2 className="text-base font-semibold text-slate-900">
+          No controlled drug registers yet
+        </h2>
+        <p className="mt-2 text-sm text-slate-500">
+          Once controlled-drug medications are prescribed and registered, they will appear here.
+        </p>
+      </div>
+    );
   }
 
   return (
     <div className="space-y-6">
-      {/* Tab Navigation */}
+      {registerState.length > 1 && (
+        <div className="rounded-xl border border-slate-200 bg-white p-4 shadow-sm">
+          <label
+            htmlFor="cd-register-select"
+            className="mb-2 block text-xs font-medium uppercase tracking-wider text-slate-500"
+          >
+            Select register
+          </label>
+          <select
+            id="cd-register-select"
+            value={selectedRegister.id}
+            onChange={(event) => setSelectedRegisterId(event.target.value)}
+            className="w-full rounded-lg border border-slate-200 bg-white px-3 py-2 text-sm text-slate-900 shadow-sm focus:border-slate-400 focus:outline-none focus:ring-1 focus:ring-slate-400"
+          >
+            {registerState.map((register) => (
+              <option key={register.id} value={register.id}>
+                {register.personName} — {register.name} {register.strength}
+              </option>
+            ))}
+          </select>
+        </div>
+      )}
+
       <div className="flex gap-1 rounded-lg border border-slate-200 bg-slate-50 p-1">
         <button
           onClick={() => setActiveTab('register')}
@@ -143,37 +288,37 @@ export function CdRegisterPageClient({
       {activeTab === 'register' && (
         <>
           <CdTransactionForm
-            registerId="reg-1"
-            currentBalance={currentBalance}
+            registerId={selectedRegister.id}
+            currentBalance={selectedRegister.currentBalance}
             currentUserId={currentUserId}
             staffMembers={staffMembers}
             onSubmit={handleTransaction}
           />
           <CdRegisterTable
-            name="Morphine Sulfate"
-            strength="10mg"
-            form="Tablet"
-            schedule="2"
-            personName="Margaret Thompson"
-            currentBalance={currentBalance}
-            entries={entries}
+            name={selectedRegister.name}
+            strength={selectedRegister.strength}
+            form={selectedRegister.form}
+            schedule={selectedRegister.schedule}
+            personName={selectedRegister.personName}
+            currentBalance={selectedRegister.currentBalance}
+            entries={selectedRegister.entries}
           />
         </>
       )}
 
       {activeTab === 'patches' && (
         <PatchTracker
-          registerId="reg-2"
-          medicationId="med-2"
-          personId="person-1"
-          personName="Margaret Thompson"
-          name="Fentanyl 25mcg/hr Patch"
-          patches={[]}
-          rotationHistory={['left_upper_arm', 'right_upper_arm']}
+          registerId={selectedRegister.id}
+          medicationId={selectedRegister.medicationId}
+          personId={selectedRegister.personId}
+          personName={selectedRegister.personName}
+          name={`${selectedRegister.name} ${selectedRegister.strength}`}
+          patches={selectedRegister.patches}
+          rotationHistory={selectedRegister.rotationHistory}
           currentUserId={currentUserId}
           staffMembers={staffMembers}
-          onApply={async () => {}}
-          onRemove={async () => {}}
+          onApply={handlePatchApplication}
+          onRemove={handlePatchRemoval}
         />
       )}
     </div>

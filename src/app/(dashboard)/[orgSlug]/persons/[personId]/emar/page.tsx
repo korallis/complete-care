@@ -3,7 +3,11 @@ import { notFound, redirect } from 'next/navigation';
 import Link from 'next/link';
 import { auth } from '@/auth';
 import { getPerson } from '@/features/persons/actions';
-import { getMarChart, recordAdministration } from '@/features/emar/actions';
+import {
+  getMarChart,
+  listMedicationStaffMembers,
+  recordAdministration,
+} from '@/features/emar/actions';
 import { hasPermission } from '@/lib/rbac/permissions';
 import type { Role } from '@/lib/rbac/permissions';
 import { MarChart } from '@/components/emar/mar-chart';
@@ -66,7 +70,10 @@ export default async function EmarPage({ params, searchParams }: EmarPageProps) 
 
   // Default to today
   const date = dateParam ?? new Date().toISOString().slice(0, 10);
-  const data = await getMarChart({ personId, date });
+  const [data, staffMembers] = await Promise.all([
+    getMarChart({ personId, date }),
+    listMedicationStaffMembers(),
+  ]);
 
   // Date navigation
   const prevDate = new Date(date + 'T12:00:00Z');
@@ -168,6 +175,8 @@ export default async function EmarPage({ params, searchParams }: EmarPageProps) 
         data={data}
         orgSlug={orgSlug}
         personId={personId}
+        currentUserId={session.user.id}
+        staffMembers={staffMembers}
         canAdminister={canAdminister}
         onRecordAdministration={recordAdministration}
       />

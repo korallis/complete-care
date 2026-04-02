@@ -17,6 +17,7 @@ import { db } from '@/lib/db';
 import {
   medications,
   medicationAdministrations,
+  memberships,
   organisations,
   users,
 } from '@/lib/db/schema';
@@ -80,6 +81,11 @@ export type MedicationListResult = {
   page: number;
   pageSize: number;
   totalPages: number;
+};
+
+export type MedicationStaffMember = {
+  id: string;
+  name: string;
 };
 
 export async function listMedications({
@@ -161,6 +167,26 @@ export async function getMedication(medicationId: string): Promise<Medication | 
   assertBelongsToOrg(med.organisationId, orgId);
 
   return med;
+}
+
+// ---------------------------------------------------------------------------
+// List medication-capable staff members for witness / administration flows
+// ---------------------------------------------------------------------------
+
+export async function listMedicationStaffMembers(): Promise<MedicationStaffMember[]> {
+  const { orgId } = await requirePermission('read', 'medications');
+
+  return db
+    .select({ id: users.id, name: users.name })
+    .from(memberships)
+    .innerJoin(users, eq(memberships.userId, users.id))
+    .where(
+      and(
+        eq(memberships.organisationId, orgId),
+        eq(memberships.status, 'active'),
+      ),
+    )
+    .orderBy(asc(users.name));
 }
 
 // ---------------------------------------------------------------------------
@@ -432,6 +458,38 @@ export async function recordAdministration(
       .where(eq(users.id, userId))
       .limit(1);
 
+    const witnessId: string | null = data.witnessId ?? null;
+    let witnessName: string | null = data.witnessName ?? null;
+
+    if (med.isControlledDrug && ['given', 'self_administered'].includes(data.status)) {
+      if (!witnessId) {
+        return { success: false, error: 'A second witness is required for controlled drug administration' };
+      }
+
+      if (witnessId === userId) {
+        return { success: false, error: 'Witness must be a different staff member' };
+      }
+
+      const [witnessMembership] = await db
+        .select({ id: memberships.id, name: users.name })
+        .from(memberships)
+        .innerJoin(users, eq(memberships.userId, users.id))
+        .where(
+          and(
+            eq(memberships.userId, witnessId),
+            eq(memberships.organisationId, orgId),
+            eq(memberships.status, 'active'),
+          ),
+        )
+        .limit(1);
+
+      if (!witnessMembership) {
+        return { success: false, error: 'Witness must be an active staff member in this organisation' };
+      }
+
+      witnessName = witnessMembership.name;
+    }
+
     const [admin] = await db
       .insert(medicationAdministrations)
       .values({
@@ -444,8 +502,8 @@ export async function recordAdministration(
         reason: data.reason ?? null,
         administeredById: userId,
         administeredByName: user?.name ?? null,
-        witnessId: data.witnessId ?? null,
-        witnessName: data.witnessName ?? null,
+        witnessId,
+        witnessName,
         notes: data.notes ?? null,
       })
       .returning();
@@ -457,6 +515,8 @@ export async function recordAdministration(
         status: data.status,
         drugName: med.drugName,
         administeredByName: user?.name,
+        witnessId,
+        witnessName,
       },
     }, { userId, organisationId: orgId });
 

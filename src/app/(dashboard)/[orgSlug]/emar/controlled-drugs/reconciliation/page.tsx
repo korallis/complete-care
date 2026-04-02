@@ -1,4 +1,11 @@
 import type { Metadata } from 'next';
+import { notFound, redirect } from 'next/navigation';
+import { auth } from '@/auth';
+import {
+  listControlledDrugRegisters,
+  listControlledDrugStaffMembers,
+  recordStockReconciliation,
+} from '@/features/emar/actions/controlled-drugs';
 import { ReconciliationPageClient } from './page-client';
 
 export const metadata: Metadata = {
@@ -7,17 +14,37 @@ export const metadata: Metadata = {
     'Weekly CD stock reconciliation with discrepancy investigation and CDAO notification.',
 };
 
-/**
- * Stock Reconciliation page.
- * VAL-EMAR-008: CD stock reconciliation with dual-auth, discrepancy investigation, CDAO flag.
- */
-export default function ReconciliationPage() {
-  const mockStaff = [
-    { id: 'user-1', name: 'Sarah Johnson (Senior Carer)' },
-    { id: 'user-2', name: 'James Williams (Carer)' },
-    { id: 'user-3', name: 'Emily Brown (Manager)' },
-    { id: 'user-4', name: 'Michael Davis (CDAO)' },
-  ];
+interface ReconciliationPageProps {
+  params: Promise<{ orgSlug: string }>;
+}
+
+export default async function ReconciliationPage({ params }: ReconciliationPageProps) {
+  const { orgSlug } = await params;
+  const session = await auth();
+
+  if (!session?.user?.id) {
+    redirect('/login');
+  }
+
+  if (!session.user.activeOrgId) {
+    redirect('/onboarding');
+  }
+
+  const memberships = session.user.memberships ?? [];
+  const activeMembership = memberships.find(
+    (membership) => membership.orgId === session.user.activeOrgId,
+  );
+
+  if (!activeMembership || activeMembership.orgSlug !== orgSlug) {
+    const targetMembership = memberships.find((membership) => membership.orgSlug === orgSlug);
+    if (!targetMembership) notFound();
+    redirect(`/api/orgs/switch?slug=${orgSlug}&returnTo=/${orgSlug}/emar/controlled-drugs/reconciliation`);
+  }
+
+  const [registers, staffMembers] = await Promise.all([
+    listControlledDrugRegisters(),
+    listControlledDrugStaffMembers(),
+  ]);
 
   return (
     <div className="mx-auto max-w-7xl px-4 py-8 sm:px-6 lg:px-8">
@@ -31,8 +58,10 @@ export default function ReconciliationPage() {
         </p>
       </div>
       <ReconciliationPageClient
-        currentUserId="user-1"
-        staffMembers={mockStaff}
+        currentUserId={session.user.id}
+        staffMembers={staffMembers}
+        registers={registers}
+        onRecordStockReconciliation={recordStockReconciliation}
       />
     </div>
   );
