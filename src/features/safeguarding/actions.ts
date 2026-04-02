@@ -576,6 +576,24 @@ export async function getChildChronology(
 }
 
 /**
+ * Get Section 47 investigations for the current organisation.
+ */
+export async function getSection47Records(): Promise<ActionResult> {
+  const { userId, orgId, role } = await requirePermission('read', 'persons');
+  if (!canPerformDslReview(role)) {
+    return { success: false, error: 'Insufficient permissions' };
+  }
+
+  const investigations = await db
+    .select()
+    .from(section47Investigations)
+    .where(eq(section47Investigations.organisationId, orgId))
+    .orderBy(desc(section47Investigations.createdAt));
+
+  return { success: true, data: investigations };
+}
+
+/**
  * Add a manual chronology entry (for historical events).
  */
 export async function addManualChronologyEntry(

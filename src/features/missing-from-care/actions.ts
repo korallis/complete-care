@@ -603,3 +603,35 @@ export async function getRhiForEpisode(
 
   return rhi ?? null;
 }
+
+export async function getMissingEpisodeById(episodeId: string) {
+  const { orgId } = await requirePermission('read', 'persons');
+  const [episode] = await db
+    .select()
+    .from(missingEpisodes)
+    .where(
+      and(
+        eq(missingEpisodes.id, episodeId),
+        eq(missingEpisodes.organisationId, orgId),
+      ),
+    )
+    .limit(1);
+
+  return episode ?? null;
+}
+
+export async function getRhiById(rhiId: string) {
+  const { orgId } = await requirePermission('read', 'persons');
+  const [rhi] = await db
+    .select()
+    .from(returnHomeInterviews)
+    .where(
+      and(
+        eq(returnHomeInterviews.id, rhiId),
+        eq(returnHomeInterviews.organisationId, orgId),
+      ),
+    )
+    .limit(1);
+
+  return rhi ?? null;
+}

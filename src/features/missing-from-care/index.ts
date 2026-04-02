@@ -54,6 +54,8 @@ export {
   getPendingRhis,
   getOverdueRhis,
   getRhiForEpisode,
+  getMissingEpisodeById,
+  getRhiById,
 } from './actions';
 
 // Components
