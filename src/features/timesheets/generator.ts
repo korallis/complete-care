@@ -12,6 +12,11 @@ import type {
   PayrollSummary,
 } from './types';
 
+const PAYROLL_INCLUDED_STATUSES: ReadonlySet<TimesheetEntry['status']> = new Set([
+  'approved',
+  'paid',
+]);
+
 /** Calculate duration in hours between two HH:MM time strings. */
 function timeDiffHours(start: string, end: string): number {
   const [sh, sm] = start.split(':').map(Number);
@@ -19,6 +24,10 @@ function timeDiffHours(start: string, end: string): number {
   let diff = eh - sh + (em - sm) / 60;
   if (diff <= 0) diff += 24; // overnight
   return diff;
+}
+
+function escapeCSVCell(value: string): string {
+  return `"${value.replaceAll('"', '""')}"`;
 }
 
 /**
@@ -84,9 +93,13 @@ export function generatePayroll(
   periodEnd: string,
   overtimeMultiplier: number = 1.5,
 ): PayrollSummary {
+  const exportableEntries = timesheetEntries.filter((entry) =>
+    PAYROLL_INCLUDED_STATUSES.has(entry.status),
+  );
+
   // Group entries by staff member
   const byStaff = new Map<string, TimesheetEntry[]>();
-  for (const entry of timesheetEntries) {
+  for (const entry of exportableEntries) {
     const existing = byStaff.get(entry.staffId) ?? [];
     existing.push(entry);
     byStaff.set(entry.staffId, existing);
@@ -163,7 +176,7 @@ export function payrollToCSV(summary: PayrollSummary): string {
 
   const rows = summary.rows.map((r) =>
     [
-      `"${r.staffName}"`,
+      escapeCSVCell(r.staffName),
       r.staffId,
       r.hoursWorked.toFixed(2),
       r.overtimeHours.toFixed(2),
