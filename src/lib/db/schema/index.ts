@@ -52,5 +52,6 @@ export * from './outcomes';
 export * from './weight-wounds';
 export * from './stock-management';
 export * from './education';
+export * from './family-portal';
 
 export * from './relations';

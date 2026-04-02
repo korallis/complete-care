@@ -1,81 +1,108 @@
 /**
- * Geofencing — Pure Functions
- *
- * Haversine distance calculation and geofence checking.
- * No DB calls, no side effects — safe for use in tests, client, and server.
+ * Geofencing utilities — Haversine distance calculation and geofence validation.
+ * Used for EVV check-in/check-out GPS verification.
  */
 
-import { EARTH_RADIUS_METRES } from './constants';
+/** Earth radius in metres */
+const EARTH_RADIUS_M = 6_371_000;
 
-// ---------------------------------------------------------------------------
-// Types
-// ---------------------------------------------------------------------------
-
-export type Coordinates = {
-  lat: number;
-  lng: number;
-};
-
-export type GeofenceResult = {
-  /** Distance in metres between the two points */
-  distance: number;
-  /** Whether the point is within the geofence radius */
-  isWithinGeofence: boolean;
-};
-
-// ---------------------------------------------------------------------------
-// Haversine distance calculation
-// ---------------------------------------------------------------------------
-
-/**
- * Convert degrees to radians.
- */
-export function degreesToRadians(degrees: number): number {
-  return degrees * (Math.PI / 180);
+/** Convert degrees to radians */
+function toRadians(deg: number): number {
+  return (deg * Math.PI) / 180;
 }
 
 /**
- * Calculate the great-circle distance between two points using the Haversine formula.
- *
- * @param pointA - First coordinate (lat/lng in degrees)
- * @param pointB - Second coordinate (lat/lng in degrees)
- * @returns Distance in metres
+ * Calculate the Haversine distance between two GPS coordinates.
+ * Returns distance in metres.
  */
-export function calculateDistance(
-  pointA: Coordinates,
-  pointB: Coordinates,
+export function haversineDistance(
+  lat1: number,
+  lon1: number,
+  lat2: number,
+  lon2: number,
 ): number {
-  const dLat = degreesToRadians(pointB.lat - pointA.lat);
-  const dLng = degreesToRadians(pointB.lng - pointA.lng);
+  const dLat = toRadians(lat2 - lat1);
+  const dLon = toRadians(lon2 - lon1);
 
   const a =
     Math.sin(dLat / 2) * Math.sin(dLat / 2) +
-    Math.cos(degreesToRadians(pointA.lat)) *
-      Math.cos(degreesToRadians(pointB.lat)) *
-      Math.sin(dLng / 2) *
-      Math.sin(dLng / 2);
+    Math.cos(toRadians(lat1)) *
+      Math.cos(toRadians(lat2)) *
+      Math.sin(dLon / 2) *
+      Math.sin(dLon / 2);
 
   const c = 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1 - a));
 
-  return EARTH_RADIUS_METRES * c;
+  return EARTH_RADIUS_M * c;
 }
 
 /**
- * Check whether a point is within a geofence radius of a target location.
+ * Check whether a point is within a circular geofence.
  *
- * @param carerLocation - The carer's current GPS coordinates
- * @param clientLocation - The client's registered location
- * @param radiusMetres - The geofence radius in metres
- * @returns GeofenceResult with distance and within-geofence flag
+ * @param checkLat - Check-in latitude
+ * @param checkLon - Check-in longitude
+ * @param fenceLat - Geofence centre latitude
+ * @param fenceLon - Geofence centre longitude
+ * @param radiusMetres - Geofence radius in metres
+ * @returns Object with distance and whether the point is within the fence
  */
-export function checkGeofence(
-  carerLocation: Coordinates,
-  clientLocation: Coordinates,
+export function validateGeofence(
+  checkLat: number,
+  checkLon: number,
+  fenceLat: number,
+  fenceLon: number,
   radiusMetres: number,
-): GeofenceResult {
-  const distance = calculateDistance(carerLocation, clientLocation);
+): { distanceMetres: number; withinGeofence: boolean } {
+  const distanceMetres = haversineDistance(
+    checkLat,
+    checkLon,
+    fenceLat,
+    fenceLon,
+  );
+
   return {
-    distance: Math.round(distance * 100) / 100,
-    isWithinGeofence: distance <= radiusMetres,
+    distanceMetres: Math.round(distanceMetres * 100) / 100,
+    withinGeofence: distanceMetres <= radiusMetres,
   };
+}
+
+/**
+ * Determine the visit timeliness status based on scheduled vs actual times.
+ *
+ * @param scheduledStart - The planned start time
+ * @param actualStart - The actual start time (null if not started)
+ * @param gracePeriodMinutes - Grace period in minutes
+ * @returns 'on_time' | 'late' | 'missed' | 'not_started'
+ */
+export function getVisitTimeliness(
+  scheduledStart: Date,
+  actualStart: Date | null,
+  gracePeriodMinutes: number,
+): 'on_time' | 'late' | 'missed' | 'not_started' {
+  if (!actualStart) {
+    const now = new Date();
+    const missedThreshold = new Date(
+      scheduledStart.getTime() + gracePeriodMinutes * 2 * 60_000,
+    );
+    if (now > missedThreshold) return 'missed';
+    if (now > new Date(scheduledStart.getTime() + gracePeriodMinutes * 60_000))
+      return 'late';
+    return 'not_started';
+  }
+
+  const diffMinutes =
+    (actualStart.getTime() - scheduledStart.getTime()) / 60_000;
+
+  if (diffMinutes <= gracePeriodMinutes) return 'on_time';
+  return 'late';
+}
+
+/**
+ * Calculate visit duration in minutes between two timestamps.
+ */
+export function calculateDurationMinutes(
+  start: Date,
+  end: Date,
+): number {
+  return Math.round((end.getTime() - start.getTime()) / 60_000);
 }

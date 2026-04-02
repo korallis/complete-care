@@ -47,6 +47,8 @@ import { goals, goalReviews, skillDomains, skills, skillAssessments, communityAc
 import { weightSchedules, weightRecords, waterlowAssessments, wounds, woundAssessments } from './weight-wounds';
 import { medicationStock, stockBatches, stockTransactions, reorderRequests, medicationErrors, handoverReports, topicalMar, topicalMarAdministrations, homelyRemedyProtocols, homelyRemedyAdministrations } from './stock-management';
 import { schoolRecords, personalEducationPlans, pepAttendees, educationAttendance, exclusionRecords, pupilPremiumPlusRecords, sdqAssessments } from './education';
+import { evvVisits, evvCheckEvents, evvGeofenceConfigs, evvAlerts, evvAlertConfigs } from './evv';
+import { familyInvitations, familyMembers, familyMessages, familyUpdates, familyPortalSettings, familyNotifications } from './family-portal';
 
 export const organisationsRelations = relations(organisations, ({ many }) => ({
   memberships: many(memberships),
@@ -166,6 +168,17 @@ export const organisationsRelations = relations(organisations, ({ many }) => ({
   exclusionRecords: many(exclusionRecords),
   pupilPremiumPlusRecords: many(pupilPremiumPlusRecords),
   sdqAssessments: many(sdqAssessments),
+  evvVisits: many(evvVisits),
+  evvCheckEvents: many(evvCheckEvents),
+  evvGeofenceConfigs: many(evvGeofenceConfigs),
+  evvAlerts: many(evvAlerts),
+  evvAlertConfigs: many(evvAlertConfigs),
+  familyInvitations: many(familyInvitations),
+  familyMembers: many(familyMembers),
+  familyMessages: many(familyMessages),
+  familyUpdates: many(familyUpdates),
+  familyPortalSettings: many(familyPortalSettings),
+  familyNotifications: many(familyNotifications),
 }));
 
 export const usersRelations = relations(users, ({ many }) => ({
