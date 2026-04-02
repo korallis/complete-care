@@ -89,6 +89,12 @@ export default async function SchedulingPage({
         </div>
         <div className="flex items-center gap-2">
           <a
+            href={`/${orgSlug}/rostering?date=${startDate}`}
+            className="rounded-lg border border-[oklch(0.18_0.03_160)] bg-[oklch(0.18_0.03_160)] px-3 py-1.5 text-sm text-white hover:bg-[oklch(0.24_0.03_160)] transition-colors"
+          >
+            Timesheets & payroll
+          </a>
+          <a
             href={`/${orgSlug}/scheduling?date=${getPrevWeek(startDate)}`}
             className="rounded-lg border border-[oklch(0.88_0.005_160)] bg-white px-3 py-1.5 text-sm text-[oklch(0.35_0.04_160)] hover:bg-[oklch(0.97_0.003_160)] transition-colors"
           >
