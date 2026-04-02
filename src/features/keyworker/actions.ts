@@ -18,6 +18,7 @@ import {
   restraints,
   sanctions,
   visitorLog,
+  childrensVoice,
   organisations,
 } from '@/lib/db/schema';
 import { requirePermission, UnauthorizedError } from '@/lib/rbac';
@@ -662,5 +663,101 @@ export async function updateVisitorLogEntry(
   } catch (error) {
     if (error instanceof UnauthorizedError) return { success: false, error: error.message };
     return { success: false, error: 'Failed to update visitor log entry' };
+  }
+}
+
+// ---------------------------------------------------------------------------
+// Children's Voice
+// ---------------------------------------------------------------------------
+
+const createChildrensVoiceSchema = z.object({
+  personId: z.string().uuid(),
+  recordedDate: z.string().min(1),
+  category: z.string().min(1),
+  content: z.string().min(1),
+  method: z.string().optional().nullable(),
+  actionTaken: z.string().optional().nullable(),
+});
+
+export async function listChildrensVoice({
+  personId,
+  page = 1,
+  pageSize = 20,
+}: {
+  personId?: string;
+  page?: number;
+  pageSize?: number;
+}) {
+  const { orgId } = await requirePermission('read', 'care_plans');
+
+  const conditions = [eq(childrensVoice.organisationId, orgId)];
+  if (personId) conditions.push(eq(childrensVoice.personId, personId));
+
+  const whereClause = and(...conditions);
+  const offset = (page - 1) * pageSize;
+
+  const [rows, countResult] = await Promise.all([
+    db
+      .select()
+      .from(childrensVoice)
+      .where(whereClause)
+      .orderBy(desc(childrensVoice.recordedDate))
+      .limit(pageSize)
+      .offset(offset),
+    db.select({ count: count() }).from(childrensVoice).where(whereClause),
+  ]);
+
+  return {
+    entries: rows,
+    totalCount: countResult[0]?.count ?? 0,
+    page,
+    pageSize,
+  };
+}
+
+export async function createChildrensVoiceEntry(
+  input: z.infer<typeof createChildrensVoiceSchema>,
+): Promise<ActionResult<typeof childrensVoice.$inferSelect>> {
+  try {
+    const { orgId, userId } = await requirePermission('create', 'care_plans');
+
+    const parsed = createChildrensVoiceSchema.safeParse(input);
+    if (!parsed.success) {
+      return { success: false, error: parsed.error.issues[0]?.message ?? 'Validation failed' };
+    }
+
+    const data = parsed.data;
+
+    const [row] = await db
+      .insert(childrensVoice)
+      .values({
+        organisationId: orgId,
+        personId: data.personId,
+        recordedDate: data.recordedDate,
+        category: data.category,
+        content: data.content,
+        method: data.method ?? null,
+        actionTaken: data.actionTaken ?? null,
+        recordedById: userId,
+      })
+      .returning();
+
+    await auditLog('create', 'childrens_voice', row.id, {
+      before: null,
+      after: {
+        personId: data.personId,
+        category: data.category,
+        date: data.recordedDate,
+      },
+    }, { userId, organisationId: orgId });
+
+    const slug = await getOrgSlug(orgId);
+    if (slug) revalidatePath(`/${slug}/persons/${data.personId}/keyworker`);
+
+    return { success: true, data: row };
+  } catch (error) {
+    if (error instanceof UnauthorizedError) return { success: false, error: error.message };
+    console.error('[createChildrensVoiceEntry] Error:', error);
+    return { success: false, error: 'Failed to create children\'s voice entry' };
   }
 }
