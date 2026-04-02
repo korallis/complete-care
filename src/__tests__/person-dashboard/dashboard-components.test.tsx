@@ -17,6 +17,7 @@ import { UnifiedTimeline } from '@/components/person-dashboard/unified-timeline'
 import { TimelineEntryComponent } from '@/components/person-dashboard/timeline-entry';
 import type { DashboardMetrics } from '@/features/person-dashboard/types';
 import type { TimelineEntry } from '@/features/person-dashboard/types';
+import type { LacRecord } from '@/lib/db/schema/lac';
 import type { Person } from '@/lib/db/schema/persons';
 
 // ---------------------------------------------------------------------------
@@ -50,6 +51,25 @@ const mockPerson: Person = {
   createdAt: new Date('2026-01-01'),
   updatedAt: new Date('2026-01-01'),
   deletedAt: null,
+};
+
+const mockLacSummary: Pick<
+  LacRecord,
+  | 'placingAuthority'
+  | 'socialWorkerName'
+  | 'socialWorkerEmail'
+  | 'socialWorkerPhone'
+  | 'iroName'
+  | 'iroEmail'
+  | 'iroPhone'
+> = {
+  placingAuthority: 'Leeds City Council',
+  socialWorkerName: 'Alex Socialworker',
+  socialWorkerEmail: 'alex.socialworker@authority.gov.uk',
+  socialWorkerPhone: '020 7000 0001',
+  iroName: 'Jamie Reviewer',
+  iroEmail: 'jamie.reviewer@authority.gov.uk',
+  iroPhone: '020 7000 0002',
 };
 
 // ---------------------------------------------------------------------------
@@ -128,6 +148,14 @@ describe('PersonSummaryCard', () => {
   it('renders GP name', () => {
     render(<PersonSummaryCard person={mockPerson} />);
     expect(screen.getByText('Dr Johnson')).toBeDefined();
+  });
+
+  it('renders LAC social worker and IRO summary when provided', () => {
+    render(<PersonSummaryCard person={mockPerson} lacSummary={mockLacSummary} />);
+    expect(screen.getByText('LAC contacts')).toBeDefined();
+    expect(screen.getByText('Placing authority: Leeds City Council')).toBeDefined();
+    expect(screen.getByText('Alex Socialworker')).toBeDefined();
+    expect(screen.getByText('Jamie Reviewer')).toBeDefined();
   });
 });
 

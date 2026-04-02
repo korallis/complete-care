@@ -2,6 +2,7 @@ import type { Metadata } from 'next';
 import { notFound, redirect } from 'next/navigation';
 import { auth } from '@/auth';
 import { getPerson } from '@/features/persons/actions';
+import { listLacRecords } from '@/features/lac/actions';
 import { hasPermission } from '@/lib/rbac/permissions';
 import type { Role } from '@/lib/rbac/permissions';
 import { getDashboardMetrics, getRecentActivity } from '@/features/person-dashboard/actions';
@@ -67,15 +68,18 @@ export default async function PersonDetailPage({
   }
 
   // Fetch dashboard data in parallel
-  const [metrics, recentActivity] = await Promise.all([
+  const [metrics, recentActivity, lacRecords] = await Promise.all([
     getDashboardMetrics(personId),
     getRecentActivity(personId),
+    listLacRecords(personId),
   ]);
+
+  const activeLacRecord = lacRecords[0] ?? null;
 
   return (
     <div className="space-y-6">
       {/* Person summary card */}
-      <PersonSummaryCard person={person} />
+      <PersonSummaryCard person={person} lacSummary={activeLacRecord} />
 
       {/* Metrics grid */}
       <MetricsGrid metrics={metrics} />

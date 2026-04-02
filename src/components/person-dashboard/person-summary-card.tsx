@@ -2,12 +2,71 @@ import { PersonAvatar } from '@/components/persons/person-avatar';
 import { PersonTypeBadge, PersonStatusBadge } from '@/components/persons/person-type-badge';
 import { calculateAge, formatDateOfBirth, formatNhsNumber } from '@/features/persons/utils';
 import type { Person } from '@/lib/db/schema/persons';
+import type { LacRecord } from '@/lib/db/schema/lac';
 
 type PersonSummaryCardProps = {
   person: Person;
+  lacSummary?: Pick<
+    LacRecord,
+    | 'placingAuthority'
+    | 'socialWorkerName'
+    | 'socialWorkerEmail'
+    | 'socialWorkerPhone'
+    | 'iroName'
+    | 'iroEmail'
+    | 'iroPhone'
+  > | null;
 };
 
-export function PersonSummaryCard({ person }: PersonSummaryCardProps) {
+function ContactSummary({
+  title,
+  name,
+  email,
+  phone,
+}: {
+  title: string;
+  name: string | null;
+  email: string | null;
+  phone: string | null;
+}) {
+  const hasDetails = name || email || phone;
+
+  return (
+    <div className="rounded-lg border border-[oklch(0.91_0.005_160)] bg-[oklch(0.985_0.003_160)] p-3">
+      <p className="text-xs font-semibold uppercase tracking-wide text-[oklch(0.55_0_0)]">
+        {title}
+      </p>
+      {hasDetails ? (
+        <div className="mt-2 space-y-1 text-sm text-[oklch(0.22_0.04_160)]">
+          {name && <p className="font-medium">{name}</p>}
+          {email && (
+            <a
+              href={`mailto:${email}`}
+              className="block text-[oklch(0.35_0.06_160)] underline hover:no-underline"
+            >
+              {email}
+            </a>
+          )}
+          {phone && (
+            <a
+              href={`tel:${phone}`}
+              className="block text-[oklch(0.35_0.06_160)] underline hover:no-underline"
+            >
+              {phone}
+            </a>
+          )}
+        </div>
+      ) : (
+        <p className="mt-2 text-sm text-[oklch(0.55_0_0)]">Not recorded</p>
+      )}
+    </div>
+  );
+}
+
+export function PersonSummaryCard({
+  person,
+  lacSummary = null,
+}: PersonSummaryCardProps) {
   const age = calculateAge(person.dateOfBirth);
   const hasAllergies = person.allergies.length > 0;
 
@@ -91,6 +150,35 @@ export function PersonSummaryCard({ person }: PersonSummaryCardProps) {
               <span className="text-xs font-medium text-red-800">
                 Allergies: {person.allergies.join(', ')}
               </span>
+            </div>
+          )}
+
+          {lacSummary && (
+            <div className="space-y-3 rounded-xl border border-[oklch(0.9_0.01_160)] bg-[oklch(0.98_0.005_160)] p-4">
+              <div className="flex flex-col gap-1 sm:flex-row sm:items-center sm:justify-between">
+                <div>
+                  <p className="text-xs font-semibold uppercase tracking-wide text-[oklch(0.55_0_0)]">
+                    LAC contacts
+                  </p>
+                  <p className="text-sm text-[oklch(0.22_0.04_160)]">
+                    Placing authority: {lacSummary.placingAuthority}
+                  </p>
+                </div>
+              </div>
+              <div className="grid gap-3 md:grid-cols-2">
+                <ContactSummary
+                  title="Assigned social worker"
+                  name={lacSummary.socialWorkerName}
+                  email={lacSummary.socialWorkerEmail}
+                  phone={lacSummary.socialWorkerPhone}
+                />
+                <ContactSummary
+                  title="Independent Reviewing Officer (IRO)"
+                  name={lacSummary.iroName}
+                  email={lacSummary.iroEmail}
+                  phone={lacSummary.iroPhone}
+                />
+              </div>
             </div>
           )}
         </div>

@@ -27,15 +27,17 @@ const CONTACT_TYPE_LABELS: Record<string, string> = {
 export function ContactScheduleForm({
   personId,
   approvedContacts,
+  defaultContactId,
   onSubmit,
   onCancel,
 }: {
   personId: string;
   approvedContacts: ApprovedContact[];
+  defaultContactId?: string;
   onSubmit: (data: CreateContactScheduleInput) => Promise<void>;
   onCancel: () => void;
 }) {
-  const [selectedContactId, setSelectedContactId] = useState('');
+  const [selectedContactId, setSelectedContactId] = useState(defaultContactId ?? '');
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
@@ -209,6 +211,7 @@ export function ContactScheduleForm({
             Supervision Level <span className="text-red-500">*</span>
           </label>
           <select
+            key={selectedContact?.id ?? 'supervision-default'}
             id="supervisionLevel"
             name="supervisionLevel"
             required
