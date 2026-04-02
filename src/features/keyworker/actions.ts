@@ -9,7 +9,7 @@
  * All actions are tenant-scoped and RBAC-protected.
  */
 
-import { and, count, desc, eq } from 'drizzle-orm';
+import { and, count, desc, eq, gte, ilike, isNull, lte } from 'drizzle-orm';
 import { revalidatePath } from 'next/cache';
 import { z } from 'zod';
 import { db } from '@/lib/db';
@@ -51,6 +51,7 @@ const sessionGoalsSchema = z.object({
 
 const sessionActionSchema = z.object({
   action: z.string().min(1),
+  assignedTo: z.string().min(1),
   deadline: z.string().min(1),
   completed: z.boolean().default(false),
 });
@@ -382,6 +383,15 @@ export async function reviewRestraint(
 
     if (!existing) return { success: false, error: 'Restraint record not found' };
     assertBelongsToOrg(existing.organisationId, orgId);
+    if (!existing.childDebrief?.trim() || !existing.staffDebrief?.trim()) {
+      return {
+        success: false,
+        error: 'Both child and staff debriefs must be completed before manager sign-off.',
+      };
+    }
+    if (!managementReview.trim()) {
+      return { success: false, error: 'Management review is required for sign-off.' };
+    }
 
     const [updated] = await db
       .update(restraints)
@@ -460,6 +470,14 @@ export async function createSanction(
     }
 
     const data = parsed.data;
+
+    if (data.isProhibited) {
+      return {
+        success: false,
+        error: 'Prohibited sanctions cannot be recorded. Select a permitted measure instead.',
+        field: 'isProhibited',
+      };
+    }
 
     const [row] = await db
       .insert(sanctions)
@@ -540,12 +558,20 @@ export async function reviewSanction(
 
 export async function listVisitorLog({
   personVisitedId,
-  visitDate,
+  relationship,
+  visitorName,
+  dateFrom,
+  dateTo,
+  signedInOnly,
   page = 1,
   pageSize = 20,
 }: {
   personVisitedId?: string;
-  visitDate?: string;
+  relationship?: string;
+  visitorName?: string;
+  dateFrom?: string;
+  dateTo?: string;
+  signedInOnly?: boolean;
   page?: number;
   pageSize?: number;
 } = {}) {
@@ -553,7 +579,11 @@ export async function listVisitorLog({
 
   const conditions = [eq(visitorLog.organisationId, orgId)];
   if (personVisitedId) conditions.push(eq(visitorLog.personVisitedId, personVisitedId));
-  if (visitDate) conditions.push(eq(visitorLog.visitDate, visitDate));
+  if (relationship) conditions.push(eq(visitorLog.relationship, relationship));
+  if (visitorName?.trim()) conditions.push(ilike(visitorLog.visitorName, `%${visitorName.trim()}%`));
+  if (dateFrom) conditions.push(gte(visitorLog.visitDate, dateFrom));
+  if (dateTo) conditions.push(lte(visitorLog.visitDate, dateTo));
+  if (signedInOnly) conditions.push(isNull(visitorLog.departureTime));
 
   const whereClause = and(...conditions);
   const offset = (page - 1) * pageSize;
@@ -613,7 +643,10 @@ export async function createVisitorLogEntry(
     }, { userId, organisationId: orgId });
 
     const slug = await getOrgSlug(orgId);
-    if (slug) revalidatePath(`/${slug}/visitor-log`);
+    if (slug) {
+      revalidatePath(`/${slug}/visitor-log`);
+      if (existing.personVisitedId) revalidatePath(`/${slug}/persons/${existing.personVisitedId}/keyworker`);
+    }
 
     return { success: true, data: row };
   } catch (error) {
@@ -657,7 +690,10 @@ export async function updateVisitorLogEntry(
     }, { userId, organisationId: orgId });
 
     const slug = await getOrgSlug(orgId);
-    if (slug) revalidatePath(`/${slug}/visitor-log`);
+    if (slug) {
+      revalidatePath(`/${slug}/visitor-log`);
+      if (data.personVisitedId) revalidatePath(`/${slug}/persons/${data.personVisitedId}/keyworker`);
+    }
 
     return { success: true, data: updated };
   } catch (error) {

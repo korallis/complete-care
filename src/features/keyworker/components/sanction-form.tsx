@@ -76,11 +76,7 @@ export function SanctionForm({
         toast.error(result.error ?? 'Failed to save sanction');
         return;
       }
-      if (data.isProhibited) {
-        toast.warning('Prohibited measure recorded — this requires immediate management review');
-      } else {
-        toast.success('Sanction recorded');
-      }
+      toast.success('Sanction recorded');
       router.push(`/${orgSlug}/persons/${personId}/keyworker`);
       router.refresh();
     } catch {
@@ -190,7 +186,7 @@ export function SanctionForm({
               ))}
             </ul>
             <p className="text-xs text-red-700 font-medium mt-2">
-              Recording this will flag it for immediate management review.
+              This selection is blocked and cannot be saved.
             </p>
           </div>
         )}
@@ -244,7 +240,7 @@ export function SanctionForm({
               Saving...
             </>
           ) : isProhibited ? (
-            'Record prohibited measure'
+            'Blocked: prohibited measure'
           ) : (
             'Save sanction'
           )}

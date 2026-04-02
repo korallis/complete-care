@@ -27,10 +27,14 @@ function SessionCard({
 }: {
   session: KeyworkerSession;
 }) {
+  const today = new Date().toISOString().slice(0, 10);
   const actionCount = Array.isArray(session.actions) ? session.actions.length : 0;
   const pendingActions = Array.isArray(session.actions)
     ? session.actions.filter((a) => !a.completed).length
     : 0;
+  const overdueActions = Array.isArray(session.actions)
+    ? session.actions.filter((a) => !a.completed && a.deadline < today)
+    : [];
 
   return (
     <div className="group rounded-xl border border-[oklch(0.91_0.005_160)] bg-white p-5 hover:border-[oklch(0.6_0.06_160)] hover:shadow-sm transition-all duration-150">
@@ -91,12 +95,31 @@ function SessionCard({
                 )}
               </span>
             )}
+            {overdueActions.length > 0 && (
+              <span className="inline-flex items-center gap-1 rounded-full bg-red-50 px-2 py-0.5 text-xs font-medium text-red-700">
+                <span className="h-1.5 w-1.5 rounded-full bg-red-500" />
+                {overdueActions.length} overdue
+              </span>
+            )}
             {session.wishesAndFeelings && (
               <span className="inline-flex items-center gap-1 rounded-full bg-purple-50 px-2 py-0.5 text-xs font-medium text-purple-700">
                 Wishes recorded
               </span>
             )}
           </div>
+          {Array.isArray(session.actions) && session.actions.length > 0 && (
+            <ul className="mt-3 space-y-1">
+              {session.actions.slice(0, 3).map((action, index) => (
+                <li key={`${session.id}-${index}`} className="text-xs text-[oklch(0.5_0_0)]">
+                  <span className="font-medium text-[oklch(0.35_0.04_160)]">{action.assignedTo}</span>
+                  {' — '}
+                  {action.action}
+                  {' · due '}
+                  {action.deadline}
+                </li>
+              ))}
+            </ul>
+          )}
         </div>
       </div>
     </div>
