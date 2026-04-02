@@ -7,6 +7,7 @@
  */
 
 import { db } from '@/lib/db';
+import { persons } from '@/lib/db/schema';
 import {
   safeguardingConcerns,
   concernCorrections,
@@ -19,6 +20,7 @@ import {
 import { eq, and, desc } from 'drizzle-orm';
 import { requirePermission } from '@/lib/rbac';
 import { auditLog } from '@/lib/audit';
+import { assertBelongsToOrg } from '@/lib/tenant';
 import {
   createConcernSchema,
   createCorrectionSchema,
@@ -65,6 +67,52 @@ function canPerformDslReview(role: string): boolean {
   return (DSL_REVIEW_ROLES as readonly string[]).includes(role);
 }
 
+async function getChildForOrg(childId: string, organisationId: string) {
+  const [child] = await db
+    .select({
+      id: persons.id,
+      organisationId: persons.organisationId,
+    })
+    .from(persons)
+    .where(
+      and(
+        eq(persons.id, childId),
+        eq(persons.organisationId, organisationId),
+      ),
+    )
+    .limit(1);
+
+  return child ?? null;
+}
+
+async function getConcernForOrg(concernId: string, organisationId: string) {
+  const [concern] = await db
+    .select()
+    .from(safeguardingConcerns)
+    .where(eq(safeguardingConcerns.id, concernId))
+    .limit(1);
+
+  if (!concern) return null;
+
+  assertBelongsToOrg(concern.organisationId, organisationId);
+
+  return concern;
+}
+
+async function getDslReviewForOrg(dslReviewId: string, organisationId: string) {
+  const [review] = await db
+    .select()
+    .from(dslReviews)
+    .where(eq(dslReviews.id, dslReviewId))
+    .limit(1);
+
+  if (!review) return null;
+
+  assertBelongsToOrg(review.organisationId, organisationId);
+
+  return review;
+}
+
 /** Generate a reference number: SC-YYYYMMDD-XXXX */
 function generateReferenceNumber(): string {
   const now = new Date();
@@ -89,7 +137,12 @@ export async function createConcern(
     return { success: false, error: parsed.error.issues[0]?.message ?? 'Validation failed' };
   }
 
-  const { userId, orgId, role } = await requirePermission('create', 'persons');
+  const { userId, orgId } = await requirePermission('create', 'persons');
+
+  const child = await getChildForOrg(parsed.data.childId, orgId);
+  if (!child) {
+    return { success: false, error: 'Child not found' };
+  }
 
   const referenceNumber = generateReferenceNumber();
   const [concern] = await db
@@ -129,7 +182,7 @@ export async function createConcern(
 export async function getConcernsByChild(
   childId: string,
 ): Promise<ActionResult> {
-  const { userId, orgId, role } = await requirePermission('read', 'persons');
+  const { orgId } = await requirePermission('read', 'persons');
 
   const concerns = await db
     .select()
@@ -149,7 +202,7 @@ export async function getConcernsByChild(
  * Get all open concerns for the DSL review dashboard.
  */
 export async function getOpenConcerns(): Promise<ActionResult> {
-  const { userId, orgId, role } = await requirePermission('read', 'persons');
+  const { orgId, role } = await requirePermission('read', 'persons');
   if (!canPerformDslReview(role)) {
     return { success: false, error: 'Insufficient permissions for DSL review' };
   }
@@ -179,7 +232,12 @@ export async function addConcernCorrection(
     return { success: false, error: parsed.error.issues[0]?.message ?? 'Validation failed' };
   }
 
-  const { userId, orgId, role } = await requirePermission('create', 'persons');
+  const { userId, orgId } = await requirePermission('create', 'persons');
+
+  const concern = await getConcernForOrg(parsed.data.concernId, orgId);
+  if (!concern) {
+    return { success: false, error: 'Concern not found' };
+  }
 
   const [correction] = await db
     .insert(concernCorrections)
@@ -218,6 +276,11 @@ export async function createDslReview(
     return { success: false, error: 'Insufficient permissions for DSL review' };
   }
 
+  const concern = await getConcernForOrg(parsed.data.concernId, orgId);
+  if (!concern) {
+    return { success: false, error: 'Concern not found' };
+  }
+
   const [review] = await db
     .insert(dslReviews)
     .values({
@@ -231,12 +294,6 @@ export async function createDslReview(
   await db
     .update(safeguardingConcerns)
     .set({ status: 'under_review' })
-    .where(eq(safeguardingConcerns.id, parsed.data.concernId));
-
-  // Get the concern to find the childId for chronology
-  const [concern] = await db
-    .select()
-    .from(safeguardingConcerns)
     .where(eq(safeguardingConcerns.id, parsed.data.concernId));
 
   if (concern) {
@@ -278,6 +335,23 @@ export async function createLadoReferral(
   const { userId, orgId, role } = await requirePermission('create', 'persons');
   if (!canAccessLado(role)) {
     return { success: false, error: 'LADO records are restricted to DSL and senior leadership' };
+  }
+
+  const child = await getChildForOrg(parsed.data.childId, orgId);
+  if (!child) {
+    return { success: false, error: 'Child not found' };
+  }
+  if (parsed.data.concernId) {
+    const concern = await getConcernForOrg(parsed.data.concernId, orgId);
+    if (!concern) {
+      return { success: false, error: 'Concern not found' };
+    }
+  }
+  if (parsed.data.dslReviewId) {
+    const review = await getDslReviewForOrg(parsed.data.dslReviewId, orgId);
+    if (!review) {
+      return { success: false, error: 'DSL review not found' };
+    }
   }
 
   const [referral] = await db
@@ -354,7 +428,7 @@ export async function updateLadoReferral(
  * Get LADO referrals. Restricted access.
  */
 export async function getLadoReferrals(): Promise<ActionResult> {
-  const { userId, orgId, role } = await requirePermission('read', 'persons');
+  const { orgId, role } = await requirePermission('read', 'persons');
   if (!canAccessLado(role)) {
     return { success: false, error: 'LADO records are restricted to DSL and senior leadership' };
   }
@@ -386,6 +460,17 @@ export async function createSection47(
   const { userId, orgId, role } = await requirePermission('create', 'persons');
   if (!canPerformDslReview(role)) {
     return { success: false, error: 'Insufficient permissions' };
+  }
+
+  const child = await getChildForOrg(parsed.data.childId, orgId);
+  if (!child) {
+    return { success: false, error: 'Child not found' };
+  }
+  if (parsed.data.concernId) {
+    const concern = await getConcernForOrg(parsed.data.concernId, orgId);
+    if (!concern) {
+      return { success: false, error: 'Concern not found' };
+    }
   }
 
   const [investigation] = await db
@@ -476,6 +561,23 @@ export async function createMashReferral(
     return { success: false, error: 'Insufficient permissions' };
   }
 
+  const child = await getChildForOrg(parsed.data.childId, orgId);
+  if (!child) {
+    return { success: false, error: 'Child not found' };
+  }
+  if (parsed.data.concernId) {
+    const concern = await getConcernForOrg(parsed.data.concernId, orgId);
+    if (!concern) {
+      return { success: false, error: 'Concern not found' };
+    }
+  }
+  if (parsed.data.dslReviewId) {
+    const review = await getDslReviewForOrg(parsed.data.dslReviewId, orgId);
+    if (!review) {
+      return { success: false, error: 'DSL review not found' };
+    }
+  }
+
   const [referral] = await db
     .insert(mashReferrals)
     .values({
@@ -554,7 +656,7 @@ export async function updateMashReferral(
 export async function getChildChronology(
   childId: string,
 ): Promise<ActionResult> {
-  const { userId, orgId, role } = await requirePermission('read', 'persons');
+  const { orgId, role } = await requirePermission('read', 'persons');
 
   const entries = await db
     .select()
@@ -579,7 +681,7 @@ export async function getChildChronology(
  * Get Section 47 investigations for the current organisation.
  */
 export async function getSection47Records(): Promise<ActionResult> {
-  const { userId, orgId, role } = await requirePermission('read', 'persons');
+  const { orgId, role } = await requirePermission('read', 'persons');
   if (!canPerformDslReview(role)) {
     return { success: false, error: 'Insufficient permissions' };
   }
@@ -604,7 +706,12 @@ export async function addManualChronologyEntry(
     return { success: false, error: parsed.error.issues[0]?.message ?? 'Validation failed' };
   }
 
-  const { userId, orgId, role } = await requirePermission('create', 'persons');
+  const { userId, orgId } = await requirePermission('create', 'persons');
+
+  const child = await getChildForOrg(parsed.data.childId, orgId);
+  if (!child) {
+    return { success: false, error: 'Child not found' };
+  }
 
   const [entry] = await db
     .insert(safeguardingChronology)
