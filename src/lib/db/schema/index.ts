@@ -35,6 +35,9 @@ export * from './leave';
 
 export * from './properties';
 export * from './ofsted';
+export * from './lac';
 export * from './care-packages';
+export * from './clinical-alerts';
+export * from './rota';
 
 export * from './relations';

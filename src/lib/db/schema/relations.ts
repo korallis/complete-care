@@ -31,6 +31,9 @@ import { leaveRequests, leaveBalances } from './leave';
 import { properties, tenancies, propertyDocuments, maintenanceRequests } from './properties';
 import { ofstedStandards, ofstedEvidence, childrensRegister, statementOfPurpose } from './ofsted';
 import { carePackages, visitTypes, scheduledVisits } from './care-packages';
+import { clinicalAlerts, personAlertThresholds } from './clinical-alerts';
+import { lacRecords, placementPlans, lacStatusChanges } from './lac';
+import { hospitalAdmissions, visitCancellations } from './rota';
 
 export const organisationsRelations = relations(organisations, ({ many }) => ({
   memberships: many(memberships),
@@ -78,6 +81,13 @@ export const organisationsRelations = relations(organisations, ({ many }) => ({
   carePackages: many(carePackages),
   visitTypes: many(visitTypes),
   scheduledVisits: many(scheduledVisits),
+  clinicalAlerts: many(clinicalAlerts),
+  personAlertThresholds: many(personAlertThresholds),
+  lacRecords: many(lacRecords),
+  placementPlans: many(placementPlans),
+  lacStatusChanges: many(lacStatusChanges),
+  hospitalAdmissions: many(hospitalAdmissions),
+  visitCancellations: many(visitCancellations),
 }));
 
 export const usersRelations = relations(users, ({ many }) => ({
@@ -171,6 +181,11 @@ export const personsRelations = relations(persons, ({ one, many }) => ({
   childrensRegister: many(childrensRegister),
   carePackages: many(carePackages),
   scheduledVisits: many(scheduledVisits),
+  clinicalAlerts: many(clinicalAlerts),
+  personAlertThresholds: many(personAlertThresholds),
+  lacRecords: many(lacRecords),
+  placementPlans: many(placementPlans),
+  hospitalAdmissions: many(hospitalAdmissions),
 }));
 
 export const staffProfilesRelations = relations(staffProfiles, ({ one, many }) => ({
@@ -738,6 +753,40 @@ export const maintenanceRequestsRelations = relations(maintenanceRequests, ({ on
 }));
 
 // ---------------------------------------------------------------------------
+// Clinical Alert relations
+// ---------------------------------------------------------------------------
+
+export const clinicalAlertsRelations = relations(clinicalAlerts, ({ one }) => ({
+  organisation: one(organisations, {
+    fields: [clinicalAlerts.organisationId],
+    references: [organisations.id],
+  }),
+  person: one(persons, {
+    fields: [clinicalAlerts.personId],
+    references: [persons.id],
+  }),
+  acknowledgedBy: one(users, {
+    fields: [clinicalAlerts.acknowledgedById],
+    references: [users.id],
+  }),
+}));
+
+export const personAlertThresholdsRelations = relations(personAlertThresholds, ({ one }) => ({
+  organisation: one(organisations, {
+    fields: [personAlertThresholds.organisationId],
+    references: [organisations.id],
+  }),
+  person: one(persons, {
+    fields: [personAlertThresholds.personId],
+    references: [persons.id],
+  }),
+  setBy: one(users, {
+    fields: [personAlertThresholds.setById],
+    references: [users.id],
+  }),
+}));
+
+// ---------------------------------------------------------------------------
 // Care Package relations
 // ---------------------------------------------------------------------------
 
@@ -786,5 +835,90 @@ export const scheduledVisitsRelations = relations(scheduledVisits, ({ one }) => 
   assignedStaff: one(staffProfiles, {
     fields: [scheduledVisits.assignedStaffId],
     references: [staffProfiles.id],
+  }),
+}));
+
+// ---------------------------------------------------------------------------
+// LAC (Looked After Children) relations
+// ---------------------------------------------------------------------------
+
+export const lacRecordsRelations = relations(lacRecords, ({ one, many }) => ({
+  organisation: one(organisations, {
+    fields: [lacRecords.organisationId],
+    references: [organisations.id],
+  }),
+  person: one(persons, {
+    fields: [lacRecords.personId],
+    references: [persons.id],
+  }),
+  placementPlans: many(placementPlans),
+  statusChanges: many(lacStatusChanges),
+}));
+
+export const placementPlansRelations = relations(placementPlans, ({ one }) => ({
+  organisation: one(organisations, {
+    fields: [placementPlans.organisationId],
+    references: [organisations.id],
+  }),
+  person: one(persons, {
+    fields: [placementPlans.personId],
+    references: [persons.id],
+  }),
+  lacRecord: one(lacRecords, {
+    fields: [placementPlans.lacRecordId],
+    references: [lacRecords.id],
+  }),
+  reviewedBy: one(users, {
+    fields: [placementPlans.reviewedById],
+    references: [users.id],
+  }),
+}));
+
+export const lacStatusChangesRelations = relations(lacStatusChanges, ({ one }) => ({
+  organisation: one(organisations, {
+    fields: [lacStatusChanges.organisationId],
+    references: [organisations.id],
+  }),
+  lacRecord: one(lacRecords, {
+    fields: [lacStatusChanges.lacRecordId],
+    references: [lacRecords.id],
+  }),
+  changedBy: one(users, {
+    fields: [lacStatusChanges.changedById],
+    references: [users.id],
+  }),
+}));
+
+// ---------------------------------------------------------------------------
+// Hospital Admission & Visit Cancellation relations
+// ---------------------------------------------------------------------------
+
+export const hospitalAdmissionsRelations = relations(hospitalAdmissions, ({ one }) => ({
+  organisation: one(organisations, {
+    fields: [hospitalAdmissions.organisationId],
+    references: [organisations.id],
+  }),
+  person: one(persons, {
+    fields: [hospitalAdmissions.personId],
+    references: [persons.id],
+  }),
+  recordedBy: one(users, {
+    fields: [hospitalAdmissions.recordedById],
+    references: [users.id],
+  }),
+  dischargedBy: one(users, {
+    fields: [hospitalAdmissions.dischargedById],
+    references: [users.id],
+  }),
+}));
+
+export const visitCancellationsRelations = relations(visitCancellations, ({ one }) => ({
+  organisation: one(organisations, {
+    fields: [visitCancellations.organisationId],
+    references: [organisations.id],
+  }),
+  cancelledBy: one(users, {
+    fields: [visitCancellations.cancelledById],
+    references: [users.id],
   }),
 }));
