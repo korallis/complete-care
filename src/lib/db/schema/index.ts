@@ -42,5 +42,7 @@ export * from './rota';
 
 export * from './safeguarding';
 export * from './pbs';
+export * from './mca-dols';
+export * from './shift-patterns';
 
 export * from './relations';

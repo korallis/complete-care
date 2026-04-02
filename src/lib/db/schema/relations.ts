@@ -36,6 +36,8 @@ import { lacRecords, placementPlans, lacStatusChanges } from './lac';
 import { hospitalAdmissions, visitCancellations } from './rota';
 import { safeguardingConcerns, safeguardingReferrals } from './safeguarding';
 import { pbsPlans, abcIncidents, restrictivePractices } from './pbs';
+import { mcaAssessments, bestInterestDecisions, lpaAdrtRecords, dolsApplications, dolsRestrictions } from './mca-dols';
+import { shiftPatterns, rotaPeriods, shiftAssignments, conflictOverrides } from './shift-patterns';
 
 export const organisationsRelations = relations(organisations, ({ many }) => ({
   memberships: many(memberships),
@@ -95,6 +97,15 @@ export const organisationsRelations = relations(organisations, ({ many }) => ({
   pbsPlans: many(pbsPlans),
   abcIncidents: many(abcIncidents),
   restrictivePractices: many(restrictivePractices),
+  mcaAssessments: many(mcaAssessments),
+  bestInterestDecisions: many(bestInterestDecisions),
+  lpaAdrtRecords: many(lpaAdrtRecords),
+  dolsApplications: many(dolsApplications),
+  dolsRestrictions: many(dolsRestrictions),
+  shiftPatterns: many(shiftPatterns),
+  rotaPeriods: many(rotaPeriods),
+  shiftAssignments: many(shiftAssignments),
+  conflictOverrides: many(conflictOverrides),
 }));
 
 export const usersRelations = relations(users, ({ many }) => ({
@@ -197,6 +208,11 @@ export const personsRelations = relations(persons, ({ one, many }) => ({
   pbsPlans: many(pbsPlans),
   abcIncidents: many(abcIncidents),
   restrictivePractices: many(restrictivePractices),
+  mcaAssessments: many(mcaAssessments),
+  bestInterestDecisions: many(bestInterestDecisions),
+  lpaAdrtRecords: many(lpaAdrtRecords),
+  dolsApplications: many(dolsApplications),
+  dolsRestrictions: many(dolsRestrictions),
 }));
 
 export const staffProfilesRelations = relations(staffProfiles, ({ one, many }) => ({
@@ -1025,3 +1041,127 @@ export const restrictivePracticesRelations = relations(
     }),
   }),
 );
+
+// ---------------------------------------------------------------------------
+// MCA / DoLS relations
+// ---------------------------------------------------------------------------
+
+export const mcaAssessmentsRelations = relations(mcaAssessments, ({ one, many }) => ({
+  organisation: one(organisations, {
+    fields: [mcaAssessments.organisationId],
+    references: [organisations.id],
+  }),
+  person: one(persons, {
+    fields: [mcaAssessments.personId],
+    references: [persons.id],
+  }),
+  assessor: one(users, {
+    fields: [mcaAssessments.assessorId],
+    references: [users.id],
+  }),
+  bestInterestDecisions: many(bestInterestDecisions),
+}));
+
+export const bestInterestDecisionsRelations = relations(bestInterestDecisions, ({ one }) => ({
+  organisation: one(organisations, {
+    fields: [bestInterestDecisions.organisationId],
+    references: [organisations.id],
+  }),
+  person: one(persons, {
+    fields: [bestInterestDecisions.personId],
+    references: [persons.id],
+  }),
+  mcaAssessment: one(mcaAssessments, {
+    fields: [bestInterestDecisions.mcaAssessmentId],
+    references: [mcaAssessments.id],
+  }),
+}));
+
+export const lpaAdrtRecordsRelations = relations(lpaAdrtRecords, ({ one }) => ({
+  organisation: one(organisations, {
+    fields: [lpaAdrtRecords.organisationId],
+    references: [organisations.id],
+  }),
+  person: one(persons, {
+    fields: [lpaAdrtRecords.personId],
+    references: [persons.id],
+  }),
+}));
+
+export const dolsApplicationsRelations = relations(dolsApplications, ({ one, many }) => ({
+  organisation: one(organisations, {
+    fields: [dolsApplications.organisationId],
+    references: [organisations.id],
+  }),
+  person: one(persons, {
+    fields: [dolsApplications.personId],
+    references: [persons.id],
+  }),
+  restrictions: many(dolsRestrictions),
+}));
+
+export const dolsRestrictionsRelations = relations(dolsRestrictions, ({ one }) => ({
+  organisation: one(organisations, {
+    fields: [dolsRestrictions.organisationId],
+    references: [organisations.id],
+  }),
+  person: one(persons, {
+    fields: [dolsRestrictions.personId],
+    references: [persons.id],
+  }),
+  dolsApplication: one(dolsApplications, {
+    fields: [dolsRestrictions.dolsApplicationId],
+    references: [dolsApplications.id],
+  }),
+}));
+
+// ---------------------------------------------------------------------------
+// Shift Patterns / Rota relations
+// ---------------------------------------------------------------------------
+
+export const shiftPatternsRelations = relations(shiftPatterns, ({ one, many }) => ({
+  organisation: one(organisations, {
+    fields: [shiftPatterns.organisationId],
+    references: [organisations.id],
+  }),
+  assignments: many(shiftAssignments),
+}));
+
+export const rotaPeriodsRelations = relations(rotaPeriods, ({ one, many }) => ({
+  organisation: one(organisations, {
+    fields: [rotaPeriods.organisationId],
+    references: [organisations.id],
+  }),
+  assignments: many(shiftAssignments),
+}));
+
+export const shiftAssignmentsRelations = relations(shiftAssignments, ({ one, many }) => ({
+  organisation: one(organisations, {
+    fields: [shiftAssignments.organisationId],
+    references: [organisations.id],
+  }),
+  rotaPeriod: one(rotaPeriods, {
+    fields: [shiftAssignments.rotaPeriodId],
+    references: [rotaPeriods.id],
+  }),
+  shiftPattern: one(shiftPatterns, {
+    fields: [shiftAssignments.shiftPatternId],
+    references: [shiftPatterns.id],
+  }),
+  overrides: many(conflictOverrides),
+}));
+
+export const conflictOverridesRelations = relations(conflictOverrides, ({ one }) => ({
+  organisation: one(organisations, {
+    fields: [conflictOverrides.organisationId],
+    references: [organisations.id],
+  }),
+  shiftAssignment: one(shiftAssignments, {
+    fields: [conflictOverrides.shiftAssignmentId],
+    references: [shiftAssignments.id],
+  }),
+  overriddenByUser: one(users, {
+    fields: [conflictOverrides.overriddenBy],
+    references: [users.id],
+  }),
+}));
