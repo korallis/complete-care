@@ -1,72 +1,86 @@
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 
-const selectQueue: unknown[] = [];
-const insertQueue: unknown[] = [];
-const updateQueue: unknown[] = [];
+const {
+  insertQueue,
+  insertValuesCalls,
+  mockAssertBelongsToOrg,
+  mockAuditLog,
+  mockDb,
+  mockRequirePermission,
+  selectQueue,
+  selectWhereCalls,
+  updateQueue,
+  updateSetCalls,
+  updateWhereCalls,
+} = vi.hoisted(() => {
+  const selectQueue: unknown[] = [];
+  const insertQueue: unknown[] = [];
+  const updateQueue: unknown[] = [];
 
-const selectWhereCalls: unknown[][] = [];
-const insertValuesCalls: unknown[] = [];
-const updateSetCalls: unknown[] = [];
-const updateWhereCalls: unknown[][] = [];
+  const selectWhereCalls: unknown[][] = [];
+  const insertValuesCalls: unknown[] = [];
+  const updateSetCalls: unknown[] = [];
+  const updateWhereCalls: unknown[][] = [];
 
-function makeAwaitableQuery<T>(result: T) {
-  return {
-    limit: vi.fn().mockResolvedValue(result),
-    orderBy: vi.fn().mockResolvedValue(result),
-    returning: vi.fn().mockResolvedValue(result),
-    then: (resolve: (value: T) => unknown, reject?: (reason: unknown) => unknown) =>
-      Promise.resolve(result).then(resolve, reject),
-  };
-}
+  function makeAwaitableQuery<T>(result: T) {
+    return {
+      limit: vi.fn().mockResolvedValue(result),
+      orderBy: vi.fn().mockResolvedValue(result),
+      returning: vi.fn().mockResolvedValue(result),
+      then: (
+        resolve: (value: T) => unknown,
+        reject?: (reason: unknown) => unknown,
+      ) => Promise.resolve(result).then(resolve, reject),
+    };
+  }
 
-const mockDb = {
-  select: vi.fn(() => ({
-    from: vi.fn(() => ({
-      where: vi.fn((...args: unknown[]) => {
-        selectWhereCalls.push(args);
-        return makeAwaitableQuery(selectQueue.shift());
-      }),
-      orderBy: vi.fn(() => Promise.resolve(selectQueue.shift())),
-    })),
-  })),
-  insert: vi.fn(() => ({
-    values: vi.fn((payload: unknown) => {
-      insertValuesCalls.push(payload);
-      return makeAwaitableQuery(insertQueue.shift());
-    }),
-  })),
-  update: vi.fn(() => ({
-    set: vi.fn((payload: unknown) => {
-      updateSetCalls.push(payload);
-      return {
+  const mockDb = {
+    select: vi.fn(() => ({
+      from: vi.fn(() => ({
         where: vi.fn((...args: unknown[]) => {
-          updateWhereCalls.push(args);
-          return makeAwaitableQuery(updateQueue.shift());
+          selectWhereCalls.push(args);
+          return makeAwaitableQuery(selectQueue.shift());
         }),
-      };
-    }),
-  })),
-};
+        orderBy: vi.fn(() => Promise.resolve(selectQueue.shift())),
+      })),
+    })),
+    insert: vi.fn(() => ({
+      values: vi.fn((payload: unknown) => {
+        insertValuesCalls.push(payload);
+        return makeAwaitableQuery(insertQueue.shift());
+      }),
+    })),
+    update: vi.fn(() => ({
+      set: vi.fn((payload: unknown) => {
+        updateSetCalls.push(payload);
+        return {
+          where: vi.fn((...args: unknown[]) => {
+            updateWhereCalls.push(args);
+            return makeAwaitableQuery(updateQueue.shift());
+          }),
+        };
+      }),
+    })),
+  };
 
-const mockRequirePermission = vi.fn();
-const mockAssertBelongsToOrg = vi.fn();
-const mockAuditLog = vi.fn();
+  return {
+    selectQueue,
+    insertQueue,
+    updateQueue,
+    selectWhereCalls,
+    insertValuesCalls,
+    updateSetCalls,
+    updateWhereCalls,
+    mockDb,
+    mockRequirePermission: vi.fn(),
+    mockAssertBelongsToOrg: vi.fn(),
+    mockAuditLog: vi.fn(),
+  };
+});
 
 vi.mock('@/lib/db', () => ({ db: mockDb }));
-vi.mock('@/lib/rbac', async (importOriginal) => {
-  const original = await importOriginal<typeof import('@/lib/rbac')>();
-  return {
-    ...original,
-    requirePermission: mockRequirePermission,
-  };
-});
-vi.mock('@/lib/tenant', async (importOriginal) => {
-  const original = await importOriginal<typeof import('@/lib/tenant')>();
-  return {
-    ...original,
-    assertBelongsToOrg: mockAssertBelongsToOrg,
-  };
-});
+vi.mock('@/lib/rbac', () => ({ requirePermission: mockRequirePermission }));
+vi.mock('@/lib/tenant', () => ({ assertBelongsToOrg: mockAssertBelongsToOrg }));
 vi.mock('@/lib/audit', () => ({ auditLog: mockAuditLog }));
 
 import {
@@ -127,26 +141,29 @@ describe('missing-from-care actions', () => {
   });
 
   it('recordReturn enforces tenant scope and writes audit evidence for recovery', async () => {
+    const episodeId = '550e8400-e29b-41d4-a716-446655440010';
+    const personId = '550e8400-e29b-41d4-a716-446655440011';
+    const rhiId = '550e8400-e29b-41d4-a716-446655440012';
     selectQueue.push([
       {
-        id: 'episode-1',
+        id: episodeId,
         organisationId: 'org-1',
-        personId: 'person-1',
+        personId,
         status: 'open',
       },
     ]);
     updateQueue.push(undefined);
-    insertQueue.push(undefined, [{ id: 'rhi-1' }], undefined);
+    insertQueue.push(undefined, [{ id: rhiId }], undefined);
 
     const returnedAt = new Date('2026-04-01T18:00:00Z');
     const result = await recordReturn({
-      episodeId: 'episode-1',
+      episodeId,
       returnedAt,
       returnMethod: 'self',
       wellbeingCheckNotes: 'Child was safe and medically well.',
     });
 
-    expect(result).toEqual({ success: true, data: { rhiId: 'rhi-1' } });
+    expect(result).toEqual({ success: true, data: { rhiId } });
     expect(mockRequirePermission).toHaveBeenCalledWith('update', 'persons');
     expect(mockAssertBelongsToOrg).toHaveBeenCalledWith('org-1', 'org-1');
     expect(updateSetCalls[0]).toMatchObject({
@@ -160,7 +177,7 @@ describe('missing-from-care actions', () => {
       1,
       'update',
       'missing_episode',
-      'episode-1',
+      episodeId,
       expect.objectContaining({
         after: expect.objectContaining({ status: 'returned', returnedAt }),
       }),
@@ -170,9 +187,9 @@ describe('missing-from-care actions', () => {
       2,
       'create',
       'return_home_interview',
-      'rhi-1',
+      rhiId,
       expect.objectContaining({
-        after: expect.objectContaining({ episodeId: 'episode-1' }),
+        after: expect.objectContaining({ episodeId }),
       }),
       { userId: 'user-1', organisationId: 'org-1' },
     );
@@ -192,18 +209,20 @@ describe('missing-from-care actions', () => {
   });
 
   it('completeRhi enforces RBAC, tenant scope, and audit logging', async () => {
+    const rhiId = '550e8400-e29b-41d4-a716-446655440020';
+    const episodeId = '550e8400-e29b-41d4-a716-446655440021';
     const existingRhi = {
-      id: 'rhi-1',
+      id: rhiId,
       organisationId: 'org-1',
       status: 'pending',
-      episodeId: 'episode-1',
+      episodeId,
       whereChildWas: null,
     };
     selectQueue.push([existingRhi]);
     updateQueue.push(undefined);
 
     const result = await completeRhi({
-      id: 'rhi-1',
+      id: rhiId,
       whereChildWas: 'Town centre',
       whoChildWasWith: 'Friends',
       childDeclined: false,
@@ -223,7 +242,7 @@ describe('missing-from-care actions', () => {
     expect(mockAuditLog).toHaveBeenCalledWith(
       'update',
       'return_home_interview',
-      'rhi-1',
+      rhiId,
       {
         before: existingRhi,
         after: expect.objectContaining({ status: 'completed', whereChildWas: 'Town centre' }),
@@ -233,17 +252,19 @@ describe('missing-from-care actions', () => {
   });
 
   it('escalateRhi enforces tenant scope and records audit history', async () => {
+    const rhiId = '550e8400-e29b-41d4-a716-446655440030';
+    const episodeId = '550e8400-e29b-41d4-a716-446655440031';
     const existingRhi = {
-      id: 'rhi-2',
+      id: rhiId,
       organisationId: 'org-1',
       status: 'overdue',
-      episodeId: 'episode-9',
+      episodeId,
       escalatedToRi: false,
     };
     selectQueue.push([existingRhi]);
     updateQueue.push(undefined);
 
-    const result = await escalateRhi({ id: 'rhi-2' });
+    const result = await escalateRhi({ id: rhiId });
 
     expect(result).toEqual({ success: true, data: undefined });
     expect(mockRequirePermission).toHaveBeenCalledWith('update', 'persons');
@@ -255,7 +276,7 @@ describe('missing-from-care actions', () => {
     expect(mockAuditLog).toHaveBeenCalledWith(
       'update',
       'return_home_interview',
-      'rhi-2',
+      rhiId,
       {
         before: existingRhi,
         after: { status: 'escalated', escalatedToRi: true },
