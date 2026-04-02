@@ -18,6 +18,7 @@ Execution brief:
 
 ## Code evidence
 - Org-scoped GDPR routes exist under `src/app/(dashboard)/[orgSlug]/settings/gdpr/*` for dashboard, SAR, erasure, retention, and export flows.
+- Added a compatibility alias at `src/app/(dashboard)/[orgSlug]/settings/gdpr/sar/page.tsx` so singular SAR paths redirect to the implemented `/sars` workflow.
 - GDPR admin components exist for SAR queues, erasure workflows, retention/deletion review, and export-ledger visibility.
 - `src/features/gdpr/page-access.ts` enforces active-org switching plus compliance permissions.
 - `src/features/gdpr/actions.ts` records audit events for SAR creation/status changes, erasure review, retention policy changes, retention-flag review, and export jobs.
