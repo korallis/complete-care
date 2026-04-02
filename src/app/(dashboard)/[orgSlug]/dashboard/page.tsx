@@ -102,7 +102,7 @@ export default async function OrgDashboardPage({
       </div>
 
       {/* Quick links */}
-      <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
+      <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 xl:grid-cols-4">
         <a
           href={`/${orgSlug}/persons`}
           className="group rounded-xl border border-[oklch(0.91_0.005_160)] bg-white p-5 hover:border-[oklch(0.35_0.06_160)] hover:shadow-sm transition-all"
@@ -194,6 +194,43 @@ export default async function OrgDashboardPage({
           </div>
           <p className="text-xs text-[oklch(0.55_0_0)]">
             Organisation settings
+          </p>
+        </a>
+
+        <a
+          href={`/${orgSlug}/travel-safety`}
+          className="group rounded-xl border border-[oklch(0.91_0.005_160)] bg-white p-5 hover:border-[oklch(0.35_0.06_160)] hover:shadow-sm transition-all"
+        >
+          <div className="flex items-center gap-3 mb-2">
+            <div className="h-8 w-8 rounded-lg bg-[oklch(0.22_0.04_160)/0.08] flex items-center justify-center group-hover:bg-[oklch(0.22_0.04_160)/0.12] transition-colors">
+              <svg
+                xmlns="http://www.w3.org/2000/svg"
+                viewBox="0 0 24 24"
+                fill="none"
+                stroke="oklch(0.22 0.04 160)"
+                strokeWidth="2"
+                strokeLinecap="round"
+                strokeLinejoin="round"
+                className="h-4 w-4"
+                aria-hidden="true"
+              >
+                <path d="M10 2h4" />
+                <path d="M12 14v8" />
+                <path d="M4.93 10.93l1.41 1.41" />
+                <path d="M2 18h2" />
+                <path d="M20 18h2" />
+                <path d="M19.07 10.93l-1.41 1.41" />
+                <path d="M22 22H2" />
+                <path d="m16 6-4 4-4-4" />
+                <path d="M16 18a4 4 0 0 0-8 0" />
+              </svg>
+            </div>
+            <p className="text-sm font-semibold text-[oklch(0.22_0.04_160)]">
+              Travel &amp; Safety
+            </p>
+          </div>
+          <p className="text-xs text-[oklch(0.55_0_0)]">
+            Review travel-time variance, SOS alerts, and lone-worker checks
           </p>
         </a>
       </div>

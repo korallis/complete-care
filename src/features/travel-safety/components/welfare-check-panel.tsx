@@ -7,12 +7,14 @@ interface WelfareCheckPanelProps {
   checks: WelfareCheck[];
   onCheckIn: (id: string) => void;
   onResolve: (id: string, resolution: string, notes?: string) => void;
+  canResolve?: boolean;
 }
 
 export function WelfareCheckPanel({
   checks,
   onCheckIn,
   onResolve,
+  canResolve = true,
 }: WelfareCheckPanelProps) {
   const now = new Date();
 
@@ -79,15 +81,17 @@ export function WelfareCheckPanel({
                         >
                           Check In
                         </button>
-                        <button
-                          type="button"
-                          onClick={() =>
-                            onResolve(check.id, 'false_alarm')
-                          }
-                          className="rounded bg-gray-200 px-3 py-1.5 text-xs text-gray-700 hover:bg-gray-300"
-                        >
-                          False Alarm
-                        </button>
+                        {canResolve && (
+                          <button
+                            type="button"
+                            onClick={() =>
+                              onResolve(check.id, 'false_alarm')
+                            }
+                            className="rounded bg-gray-200 px-3 py-1.5 text-xs text-gray-700 hover:bg-gray-300"
+                          >
+                            False Alarm
+                          </button>
+                        )}
                       </>
                     )}
                   </div>

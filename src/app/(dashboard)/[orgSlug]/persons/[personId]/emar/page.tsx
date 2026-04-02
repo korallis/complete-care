@@ -108,6 +108,15 @@ export default async function EmarPage({ params, searchParams }: EmarPageProps) 
             </svg>
             All Medications
           </Link>
+          <Link
+            href={`/${orgSlug}/emar/controlled-drugs`}
+            className="inline-flex items-center gap-1.5 rounded-lg border border-[oklch(0.88_0.005_160)] bg-white px-3 py-1.5 text-xs font-medium text-[oklch(0.35_0.04_160)] hover:bg-[oklch(0.97_0.003_160)] transition-colors"
+          >
+            <svg className="h-3.5 w-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth="2">
+              <path strokeLinecap="round" strokeLinejoin="round" d="M9 12h6m-3-3v6m8 4H4a2 2 0 01-2-2V7a2 2 0 012-2h4l2-2h4l2 2h4a2 2 0 012 2v10a2 2 0 01-2 2z" />
+            </svg>
+            Controlled Drugs
+          </Link>
           {canPrescribe && (
             <Link
               href={`/${orgSlug}/persons/${personId}/emar/medications/new`}
