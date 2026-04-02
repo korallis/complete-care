@@ -144,7 +144,8 @@ const pathwaySectionsSchema = z.object({
 });
 
 export const createPathwayPlanSchema = z.object({
-  youngPersonName: z.string().min(1, 'Young person name is required'),
+  personId: z.string().uuid('Young person is required'),
+  youngPersonName: z.string().min(1, 'Young person name is required').optional(),
   dateOfBirth: z.string().optional(),
   personalAdviser: z.string().optional(),
   planStartDate: z.string().min(1, 'Plan start date is required'),

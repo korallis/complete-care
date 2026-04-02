@@ -10,6 +10,7 @@ import {
   boolean,
 } from 'drizzle-orm/pg-core';
 import { organisations } from './organisations';
+import { persons } from './persons';
 import { users } from './users';
 
 // ---------------------------------------------------------------------------
@@ -249,6 +250,10 @@ export const pathwayPlans = pgTable(
     organisationId: uuid('organisation_id')
       .notNull()
       .references(() => organisations.id, { onDelete: 'cascade' }),
+    /** Optional direct person link for chronology / transition evidence */
+    personId: uuid('person_id').references(() => persons.id, {
+      onDelete: 'set null',
+    }),
     /** Name or identifier of the young person */
     youngPersonName: text('young_person_name').notNull(),
     /** Date of birth */
@@ -283,6 +288,7 @@ export const pathwayPlans = pgTable(
   },
   (t) => [
     index('pathway_plans_org_idx').on(t.organisationId),
+    index('pathway_plans_person_idx').on(t.organisationId, t.personId),
     index('pathway_plans_status_idx').on(t.status),
     index('pathway_plans_review_idx').on(t.planReviewDate),
   ],
