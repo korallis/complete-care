@@ -38,7 +38,7 @@ describe('organisations schema', () => {
   it('defines all required columns', () => {
     const cols = Object.keys(organisations);
     expect(cols).toEqual(
-      expect.arrayContaining(['id', 'name', 'slug', 'plan', 'orgType', 'domains', 'stripeCustomerId', 'createdAt', 'updatedAt']),
+      expect.arrayContaining(['id', 'name', 'slug', 'plan', 'domains', 'stripeCustomerId', 'createdAt', 'updatedAt']),
     );
   });
 
@@ -83,14 +83,8 @@ describe('organisations schema', () => {
       name: 'Test Org',
       slug: 'test-org',
       plan: 'free',
-      orgType: null,
       domains: [],
       stripeCustomerId: null,
-      stripeSubscriptionId: null,
-      stripePriceId: null,
-      subscriptionStatus: 'free',
-      currentPeriodEnd: null,
-      maxUsers: 5,
       createdAt: new Date(),
       updatedAt: new Date(),
     };
@@ -268,7 +262,6 @@ describe('auditLogs schema', () => {
       entityType: 'person',
       entityId: 'person-uuid',
       changes: { before: null, after: { name: 'Alice' } },
-      ipAddress: null,
       createdAt: new Date(),
     };
     expect(log.action).toBe('create');

@@ -18,7 +18,6 @@ import {
   approvedContacts,
   contactSchedules,
   contactRecords,
-  auditLogs,
 } from '@/lib/db/schema';
 import { eq, and, count, gte, lte } from 'drizzle-orm';
 import type { ActionResult } from '@/types';
@@ -27,6 +26,9 @@ import type {
   ContactSchedule,
   ContactRecord,
 } from '@/lib/db/schema';
+import { requirePermission } from '@/lib/rbac';
+import { assertBelongsToOrg } from '@/lib/tenant';
+import { auditLog } from '@/lib/audit';
 import {
   createApprovedContactSchema,
   updateApprovedContactSchema,
@@ -36,52 +38,13 @@ import {
 } from './schema';
 
 // ---------------------------------------------------------------------------
-// Auth helpers (placeholder — real implementation comes from auth module)
-// ---------------------------------------------------------------------------
-
-type SessionContext = {
-  userId: string;
-  organisationId: string;
-  role: string;
-};
-
-/**
- * Placeholder: in production this reads from the Auth.js session cookie.
- * The auth feature will provide `requireAuth()` and `requireRole()`.
- */
-async function requireAuth(): Promise<SessionContext> {
-  // TODO: wire up to Auth.js v5 session
-  throw new Error(
-    'Auth not yet wired — replace with real session check from auth feature',
-  );
-}
-
-function hasRole(
-  userRole: string,
-  minimumRole: string,
-): boolean {
-  const hierarchy = [
-    'owner',
-    'admin',
-    'manager',
-    'senior_carer',
-    'carer',
-    'viewer',
-  ];
-  return hierarchy.indexOf(userRole) <= hierarchy.indexOf(minimumRole);
-}
-
-// ---------------------------------------------------------------------------
 // Approved Contacts CRUD
 // ---------------------------------------------------------------------------
 
 export async function createApprovedContact(
   input: unknown,
 ): Promise<ActionResult<ApprovedContact>> {
-  const session = await requireAuth();
-  if (!hasRole(session.role, 'senior_carer')) {
-    return { success: false, error: 'Insufficient permissions' };
-  }
+  const { orgId, userId } = await requirePermission('create', 'persons');
 
   const parsed = createApprovedContactSchema.safeParse(input);
   if (!parsed.success) {
@@ -93,7 +56,7 @@ export async function createApprovedContact(
   const [contact] = await db
     .insert(approvedContacts)
     .values({
-      organisationId: session.organisationId,
+      organisationId: orgId,
       personId: data.personId,
       name: data.name,
       relationship: data.relationship,
@@ -107,19 +70,15 @@ export async function createApprovedContact(
       courtOrderReference: data.courtOrderReference || null,
       courtOrderDate: data.courtOrderDate || null,
       courtOrderConditions: data.courtOrderConditions || null,
-      approvedById: session.userId,
+      approvedById: userId,
       approvedAt: new Date(),
     })
     .returning();
 
-  await db.insert(auditLogs).values({
-    userId: session.userId,
-    organisationId: session.organisationId,
-    action: 'create',
-    entityType: 'approved_contact',
-    entityId: contact.id,
-    changes: { before: null, after: contact },
-  });
+  await auditLog('create', 'approved_contact', contact.id, {
+    before: null,
+    after: contact,
+  }, { userId, organisationId: orgId });
 
   return { success: true, data: contact };
 }
@@ -127,10 +86,7 @@ export async function createApprovedContact(
 export async function updateApprovedContact(
   input: unknown,
 ): Promise<ActionResult<ApprovedContact>> {
-  const session = await requireAuth();
-  if (!hasRole(session.role, 'senior_carer')) {
-    return { success: false, error: 'Insufficient permissions' };
-  }
+  const { orgId, userId } = await requirePermission('update', 'persons');
 
   const parsed = updateApprovedContactSchema.safeParse(input);
   if (!parsed.success) {
@@ -146,7 +102,7 @@ export async function updateApprovedContact(
     .where(
       and(
         eq(approvedContacts.id, id),
-        eq(approvedContacts.organisationId, session.organisationId),
+        eq(approvedContacts.organisationId, orgId),
       ),
     );
 
@@ -154,20 +110,18 @@ export async function updateApprovedContact(
     return { success: false, error: 'Contact not found' };
   }
 
+  assertBelongsToOrg(existing.organisationId, orgId);
+
   const [updated] = await db
     .update(approvedContacts)
     .set({ ...updates, updatedAt: new Date() })
     .where(eq(approvedContacts.id, id))
     .returning();
 
-  await db.insert(auditLogs).values({
-    userId: session.userId,
-    organisationId: session.organisationId,
-    action: 'update',
-    entityType: 'approved_contact',
-    entityId: id,
-    changes: { before: existing, after: updated },
-  });
+  await auditLog('update', 'approved_contact', id, {
+    before: existing,
+    after: updated,
+  }, { userId, organisationId: orgId });
 
   return { success: true, data: updated };
 }
@@ -175,14 +129,14 @@ export async function updateApprovedContact(
 export async function getApprovedContacts(
   personId: string,
 ): Promise<ActionResult<ApprovedContact[]>> {
-  const session = await requireAuth();
+  const { orgId } = await requirePermission('read', 'persons');
 
   const contacts = await db
     .select()
     .from(approvedContacts)
     .where(
       and(
-        eq(approvedContacts.organisationId, session.organisationId),
+        eq(approvedContacts.organisationId, orgId),
         eq(approvedContacts.personId, personId),
         eq(approvedContacts.isActive, true),
       ),
@@ -204,10 +158,7 @@ export async function getApprovedContacts(
 export async function createContactSchedule(
   input: unknown,
 ): Promise<ActionResult<ContactSchedule>> {
-  const session = await requireAuth();
-  if (!hasRole(session.role, 'carer')) {
-    return { success: false, error: 'Insufficient permissions' };
-  }
+  const { orgId, userId, role } = await requirePermission('create', 'persons');
 
   const parsed = createContactScheduleSchema.safeParse(input);
   if (!parsed.success) {
@@ -223,7 +174,7 @@ export async function createContactSchedule(
     .where(
       and(
         eq(approvedContacts.id, data.approvedContactId),
-        eq(approvedContacts.organisationId, session.organisationId),
+        eq(approvedContacts.organisationId, orgId),
         eq(approvedContacts.personId, data.personId),
         eq(approvedContacts.isActive, true),
       ),
@@ -254,7 +205,8 @@ export async function createContactSchedule(
           'RESTRICTED: This contact has court-ordered restrictions. Manager override with justification is required.',
       };
     }
-    if (!hasRole(session.role, 'manager')) {
+    const managerRoles = ['owner', 'admin', 'manager'];
+    if (!managerRoles.includes(role)) {
       return {
         success: false,
         error:
@@ -266,7 +218,7 @@ export async function createContactSchedule(
   const [schedule] = await db
     .insert(contactSchedules)
     .values({
-      organisationId: session.organisationId,
+      organisationId: orgId,
       personId: data.personId,
       approvedContactId: data.approvedContactId,
       contactType: data.contactType,
@@ -275,25 +227,16 @@ export async function createContactSchedule(
       supervisionLevel: data.supervisionLevel,
       location: data.location || null,
       managerOverride: data.managerOverride,
-      overrideById: data.managerOverride ? session.userId : null,
+      overrideById: data.managerOverride ? userId : null,
       overrideJustification: data.overrideJustification || null,
-      createdById: session.userId,
+      createdById: userId,
     })
     .returning();
 
-  await db.insert(auditLogs).values({
-    userId: session.userId,
-    organisationId: session.organisationId,
-    action: 'create',
-    entityType: 'contact_schedule',
-    entityId: schedule.id,
-    changes: {
-      before: null,
-      after: schedule,
-      managerOverride: data.managerOverride,
-      restrictedContact: approvedContact.hasRestrictions,
-    },
-  });
+  await auditLog('create', 'contact_schedule', schedule.id, {
+    before: null,
+    after: schedule,
+  }, { userId, organisationId: orgId });
 
   return { success: true, data: schedule };
 }
@@ -301,10 +244,7 @@ export async function createContactSchedule(
 export async function updateContactScheduleStatus(
   input: unknown,
 ): Promise<ActionResult<ContactSchedule>> {
-  const session = await requireAuth();
-  if (!hasRole(session.role, 'carer')) {
-    return { success: false, error: 'Insufficient permissions' };
-  }
+  const { orgId, userId } = await requirePermission('update', 'persons');
 
   const parsed = updateContactScheduleStatusSchema.safeParse(input);
   if (!parsed.success) {
@@ -319,7 +259,7 @@ export async function updateContactScheduleStatus(
     .where(
       and(
         eq(contactSchedules.id, id),
-        eq(contactSchedules.organisationId, session.organisationId),
+        eq(contactSchedules.organisationId, orgId),
       ),
     );
 
@@ -327,20 +267,18 @@ export async function updateContactScheduleStatus(
     return { success: false, error: 'Schedule not found' };
   }
 
+  assertBelongsToOrg(existing.organisationId, orgId);
+
   const [updated] = await db
     .update(contactSchedules)
     .set({ status, updatedAt: new Date() })
     .where(eq(contactSchedules.id, id))
     .returning();
 
-  await db.insert(auditLogs).values({
-    userId: session.userId,
-    organisationId: session.organisationId,
-    action: 'update',
-    entityType: 'contact_schedule',
-    entityId: id,
-    changes: { before: { status: existing.status }, after: { status } },
-  });
+  await auditLog('update', 'contact_schedule', id, {
+    before: { status: existing.status },
+    after: { status },
+  }, { userId, organisationId: orgId });
 
   return { success: true, data: updated };
 }
@@ -348,14 +286,14 @@ export async function updateContactScheduleStatus(
 export async function getContactSchedules(
   personId: string,
 ): Promise<ActionResult<ContactSchedule[]>> {
-  const session = await requireAuth();
+  const { orgId } = await requirePermission('read', 'persons');
 
   const schedules = await db
     .select()
     .from(contactSchedules)
     .where(
       and(
-        eq(contactSchedules.organisationId, session.organisationId),
+        eq(contactSchedules.organisationId, orgId),
         eq(contactSchedules.personId, personId),
       ),
     );
@@ -374,10 +312,7 @@ export async function getContactSchedules(
 export async function createContactRecord(
   input: unknown,
 ): Promise<ActionResult<ContactRecord>> {
-  const session = await requireAuth();
-  if (!hasRole(session.role, 'carer')) {
-    return { success: false, error: 'Insufficient permissions' };
-  }
+  const { orgId, userId } = await requirePermission('create', 'persons');
 
   const parsed = createContactRecordSchema.safeParse(input);
   if (!parsed.success) {
@@ -393,7 +328,7 @@ export async function createContactRecord(
     .where(
       and(
         eq(approvedContacts.id, data.approvedContactId),
-        eq(approvedContacts.organisationId, session.organisationId),
+        eq(approvedContacts.organisationId, orgId),
       ),
     );
 
@@ -407,7 +342,7 @@ export async function createContactRecord(
   const [record] = await db
     .insert(contactRecords)
     .values({
-      organisationId: session.organisationId,
+      organisationId: orgId,
       personId: data.personId,
       approvedContactId: data.approvedContactId,
       contactScheduleId: data.contactScheduleId || null,
@@ -423,7 +358,7 @@ export async function createContactRecord(
       notes: data.notes || null,
       concerns: data.concerns || null,
       disclosures: data.disclosures || null,
-      recordedById: session.userId,
+      recordedById: userId,
     })
     .returning();
 
@@ -435,24 +370,15 @@ export async function createContactRecord(
       .where(
         and(
           eq(contactSchedules.id, data.contactScheduleId),
-          eq(contactSchedules.organisationId, session.organisationId),
+          eq(contactSchedules.organisationId, orgId),
         ),
       );
   }
 
-  await db.insert(auditLogs).values({
-    userId: session.userId,
-    organisationId: session.organisationId,
-    action: 'create',
-    entityType: 'contact_record',
-    entityId: record.id,
-    changes: {
-      before: null,
-      after: record,
-      hasConcerns: !!data.concerns,
-      hasDisclosures: !!data.disclosures,
-    },
-  });
+  await auditLog('create', 'contact_record', record.id, {
+    before: null,
+    after: record,
+  }, { userId, organisationId: orgId });
 
   return { success: true, data: record };
 }
@@ -460,14 +386,14 @@ export async function createContactRecord(
 export async function getContactRecords(
   personId: string,
 ): Promise<ActionResult<ContactRecord[]>> {
-  const session = await requireAuth();
+  const { orgId } = await requirePermission('read', 'persons');
 
   const records = await db
     .select()
     .from(contactRecords)
     .where(
       and(
-        eq(contactRecords.organisationId, session.organisationId),
+        eq(contactRecords.organisationId, orgId),
         eq(contactRecords.personId, personId),
       ),
     );
@@ -495,14 +421,14 @@ export type ComplianceSummary = {
 export async function getComplianceSummary(
   personId: string,
 ): Promise<ActionResult<ComplianceSummary[]>> {
-  const session = await requireAuth();
+  const { orgId } = await requirePermission('read', 'persons');
 
   const contacts = await db
     .select()
     .from(approvedContacts)
     .where(
       and(
-        eq(approvedContacts.organisationId, session.organisationId),
+        eq(approvedContacts.organisationId, orgId),
         eq(approvedContacts.personId, personId),
         eq(approvedContacts.isActive, true),
       ),
@@ -520,7 +446,7 @@ export async function getComplianceSummary(
       .from(contactRecords)
       .where(
         and(
-          eq(contactRecords.organisationId, session.organisationId),
+          eq(contactRecords.organisationId, orgId),
           eq(contactRecords.approvedContactId, contact.id),
           gte(contactRecords.contactDate, monthStart),
           lte(contactRecords.contactDate, monthEnd),
@@ -532,7 +458,7 @@ export async function getComplianceSummary(
       .from(contactSchedules)
       .where(
         and(
-          eq(contactSchedules.organisationId, session.organisationId),
+          eq(contactSchedules.organisationId, orgId),
           eq(contactSchedules.approvedContactId, contact.id),
           gte(contactSchedules.scheduledAt, monthStart),
           lte(contactSchedules.scheduledAt, monthEnd),

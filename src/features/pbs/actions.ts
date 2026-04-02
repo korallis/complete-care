@@ -1,8 +1,11 @@
 'use server';
 
 import { db } from '@/lib/db';
-import { pbsPlans, abcIncidents, restrictivePractices, auditLogs } from '@/lib/db/schema';
+import { pbsPlans, abcIncidents, restrictivePractices } from '@/lib/db/schema';
 import { eq, and, desc, sql, gte, lte, count } from 'drizzle-orm';
+import { requirePermission } from '@/lib/rbac';
+import { assertBelongsToOrg } from '@/lib/tenant';
+import { auditLog } from '@/lib/audit';
 import {
   createPbsPlanSchema,
   updatePbsPlanSchema,
@@ -17,41 +20,12 @@ import {
 } from './schema';
 
 // ---------------------------------------------------------------------------
-// Helpers — in a real app these would come from auth middleware
-// ---------------------------------------------------------------------------
-
-/** Placeholder — would call auth() from Auth.js */
-function requireAuth(): { userId: string; organisationId: string } {
-  // In production this reads from the session / cookie.
-  // For now we throw to prevent accidental unauthenticated access.
-  throw new Error('AUTH_REQUIRED');
-}
-
-function audit(
-  userId: string,
-  organisationId: string,
-  action: string,
-  entityType: string,
-  entityId: string,
-  changes?: unknown,
-) {
-  return db.insert(auditLogs).values({
-    userId,
-    organisationId,
-    action,
-    entityType,
-    entityId,
-    changes: changes ?? null,
-  });
-}
-
-// ---------------------------------------------------------------------------
 // PBS Plans
 // ---------------------------------------------------------------------------
 
 export async function createPbsPlan(input: CreatePbsPlanInput) {
   const parsed = createPbsPlanSchema.parse(input);
-  const { userId, organisationId } = requireAuth();
+  const { userId, orgId: organisationId } = await requirePermission('create', 'care_plans');
 
   // Determine next version number for this person
   const existing = await db
@@ -85,14 +59,14 @@ export async function createPbsPlan(input: CreatePbsPlanInput) {
     })
     .returning();
 
-  await audit(userId, organisationId, 'create', 'pbs_plan', plan.id);
+  await auditLog('create', 'pbs_plan', plan.id, undefined, { userId, organisationId });
 
   return { success: true, plan };
 }
 
 export async function updatePbsPlan(input: UpdatePbsPlanInput) {
   const parsed = updatePbsPlanSchema.parse(input);
-  const { userId, organisationId } = requireAuth();
+  const { userId, orgId: organisationId } = await requirePermission('update', 'care_plans');
 
   // Mark previous version as superseded
   const [previous] = await db
@@ -106,6 +80,8 @@ export async function updatePbsPlan(input: UpdatePbsPlanInput) {
     );
 
   if (!previous) throw new Error('Plan not found');
+
+  assertBelongsToOrg(previous.organisationId, organisationId);
 
   await db
     .update(pbsPlans)
@@ -133,15 +109,15 @@ export async function updatePbsPlan(input: UpdatePbsPlanInput) {
     })
     .returning();
 
-  await audit(userId, organisationId, 'update', 'pbs_plan', plan.id, {
-    previousVersionId: previous.id,
-  });
+  await auditLog('update', 'pbs_plan', plan.id, {
+    after: { previousVersionId: previous.id },
+  }, { userId, organisationId });
 
   return { success: true, plan };
 }
 
 export async function getPbsPlansForPerson(personId: string) {
-  const { organisationId } = requireAuth();
+  const { orgId: organisationId } = await requirePermission('read', 'care_plans');
 
   return db
     .select()
@@ -156,7 +132,7 @@ export async function getPbsPlansForPerson(personId: string) {
 }
 
 export async function getActivePbsPlan(personId: string) {
-  const { organisationId } = requireAuth();
+  const { orgId: organisationId } = await requirePermission('read', 'care_plans');
 
   const [plan] = await db
     .select()
@@ -180,7 +156,7 @@ export async function getActivePbsPlan(personId: string) {
 
 export async function createAbcIncident(input: CreateAbcIncidentInput) {
   const parsed = createAbcIncidentSchema.parse(input);
-  const { userId, organisationId } = requireAuth();
+  const { userId, orgId: organisationId } = await requirePermission('create', 'incidents');
 
   const [incident] = await db
     .insert(abcIncidents)
@@ -203,13 +179,13 @@ export async function createAbcIncident(input: CreateAbcIncidentInput) {
     })
     .returning();
 
-  await audit(userId, organisationId, 'create', 'abc_incident', incident.id);
+  await auditLog('create', 'abc_incident', incident.id, undefined, { userId, organisationId });
 
   return { success: true, incident };
 }
 
 export async function getAbcIncidentsForPerson(personId: string) {
-  const { organisationId } = requireAuth();
+  const { orgId: organisationId } = await requirePermission('read', 'incidents');
 
   return db
     .select()
@@ -231,7 +207,7 @@ export async function createRestrictivePractice(
   input: CreateRestrictivePracticeInput,
 ) {
   const parsed = createRestrictivePracticeSchema.parse(input);
-  const { userId, organisationId } = requireAuth();
+  const { userId, orgId: organisationId } = await requirePermission('create', 'incidents');
 
   const [entry] = await db
     .insert(restrictivePractices)
@@ -249,13 +225,7 @@ export async function createRestrictivePractice(
     })
     .returning();
 
-  await audit(
-    userId,
-    organisationId,
-    'create',
-    'restrictive_practice',
-    entry.id,
-  );
+  await auditLog('create', 'restrictive_practice', entry.id, undefined, { userId, organisationId });
 
   return { success: true, entry };
 }
@@ -264,7 +234,7 @@ export async function editRestrictivePractice(
   input: EditRestrictivePracticeInput,
 ) {
   const parsed = editRestrictivePracticeSchema.parse(input);
-  const { userId, organisationId } = requireAuth();
+  const { userId, orgId: organisationId } = await requirePermission('update', 'incidents');
 
   // Get original entry
   const [original] = await db
@@ -278,6 +248,8 @@ export async function editRestrictivePractice(
     );
 
   if (!original) throw new Error('Restrictive practice entry not found');
+
+  assertBelongsToOrg(original.organisationId, organisationId);
 
   // Mark original as superseded (immutable — we do NOT delete)
   await db
@@ -304,14 +276,9 @@ export async function editRestrictivePractice(
     })
     .returning();
 
-  await audit(
-    userId,
-    organisationId,
-    'update',
-    'restrictive_practice',
-    entry.id,
-    { previousVersionId: original.id },
-  );
+  await auditLog('update', 'restrictive_practice', entry.id, {
+    after: { previousVersionId: original.id },
+  }, { userId, organisationId });
 
   return { success: true, entry };
 }
@@ -322,7 +289,7 @@ export async function getRestrictivePractices(filters: {
   from?: string;
   to?: string;
 }) {
-  const { organisationId } = requireAuth();
+  const { orgId: organisationId } = await requirePermission('read', 'incidents');
 
   const conditions = [
     eq(restrictivePractices.organisationId, organisationId),
@@ -357,7 +324,7 @@ export async function getRestrictivePracticeCounts(
   personId: string,
   period: 'weekly' | 'monthly' | 'quarterly',
 ) {
-  const { organisationId } = requireAuth();
+  const { orgId: organisationId } = await requirePermission('read', 'incidents');
 
   // Determine the date truncation expression based on period
   const truncExpr =

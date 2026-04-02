@@ -7,8 +7,10 @@ import {
   matchingAssessments,
   admissionChecklistItems,
 } from '@/lib/db/schema/admissions';
-import { auditLogs } from '@/lib/db/schema/audit-logs';
 import { eq, and, desc } from 'drizzle-orm';
+import { requirePermission } from '@/lib/rbac';
+import { assertBelongsToOrg } from '@/lib/tenant';
+import { auditLog } from '@/lib/audit';
 import {
   createReferralSchema,
   createMatchingAssessmentSchema,
@@ -16,53 +18,6 @@ import {
   updateChecklistItemSchema,
   completeAdmissionSchema,
 } from './schema';
-
-// ── Helpers ────────────────────────────────────────────────────────────
-
-/**
- * Stub auth helper — returns the current user and org context.
- * Replace with real Auth.js session lookup once auth module is wired up.
- */
-async function requireAuth() {
-  // TODO: Replace with real auth once m1-auth is implemented.
-  // For now, return a placeholder that allows typecheck/lint to pass.
-  return {
-    userId: '00000000-0000-0000-0000-000000000000',
-    organisationId: '00000000-0000-0000-0000-000000000000',
-    role: 'manager' as const,
-  };
-}
-
-/**
- * Asserts the caller has at least one of the allowed roles.
- */
-function assertRole(
-  role: string,
-  allowed: readonly string[],
-): asserts role is string {
-  if (!allowed.includes(role)) {
-    throw new Error('Forbidden: insufficient role');
-  }
-}
-
-/** Records an audit log entry. */
-async function audit(params: {
-  userId: string;
-  organisationId: string;
-  action: string;
-  entityType: string;
-  entityId: string;
-  changes?: unknown;
-}) {
-  await db.insert(auditLogs).values({
-    userId: params.userId,
-    organisationId: params.organisationId,
-    action: params.action,
-    entityType: params.entityType,
-    entityId: params.entityId,
-    changes: params.changes ?? null,
-  });
-}
 
 /** Records a referral status transition. */
 async function recordTransition(params: {
@@ -147,8 +102,7 @@ const DEFAULT_CHECKLIST_ITEMS = [
  * Status starts at "received".
  */
 export async function createReferral(input: unknown) {
-  const { userId, organisationId, role } = await requireAuth();
-  assertRole(role, ['owner', 'admin', 'manager', 'senior_carer']);
+  const { userId, orgId: organisationId } = await requirePermission('create', 'persons');
 
   const data = createReferralSchema.parse(input);
 
@@ -175,14 +129,9 @@ export async function createReferral(input: unknown) {
     performedBy: userId,
   });
 
-  await audit({
-    userId,
-    organisationId,
-    action: 'create',
-    entityType: 'referral',
-    entityId: referral.id,
-    changes: { after: data },
-  });
+  await auditLog('create', 'referral', referral.id, {
+    after: data,
+  }, { userId, organisationId });
 
   return { success: true, referral };
 }
@@ -191,7 +140,7 @@ export async function createReferral(input: unknown) {
  * List referrals for the current organisation.
  */
 export async function listReferrals(filters?: { status?: string }) {
-  const { organisationId } = await requireAuth();
+  const { orgId: organisationId } = await requirePermission('read', 'persons');
 
   const conditions = [eq(referrals.organisationId, organisationId)];
 
@@ -231,7 +180,7 @@ export async function listReferrals(filters?: { status?: string }) {
  * Get a single referral by ID with related data.
  */
 export async function getReferral(id: string) {
-  const { organisationId } = await requireAuth();
+  const { orgId: organisationId } = await requirePermission('read', 'persons');
 
   const [referral] = await db
     .select()
@@ -265,8 +214,7 @@ export async function getReferral(id: string) {
  * Transitions referral to "assessment_complete".
  */
 export async function createMatchingAssessment(input: unknown) {
-  const { userId, organisationId, role } = await requireAuth();
-  assertRole(role, ['owner', 'admin', 'manager']);
+  const { userId, orgId: organisationId } = await requirePermission('create', 'assessments');
 
   const data = createMatchingAssessmentSchema.parse(input);
 
@@ -325,14 +273,9 @@ export async function createMatchingAssessment(input: unknown) {
     notes: `Risk rating: ${data.overallRiskRating}, Recommendation: ${data.recommendation}`,
   });
 
-  await audit({
-    userId,
-    organisationId,
-    action: 'create',
-    entityType: 'matching_assessment',
-    entityId: assessment.id,
-    changes: { after: data },
-  });
+  await auditLog('create', 'matching_assessment', assessment.id, {
+    after: data,
+  }, { userId, organisationId });
 
   return { success: true, assessment };
 }
@@ -342,8 +285,7 @@ export async function createMatchingAssessment(input: unknown) {
  * Transitions to "accepted" or "declined". Creates checklist on acceptance.
  */
 export async function recordDecision(input: unknown) {
-  const { userId, organisationId, role } = await requireAuth();
-  assertRole(role, ['owner', 'admin', 'manager']);
+  const { userId, orgId: organisationId } = await requirePermission('update', 'persons');
 
   const data = recordDecisionSchema.parse(input);
 
@@ -401,17 +343,10 @@ export async function recordDecision(input: unknown) {
     );
   }
 
-  await audit({
-    userId,
-    organisationId,
-    action: 'update',
-    entityType: 'referral',
-    entityId: data.referralId,
-    changes: {
-      before: { status: 'assessment_complete' },
-      after: { status: data.decision, reason: data.reason },
-    },
-  });
+  await auditLog('update', 'referral', data.referralId, {
+    before: { status: 'assessment_complete' },
+    after: { status: data.decision, reason: data.reason },
+  }, { userId, organisationId });
 
   return { success: true };
 }
@@ -420,8 +355,7 @@ export async function recordDecision(input: unknown) {
  * Update a checklist item (mark complete/incomplete).
  */
 export async function updateChecklistItem(input: unknown) {
-  const { userId, organisationId, role } = await requireAuth();
-  assertRole(role, ['owner', 'admin', 'manager', 'senior_carer']);
+  const { userId, orgId: organisationId } = await requirePermission('update', 'persons');
 
   const data = updateChecklistItemSchema.parse(input);
 
@@ -448,17 +382,10 @@ export async function updateChecklistItem(input: unknown) {
     })
     .where(eq(admissionChecklistItems.id, data.id));
 
-  await audit({
-    userId,
-    organisationId,
-    action: 'update',
-    entityType: 'admission_checklist_item',
-    entityId: data.id,
-    changes: {
-      before: { completed: item.completed },
-      after: { completed: data.completed },
-    },
-  });
+  await auditLog('update', 'admission_checklist_item', data.id, {
+    before: { completed: item.completed },
+    after: { completed: data.completed },
+  }, { userId, organisationId });
 
   return { success: true };
 }
@@ -468,8 +395,7 @@ export async function updateChecklistItem(input: unknown) {
  * All required checklist items must be completed first.
  */
 export async function completeAdmission(input: unknown) {
-  const { userId, organisationId, role } = await requireAuth();
-  assertRole(role, ['owner', 'admin', 'manager']);
+  const { userId, orgId: organisationId } = await requirePermission('update', 'persons');
 
   const data = completeAdmissionSchema.parse(input);
 
@@ -533,17 +459,10 @@ export async function completeAdmission(input: unknown) {
     performedBy: userId,
   });
 
-  await audit({
-    userId,
-    organisationId,
-    action: 'update',
-    entityType: 'referral',
-    entityId: data.referralId,
-    changes: {
-      before: { status: 'accepted' },
-      after: { status: 'admitted' },
-    },
-  });
+  await auditLog('update', 'referral', data.referralId, {
+    before: { status: 'accepted' },
+    after: { status: 'admitted' },
+  }, { userId, organisationId });
 
   return { success: true };
 }

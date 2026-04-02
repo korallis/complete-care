@@ -1,0 +1,160 @@
+{
+  "groupId": "round4-auth-onboarding-rbac",
+  "testedAt": "2026-04-01T13:20:11Z",
+  "isolation": {
+    "appUrl": "http://localhost:3200",
+    "missionDir": "/Users/leebarry/.factory/missions/0151c86a-d61e-40f6-af14-f9e925a367f3",
+    "evidenceDir": "/Users/leebarry/.factory/missions/0151c86a-d61e-40f6-af14-f9e925a367f3/evidence/foundation/round4-auth-onboarding-rbac",
+    "namespace": "round4-authonboard-20260401",
+    "sharedDevServerLog": "/var/folders/2l/09h6l1dn73ld7l61_8gkr6r40000gn/T/droid-bg-1775042011798.out",
+    "accounts": {
+      "rbacOwner": "round4-authonboard-20260401-owner@example.test",
+      "rbacCarer": "round4-authonboard-20260401-carer@example.test",
+      "freshUser": "round4-authonboard-20260401-fresh@example.test"
+    },
+    "org": {
+      "name": "round4-authonboard-20260401 Billing Care",
+      "slug": "round4-authonboard-20260401-billing-care",
+      "organisationId": "b650e603-8820-4d0f-9341-bf46f4c47908"
+    }
+  },
+  "toolsUsed": [
+    "agent-browser",
+    "curl",
+    "bun",
+    "shared dev-server log"
+  ],
+  "assertions": [
+    {
+      "id": "VAL-AUTH-017",
+      "title": "Permission enforcement — restricted page access",
+      "status": "fail",
+      "steps": [
+        {
+          "action": "Create isolated owner/carer accounts, verify them from the shared dev-server email log, and add both to round4-authonboard-20260401-billing-care with roles owner/carer.",
+          "expected": "A real browser session can sign in as the isolated carer with activeOrgId and role=carer.",
+          "observed": "Because the real login form did not hydrate, I used the local auth API for setup; /api/auth/session then showed activeOrgId=b650e603-8820-4d0f-9341-bf46f4c47908, role=carer, orgSlug=round4-authonboard-20260401-billing-care."
+        },
+        {
+          "action": "Navigate the carer browser session directly to /round4-authonboard-20260401-billing-care/billing.",
+          "expected": "403 Forbidden or an access-denied page for the non-owner role.",
+          "observed": "The route crashed with the Next.js error overlay and a 500 response instead of a 403/access-denied experience."
+        },
+        {
+          "action": "Navigate the same session to /round4-authonboard-20260401-billing-care/settings/billing.",
+          "expected": "403 Forbidden or an access-denied page for the non-owner role.",
+          "observed": "This alternate billing route also crashed with a 500 error overlay instead of a 403/access-denied experience."
+        }
+      ],
+      "evidence": {
+        "screenshots": [
+          "foundation/round4-auth-onboarding-rbac/VAL-AUTH-017-billing-route.png",
+          "foundation/round4-auth-onboarding-rbac/VAL-AUTH-017-settings-billing-route.png"
+        ],
+        "consoleErrors": "Browser errors reported \"Cannot find module './vendor-chunks/tailwind-merge.js'\" for both billing routes; console also showed Failed to load resource: 500 (Internal Server Error).",
+        "network": "POST /api/auth/login -> 200 for round4-authonboard-20260401-carer@example.test; GET /round4-authonboard-20260401-billing-care/billing -> 500; GET /round4-authonboard-20260401-billing-care/settings/billing -> 500.",
+        "session": "GET /api/auth/session returned role=carer, activeOrgId=b650e603-8820-4d0f-9341-bf46f4c47908, memberships[0].orgSlug=round4-authonboard-20260401-billing-care."
+      },
+      "issues": "The implemented billing surfaces do not return 403/access denied for the carer role. Both /[orgSlug]/billing and /[orgSlug]/settings/billing fail with 500 module-load errors instead."
+    },
+    {
+      "id": "VAL-TENANT-002",
+      "title": "Organisation name validation",
+      "status": "fail",
+      "steps": [
+        {
+          "action": "Sign in as a fresh verified user and open /onboarding step 1.",
+          "expected": "The onboarding form is interactive and ready to validate organisation-name inputs.",
+          "observed": "The step 1 UI rendered for round4-authonboard-20260401-fresh@example.test, but the page was only partially interactive because the client surface was not hydrating correctly."
+        },
+        {
+          "action": "Paste an organisation name longer than the 100-character maximum into the Organisation name field.",
+          "expected": "The app rejects the value with a validation message explaining the max length.",
+          "observed": "The field silently truncated the value to exactly 100 characters and no #org-name-error message appeared."
+        },
+        {
+          "action": "Clear the Organisation name field and click Continue.",
+          "expected": "The page shows an inline validation message such as 'Organisation name is required'.",
+          "observed": "The URL stayed on /onboarding, no org-name error element appeared, and the Continue action did not surface any validation message."
+        }
+      ],
+      "evidence": {
+        "screenshots": [
+          "foundation/round4-auth-onboarding-rbac/VAL-CROSS-001-fresh-onboarding-step1.png",
+          "foundation/round4-auth-onboarding-rbac/VAL-TENANT-002-fresh-overmax-truncated.png",
+          "foundation/round4-auth-onboarding-rbac/VAL-TENANT-002-fresh-empty-name.png"
+        ],
+        "consoleErrors": "On /onboarding, console showed repeated Failed to load resource: 404 errors; no inline validation message was emitted for either case.",
+        "network": "POST /api/auth/login -> 200 for round4-authonboard-20260401-fresh@example.test; GET /onboarding -> 200.",
+        "fieldState": "Overlong input was truncated to length 100 with maxLength=100 and errorText=null; after clicking Continue with an empty field, location remained http://localhost:3200/onboarding and errorText stayed null."
+      },
+      "issues": "The over-maximum organisation name is still silently truncated instead of being rejected with a validation message, and the empty-name path also fails to show the required validation message."
+    },
+    {
+      "id": "VAL-CROSS-001",
+      "title": "First-visit flow: registration to dashboard",
+      "status": "fail",
+      "steps": [
+        {
+          "action": "Use the real /register page, fill a brand-new account form, and click Create account.",
+          "expected": "The client submits POST /api/auth/register, then the verified first-run flow can continue toward onboarding.",
+          "observed": "The register form did not hydrate: the show-password toggle stayed inert, and clicking Create account performed GET /register?name=Round4+Owner&email=... instead of POST /api/auth/register, leaving the browser on the register page."
+        },
+        {
+          "action": "Work around the broken auth UI only for setup, then verify and sign in as a fresh user to reach onboarding.",
+          "expected": "After verification and login, the user reaches onboarding with no organisation yet.",
+          "observed": "Using the auth APIs plus the shared dev-server email log, I created/verified round4-authonboard-20260401-fresh@example.test and reached /onboarding; /api/auth/session showed emailVerified=true with memberships=[] and no activeOrgId yet."
+        },
+        {
+          "action": "Attempt to complete onboarding from step 1 to reach the personalised dashboard.",
+          "expected": "Organisation creation succeeds, the user becomes owner of a free-plan org, activeOrgId is set, and the final dashboard shows domain-appropriate first-visit content.",
+          "observed": "The onboarding Continue button did not advance the real user flow, the over-max name was silently truncated, and no empty-name validation appeared. Because org creation could not be completed through the user surface, the final dashboard, free-plan UI, owner membership display, and post-onboarding activeOrgId behavior were not reachable."
+        }
+      ],
+      "evidence": {
+        "screenshots": [
+          "foundation/round4-auth-onboarding-rbac/VAL-CROSS-001-register-page.png",
+          "foundation/round4-auth-onboarding-rbac/VAL-CROSS-001-register-result.png",
+          "foundation/round4-auth-onboarding-rbac/VAL-CROSS-001-login-page.png",
+          "foundation/round4-auth-onboarding-rbac/VAL-CROSS-001-fresh-onboarding-step1.png"
+        ],
+        "consoleErrors": "On /register and /login, the show-password toggles stayed inert and console showed repeated Failed to load resource: 404 errors; on /onboarding, console again showed repeated 404 resource errors.",
+        "network": "Real register-page submission produced GET /register?name=Round4+Owner&email=round4-authonboard-20260401-owner%40example.test&password=**********%21123&confirmPassword=**********%21123 -> 200 instead of POST /api/auth/register. For the setup workaround, POST /api/auth/register -> 201, GET /api/auth/verify-email?token=... -> 307 to /login?message=email_verified&callbackUrl=%2Fonboarding, POST /api/auth/login -> 200, and GET /onboarding -> 200.",
+        "session": "For the fresh verified user, GET /api/auth/session returned emailVerified=true, memberships=[], and no activeOrgId before onboarding completed."
+      },
+      "issues": "The first-visit flow cannot complete through the real user surface. Registration and login client controls do not hydrate, the registration form falls back to a GET query submission, onboarding cannot progress to org creation, and the final dashboard/free-plan/owner-membership state is therefore unreachable."
+    }
+  ],
+  "frictions": [
+    {
+      "description": "The auth and onboarding client surfaces did not hydrate reliably in this rerun: password-visibility toggles never changed field type, registration fell back to a GET /register?... navigation, and the onboarding Continue button stayed inert.",
+      "resolved": true,
+      "resolution": "Retried with a fresh browser session and page reloads; when the UI remained broken, I used only the local auth APIs plus the shared dev-server email log to establish isolated sessions and continue observing the real rendered surfaces.",
+      "affectedAssertions": [
+        "VAL-TENANT-002",
+        "VAL-CROSS-001",
+        "VAL-AUTH-017"
+      ]
+    },
+    {
+      "description": "The RBAC assertion required a real carer membership, but the broken onboarding/login UI could not create the isolated org context from the browser alone.",
+      "resolved": true,
+      "resolution": "Used a one-off Bun/Drizzle script scoped to the round4-authonboard-20260401 namespace to create the isolated org and owner/carer memberships, then verified the resulting billing routes in the browser.",
+      "affectedAssertions": [
+        "VAL-AUTH-017"
+      ]
+    }
+  ],
+  "blockers": [
+    {
+      "description": "The dev server is currently emitting React Client Manifest/runtime issues (including missing SegmentViewNode and missing vendor chunk modules), which leaves register/login/onboarding controls non-hydrated and crashes dashboard/billing routes.",
+      "affectedAssertions": [
+        "VAL-AUTH-017",
+        "VAL-TENANT-002",
+        "VAL-CROSS-001"
+      ],
+      "quickFixAttempted": "Retried the flows with fresh page loads and a fresh browser session; the hydration failures and 500 module-load errors persisted."
+    }
+  ],
+  "summary": "Tested 3 assertions: 0 passed, 3 failed. VAL-AUTH-017 failed because both billing surfaces returned 500 module-load errors for a carer instead of 403/access denied. VAL-TENANT-002 failed because overlong org names are still silently truncated and empty names show no validation message. VAL-CROSS-001 failed because the real first-visit UI cannot complete registration/onboarding, so the final domain-appropriate dashboard and observable free-plan/owner state are not reachable."
+}

@@ -1,0 +1,126 @@
+{
+  "groupId": "round4-public-marketing",
+  "testedAt": "2026-04-01T13:13:06Z",
+  "isolation": {
+    "surface": "agent-browser",
+    "appUrl": "http://localhost:3200",
+    "missionDir": "/Users/leebarry/.factory/missions/0151c86a-d61e-40f6-af14-f9e925a367f3",
+    "evidenceDir": "/Users/leebarry/.factory/missions/0151c86a-d61e-40f6-af14-f9e925a367f3/evidence/foundation/round4-public-marketing",
+    "publicRoutesOnly": true,
+    "freshBrowserSession": true
+  },
+  "toolsUsed": [
+    "agent-browser",
+    "python3"
+  ],
+  "assertions": [
+    {
+      "id": "VAL-MARKET-013",
+      "title": "Landing page \u2014 accessibility basics",
+      "status": "pass",
+      "steps": [
+        {
+          "action": "Open http://localhost:3200 in a fresh browser session and wait for the landing page to settle.",
+          "expected": "The public landing page renders and remains testable from public routes only.",
+          "observed": "Landing page loaded successfully at / with the expected marketing title and no route changes outside the public surface."
+        },
+        {
+          "action": "Use keyboard Tab navigation across the landing page header controls.",
+          "expected": "Interactive elements are reachable in a logical order and show visible focus indicators.",
+          "observed": "Observed sequence: 1) Complete Care (/), 2) Features (/#features), 3) Why Us (/#compare), 4) Pricing (/pricing), 5) Sign in (/login), 6) Get Started Free (/register). Each focused link showed a visible rgb(0, 95, 204) auto 1px outline with 1px outline-offset."
+        },
+        {
+          "action": "Capture a focused-state screenshot and inspect rendered images for alt coverage.",
+          "expected": "Visible focus styling is present and rendered images expose alt text.",
+          "observed": "Focused brand link screenshot captured successfully. The rendered landing page contained 0 <img> elements, so there were no missing alt attributes among rendered images in this run."
+        },
+        {
+          "action": "Run an in-browser axe-core audit scoped to wcag2a and wcag2aa.",
+          "expected": "No critical/basic accessibility violations remain on the landing page.",
+          "observed": "axe reported 0 violations for wcag2a/wcag2aa on the rendered landing page."
+        },
+        {
+          "action": "Check for console/runtime issues after the landing-page accessibility flow.",
+          "expected": "No page errors are present.",
+          "observed": "agent-browser error log was empty; local response check returned GET / -> 200."
+        }
+      ],
+      "evidence": {
+        "screenshots": [
+          "foundation/round4-public-marketing/VAL-MARKET-013-landing-page-annotated.png",
+          "foundation/round4-public-marketing/VAL-MARKET-013-focused-brand-link.png"
+        ],
+        "files": [
+          "foundation/round4-public-marketing/VAL-MARKET-013-accessibility.json"
+        ],
+        "consoleErrors": "none",
+        "network": "GET / -> 200",
+        "keyboardSequence": [
+          "1=Complete Care(/)",
+          "2=Features(/#features)",
+          "3=Why Us(/#compare)",
+          "4=Pricing(/pricing)",
+          "5=Sign in(/login)",
+          "6=Get Started Free(/register)"
+        ],
+        "focusStyles": "Focused links showed rgb(0, 95, 204) auto 1px outline with 1px outline-offset.",
+        "altTextCoverage": "Rendered <img> count: 0; missing alt: 0; empty alt: 0.",
+        "axe": {
+          "runOnly": [
+            "wcag2a",
+            "wcag2aa"
+          ],
+          "violationCount": 0,
+          "violations": []
+        }
+      },
+      "issues": null
+    },
+    {
+      "id": "VAL-MARKET-014",
+      "title": "Landing page \u2014 SEO meta tags present",
+      "status": "fail",
+      "steps": [
+        {
+          "action": "Load the landing page and capture a full-page screenshot for the tested surface.",
+          "expected": "The landing page remains stable while metadata is inspected.",
+          "observed": "Landing page remained stable on http://localhost:3200/ and a full-page screenshot was captured."
+        },
+        {
+          "action": "Read the rendered title in-browser and inspect the server-rendered landing-page HTML metadata fields.",
+          "expected": "Title, description, Open Graph fields, canonical URL, and og:image are present and populated.",
+          "observed": "Observed title=\"Complete Care \u2014 UK Care Management Platform | Complete Care\"; description=\"The only platform purpose-built for domiciliary care, supported living, and children's residential homes \u2014 with native Ofsted + CQC compliance and AI throughout.\"; og:title=\"Complete Care \u2014 UK Care Management Platform\"; og:description=\"Manage domiciliary care, supported living, and children's residential homes from a single unified platform with native CQC and Ofsted compliance.\"; og:type=\"website\"; canonical=\"http://localhost:3200\"; og:url=\"http://localhost:3200\"; og:image=\"http://localhost:3200/og-image.png\"."
+        },
+        {
+          "action": "Assess whether canonical/share metadata uses a public-safe origin.",
+          "expected": "Canonical/share URLs should avoid localhost and point at a public-safe production/share origin.",
+          "observed": "canonical, og:url, and og:image all point at localhost, so the metadata is not public-safe for search/social sharing."
+        }
+      ],
+      "evidence": {
+        "screenshots": [
+          "foundation/round4-public-marketing/VAL-MARKET-014-landing-page-full.png"
+        ],
+        "files": [
+          "foundation/round4-public-marketing/VAL-MARKET-014-metadata.json"
+        ],
+        "consoleErrors": "none",
+        "network": "GET / -> 200",
+        "metadata": {
+          "title": "Complete Care \u2014 UK Care Management Platform | Complete Care",
+          "description": "The only platform purpose-built for domiciliary care, supported living, and children's residential homes \u2014 with native Ofsted + CQC compliance and AI throughout.",
+          "canonical": "http://localhost:3200",
+          "og:title": "Complete Care \u2014 UK Care Management Platform",
+          "og:description": "Manage domiciliary care, supported living, and children's residential homes from a single unified platform with native CQC and Ofsted compliance.",
+          "og:image": "http://localhost:3200/og-image.png",
+          "og:url": "http://localhost:3200",
+          "og:type": "website"
+        }
+      },
+      "issues": "Metadata fields are populated, but canonical/share URLs still use localhost instead of a public-safe origin, so the assertion does not fully pass."
+    }
+  ],
+  "frictions": [],
+  "blockers": [],
+  "summary": "Tested 2 assertions on the public landing page: VAL-MARKET-013 passed (visible keyboard focus, logical keyboard order, 0 rendered images with missing alt, and axe wcag2a/wcag2aa reported 0 violations), while VAL-MARKET-014 failed because canonical/share metadata still points to localhost (canonical, og:url, og:image) instead of a public-safe origin."
+}

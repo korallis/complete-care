@@ -1,0 +1,154 @@
+{
+  "groupId": "round5-auth-onboarding-rbac",
+  "testedAt": "2026-04-01T13:36:36Z",
+  "isolation": {
+    "appUrl": "http://localhost:3200",
+    "missionDir": "/Users/leebarry/.factory/missions/0151c86a-d61e-40f6-af14-f9e925a367f3",
+    "evidenceDir": "/Users/leebarry/.factory/missions/0151c86a-d61e-40f6-af14-f9e925a367f3/evidence/foundation/round5-auth-onboarding-rbac",
+    "namespace": "round5-authonboard-20260401",
+    "sharedDevServerLog": "/var/folders/2l/09h6l1dn73ld7l61_8gkr6r40000gn/T/droid-bg-1775049768288.out",
+    "accounts": {
+      "owner": "round5-authonboard-20260401-owner@example.test",
+      "carer": "round5-authonboard-20260401-carer@example.test"
+    },
+    "org": {
+      "name": "round5-authonboard-20260401-aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
+      "slug": "round5-authonboard-20260401-empty",
+      "organisationId": "eaddec59-4a66-4a28-880f-b9b2a9e8ab4a",
+      "selectedDomains": [
+        "childrens_residential"
+      ]
+    }
+  },
+  "toolsUsed": [
+    "agent-browser",
+    "shared dev-server log"
+  ],
+  "assertions": [
+    {
+      "id": "VAL-AUTH-017",
+      "title": "Permission enforcement \u2014 restricted page access",
+      "status": "fail",
+      "steps": [
+        {
+          "action": "Create an isolated owner org in the round5-authonboard-20260401 namespace, invite round5-authonboard-20260401-carer@example.test as Carer, register/verify that invitee, sign in with callback to the invitation page, and accept the invite through the real UI.",
+          "expected": "A real carer session reaches the org dashboard with role=carer and activeOrgId set before the RBAC check.",
+          "observed": "The carer reached http://localhost:3200/round5-authonboard-20260401-empty/dashboard; the sidebar showed role 'Carer'; browser session fetch to /api/auth/session returned activeOrgId=eaddec59-4a66-4a28-880f-b9b2a9e8ab4a and membership role=carer."
+        },
+        {
+          "action": "Navigate the carer session directly to /round5-authonboard-20260401-empty/settings/billing.",
+          "expected": "The app returns 403 or an Access Denied page for a non-owner.",
+          "observed": "The app redirected to http://localhost:3200/round5-authonboard-20260401-empty/permission-denied, but that URL rendered a generic 404 page ('404' / 'This page could not be found.') instead of an access-denied experience."
+        },
+        {
+          "action": "Navigate the same carer session directly to /round5-authonboard-20260401-empty/billing.",
+          "expected": "The alternate real billing surface also returns 403 or an Access Denied page.",
+          "observed": "This route behaved the same way: it redirected to /round5-authonboard-20260401-empty/permission-denied and the final page was the same 404 screen rather than a 403/access-denied page."
+        }
+      ],
+      "evidence": {
+        "screenshots": [
+          "foundation/round5-auth-onboarding-rbac/VAL-AUTH-017-invitation-accept.png",
+          "foundation/round5-auth-onboarding-rbac/VAL-AUTH-017-carer-dashboard.png",
+          "foundation/round5-auth-onboarding-rbac/VAL-AUTH-017-settings-billing-denied.png",
+          "foundation/round5-auth-onboarding-rbac/VAL-AUTH-017-billing-denied.png"
+        ],
+        "consoleErrors": "Navigating to both owner-only billing URLs as the carer surfaced Auth.js ClientFetchError: Failed to fetch during the redirect churn plus browser console 404 resource errors for the final missing /[orgSlug]/permission-denied page.",
+        "network": "Shared dev-server log: POST /api/auth/login -> 200 for the carer; GET /round5-authonboard-20260401-empty/settings/billing -> 200 followed by GET /round5-authonboard-20260401-empty/permission-denied -> 404; GET /round5-authonboard-20260401-empty/billing -> 200 followed by GET /round5-authonboard-20260401-empty/permission-denied -> 404.",
+        "session": "Browser fetch to /api/auth/session returned activeOrgId=eaddec59-4a66-4a28-880f-b9b2a9e8ab4a, orgSlug=round5-authonboard-20260401-empty, role=carer."
+      },
+      "issues": "After the clean restart, the stale runtime crash is gone, but the RBAC outcome is still incorrect: non-owner billing access redirects to an org-scoped permission-denied URL that 404s instead of showing a real Access Denied/403 experience."
+    },
+    {
+      "id": "VAL-TENANT-002",
+      "title": "Organisation name validation",
+      "status": "fail",
+      "steps": [
+        {
+          "action": "From /onboarding step 1, set a valid slug (round5-authonboard-20260401-empty), leave Organisation name blank, and click Continue.",
+          "expected": "The wizard stays on step 1 and shows a visible validation message for the empty organisation name.",
+          "observed": "The wizard stayed on step 1 and rendered the inline alert text 'Organisation name is required'."
+        },
+        {
+          "action": "Enter an organisation name longer than the 100-character maximum (118 chars, prefixed with round5-authonboard-20260401-...).",
+          "expected": "The UI rejects the over-maximum value with a visible max-length validation message.",
+          "observed": "The textbox silently truncated the value client-side to exactly 100 characters: round5-authonboard-20260401-aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa. No validation message appeared."
+        },
+        {
+          "action": "Click Continue with that silently truncated over-maximum input still in the field.",
+          "expected": "The wizard remains on step 1 and shows a visible over-maximum validation error.",
+          "observed": "The wizard advanced to Step 2 ('Which care services do you provide?') with no validation error, so the over-maximum input was effectively accepted."
+        }
+      ],
+      "evidence": {
+        "screenshots": [
+          "foundation/round5-auth-onboarding-rbac/VAL-TENANT-002-empty-name.png",
+          "foundation/round5-auth-onboarding-rbac/VAL-TENANT-002-overmax-advanced.png"
+        ],
+        "consoleErrors": "None observed during the step-1 validation checks; the failure was in the form behavior itself, not a runtime crash.",
+        "network": "GET /onboarding -> 200 after owner login. Empty-name validation happened client-side on step 1. The over-maximum case also stayed client-side; no mutation request was needed because the wizard advanced to step 2 without rejecting the input.",
+        "fieldState": "Empty-name case showed org-name-error='Organisation name is required'. Over-maximum case accepted only the first 100 characters via maxLength and exposed no error text before advancing."
+      },
+      "issues": "The empty-name validation now works after restart, but the over-maximum-length requirement still fails: the control silently truncates input and lets the user proceed instead of showing a visible max-length validation message."
+    },
+    {
+      "id": "VAL-CROSS-001",
+      "title": "First-visit flow: registration to dashboard",
+      "status": "fail",
+      "steps": [
+        {
+          "action": "Use the real /register page to create round5-authonboard-20260401-owner@example.test, then recover the real verification link from the shared dev-server log.",
+          "expected": "A new account is created through the UI and the verification flow can continue.",
+          "observed": "The real registration form worked after the clean restart. The shared dev-server log recorded POST /api/auth/register -> 201 for round5-authonboard-20260401-owner@example.test and emitted the verification link; the browser then landed on /login?callbackUrl=%2Fonboarding."
+        },
+        {
+          "action": "Open the emailed verification link, then sign in via /login?callbackUrl=/onboarding.",
+          "expected": "The user verifies successfully, logs in, and reaches the onboarding wizard through the real UI.",
+          "observed": "The verification redirect chain completed successfully (server log: GET /api/auth/verify-email -> 307 to /login?message=email_verified&callbackUrl=%2Fonboarding). Signing in returned POST /api/auth/login -> 200 and the browser loaded /onboarding."
+        },
+        {
+          "action": "Complete onboarding in the real UI: step 1 organisation details, step 2 choose Children's Residential Homes, step 3 invite a carer, then land on the dashboard and inspect free-plan/owner/session state.",
+          "expected": "The user lands on a personalised dashboard with domain-appropriate widgets; the org is on the free plan; the user is owner; activeOrgId is set so there is no redirect back to /onboarding.",
+          "observed": "The flow reached http://localhost:3200/round5-authonboard-20260401-empty/dashboard?welcome=true with the welcome banner visible. The sidebar showed role 'Owner'; browser session fetch to /api/auth/session returned activeOrgId=eaddec59-4a66-4a28-880f-b9b2a9e8ab4a and membership role=owner; the owner billing page visibly showed 'Your organisation is on the Free plan.' However, after selecting Children's Residential Homes, the dashboard still showed only generic cards ('People in care', 'Staff on duty', 'Active care plans', 'Compliance items') and the placeholder text 'Dashboard widgets will be populated as features are added in upcoming milestones.' No domain-appropriate children's-home widgets or terminology were observable on the dashboard."
+        }
+      ],
+      "evidence": {
+        "screenshots": [
+          "foundation/round5-auth-onboarding-rbac/VAL-CROSS-001-register-initial.png",
+          "foundation/round5-auth-onboarding-rbac/VAL-CROSS-001-register-after-submit.png",
+          "foundation/round5-auth-onboarding-rbac/VAL-CROSS-001-email-verified.png",
+          "foundation/round5-auth-onboarding-rbac/VAL-CROSS-001-onboarding-step1.png",
+          "foundation/round5-auth-onboarding-rbac/VAL-CROSS-001-onboarding-step3.png",
+          "foundation/round5-auth-onboarding-rbac/VAL-CROSS-001-owner-dashboard.png",
+          "foundation/round5-auth-onboarding-rbac/VAL-CROSS-001-billing-free-plan.png"
+        ],
+        "consoleErrors": "No blocking runtime errors were observed during the happy-path register \u2192 verify \u2192 login \u2192 onboarding \u2192 dashboard flow; only normal development Fast Refresh/info logs appeared.",
+        "network": "Shared dev-server log: POST /api/auth/register -> 201; GET /api/auth/verify-email?token=... -> 307; POST /api/auth/login -> 200; GET /onboarding -> 200; POST /onboarding -> 200; GET /round5-authonboard-20260401-empty/dashboard?welcome=true -> 200; GET /round5-authonboard-20260401-empty/settings/billing -> 200.",
+        "session": "Owner session fetch returned activeOrgId=eaddec59-4a66-4a28-880f-b9b2a9e8ab4a with memberships[0]={orgSlug:'round5-authonboard-20260401-empty', role:'owner'}. The billing page visibly showed Free plan state."
+      },
+      "issues": "The clean restart removed the earlier stale-runtime blocker and the real first-visit flow now reaches dashboard successfully, but the assertion still fails because the final dashboard is generic rather than domain-appropriate after choosing Children's Residential Homes. Free-plan state, owner role, and activeOrgId are observable; domain-personalised widgets are not."
+    }
+  ],
+  "frictions": [
+    {
+      "description": "Opening the raw verification link inside agent-browser still intermittently throws 'Execution context was destroyed' during the redirect chain even though the verification succeeds server-side.",
+      "resolved": true,
+      "resolution": "Confirmed the redirect in the shared dev-server log and then reloaded the final /login?message=email_verified... URL in the browser, exactly as described in user-testing.md.",
+      "affectedAssertions": [
+        "VAL-CROSS-001",
+        "VAL-AUTH-017"
+      ]
+    },
+    {
+      "description": "The final onboarding submit stayed on a disabled 'Setting up\u2026' state for several seconds before redirecting, and agent-browser's request view in dev mode included duplicate/hot-reload noise.",
+      "resolved": true,
+      "resolution": "Waited 5 seconds for the redirect to complete and corroborated key request statuses with the shared dev-server log for clean evidence.",
+      "affectedAssertions": [
+        "VAL-CROSS-001",
+        "VAL-AUTH-017"
+      ]
+    }
+  ],
+  "blockers": [],
+  "summary": "Retest after the clean restart shows the earlier stale-runtime/hydration blocker is gone: the real registration, verification, login, onboarding, invitation, and role switch flows now execute in the browser. The remaining failures are product issues, not restart artifacts: billing RBAC redirects carers to a missing org-scoped permission-denied page (404), over-maximum organisation names are silently truncated and accepted, and the first-visit dashboard is still generic rather than domain-specific even though free-plan, owner membership, and activeOrgId are observable."
+}

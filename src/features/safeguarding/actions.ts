@@ -16,8 +16,9 @@ import {
   mashReferrals,
   safeguardingChronology,
 } from '@/lib/db/schema/safeguarding';
-import { auditLogs } from '@/lib/db/schema/audit-logs';
 import { eq, and, desc } from 'drizzle-orm';
+import { requirePermission } from '@/lib/rbac';
+import { auditLog } from '@/lib/audit';
 import {
   createConcernSchema,
   createCorrectionSchema,
@@ -46,12 +47,6 @@ import { LADO_ACCESS_ROLES, DSL_REVIEW_ROLES } from './constants';
 // Types
 // ---------------------------------------------------------------------------
 
-interface AuthContext {
-  userId: string;
-  organisationId: string;
-  role: string;
-}
-
 interface ActionResult<T = unknown> {
   success: boolean;
   data?: T;
@@ -59,34 +54,8 @@ interface ActionResult<T = unknown> {
 }
 
 // ---------------------------------------------------------------------------
-// Auth helpers (placeholder — integrate with your auth system)
+// Role check helpers
 // ---------------------------------------------------------------------------
-
-/**
- * Placeholder auth check — in production, replace with actual session/auth check.
- * Returns the current user context or throws.
- */
-async function requireAuth(): Promise<AuthContext> {
-  // TODO: Integrate with Auth.js v5 session
-  // const session = await auth();
-  // if (!session?.user) throw new Error('Unauthorized');
-  // return { userId: session.user.id, organisationId: session.user.organisationId, role: session.user.role };
-  throw new Error('Auth not configured — replace requireAuth() with actual auth check');
-}
-
-// eslint-disable-next-line @typescript-eslint/no-unused-vars
-function hasPermission(role: string, action: string, resource: string): boolean {
-  // Simplified RBAC — in production use a full permission matrix
-  const roleHierarchy: Record<string, number> = {
-    owner: 100,
-    admin: 90,
-    manager: 80,
-    senior_carer: 60,
-    carer: 40,
-    viewer: 10,
-  };
-  return (roleHierarchy[role] ?? 0) >= 40; // At minimum carer level
-}
 
 function canAccessLado(role: string): boolean {
   return (LADO_ACCESS_ROLES as readonly string[]).includes(role);
@@ -94,24 +63,6 @@ function canAccessLado(role: string): boolean {
 
 function canPerformDslReview(role: string): boolean {
   return (DSL_REVIEW_ROLES as readonly string[]).includes(role);
-}
-
-async function auditLog(
-  userId: string,
-  organisationId: string,
-  action: string,
-  entityType: string,
-  entityId: string,
-  changes?: Record<string, unknown>,
-) {
-  await db.insert(auditLogs).values({
-    userId,
-    organisationId,
-    action,
-    entityType,
-    entityId,
-    changes: changes ?? null,
-  });
 }
 
 /** Generate a reference number: SC-YYYYMMDD-XXXX */
@@ -138,17 +89,14 @@ export async function createConcern(
     return { success: false, error: parsed.error.issues[0]?.message ?? 'Validation failed' };
   }
 
-  const auth = await requireAuth();
-  if (!hasPermission(auth.role, 'create', 'safeguarding_concern')) {
-    return { success: false, error: 'Insufficient permissions' };
-  }
+  const { userId, orgId, role } = await requirePermission('create', 'persons');
 
   const referenceNumber = generateReferenceNumber();
   const [concern] = await db
     .insert(safeguardingConcerns)
     .values({
-      organisationId: auth.organisationId,
-      reportedById: auth.userId,
+      organisationId: orgId,
+      reportedById: userId,
       referenceNumber,
       ...parsed.data,
     })
@@ -156,7 +104,7 @@ export async function createConcern(
 
   // Create chronology entry automatically
   await db.insert(safeguardingChronology).values({
-    organisationId: auth.organisationId,
+    organisationId: orgId,
     childId: parsed.data.childId,
     eventDate: parsed.data.observedAt,
     source: 'concern',
@@ -165,12 +113,12 @@ export async function createConcern(
     description: parsed.data.description.slice(0, 500),
     category: parsed.data.category ?? null,
     significance: parsed.data.severity === 'critical' ? 'critical' : 'standard',
-    createdById: auth.userId,
+    createdById: userId,
   });
 
-  await auditLog(auth.userId, auth.organisationId, 'create', 'safeguarding_concern', concern.id, {
+  await auditLog('create', 'safeguarding_concern', concern.id, {
     after: { referenceNumber, severity: parsed.data.severity },
-  });
+  }, { userId, organisationId: orgId });
 
   return { success: true, data: concern };
 }
@@ -181,14 +129,14 @@ export async function createConcern(
 export async function getConcernsByChild(
   childId: string,
 ): Promise<ActionResult> {
-  const auth = await requireAuth();
+  const { userId, orgId, role } = await requirePermission('read', 'persons');
 
   const concerns = await db
     .select()
     .from(safeguardingConcerns)
     .where(
       and(
-        eq(safeguardingConcerns.organisationId, auth.organisationId),
+        eq(safeguardingConcerns.organisationId, orgId),
         eq(safeguardingConcerns.childId, childId),
       ),
     )
@@ -201,8 +149,8 @@ export async function getConcernsByChild(
  * Get all open concerns for the DSL review dashboard.
  */
 export async function getOpenConcerns(): Promise<ActionResult> {
-  const auth = await requireAuth();
-  if (!canPerformDslReview(auth.role)) {
+  const { userId, orgId, role } = await requirePermission('read', 'persons');
+  if (!canPerformDslReview(role)) {
     return { success: false, error: 'Insufficient permissions for DSL review' };
   }
 
@@ -211,7 +159,7 @@ export async function getOpenConcerns(): Promise<ActionResult> {
     .from(safeguardingConcerns)
     .where(
       and(
-        eq(safeguardingConcerns.organisationId, auth.organisationId),
+        eq(safeguardingConcerns.organisationId, orgId),
         eq(safeguardingConcerns.status, 'open'),
       ),
     )
@@ -231,20 +179,20 @@ export async function addConcernCorrection(
     return { success: false, error: parsed.error.issues[0]?.message ?? 'Validation failed' };
   }
 
-  const auth = await requireAuth();
+  const { userId, orgId, role } = await requirePermission('create', 'persons');
 
   const [correction] = await db
     .insert(concernCorrections)
     .values({
-      organisationId: auth.organisationId,
-      correctedById: auth.userId,
+      organisationId: orgId,
+      correctedById: userId,
       ...parsed.data,
     })
     .returning();
 
-  await auditLog(auth.userId, auth.organisationId, 'create', 'concern_correction', correction.id, {
+  await auditLog('create', 'concern_correction', correction.id, {
     after: { concernId: parsed.data.concernId, fieldName: parsed.data.fieldName },
-  });
+  }, { userId, organisationId: orgId });
 
   return { success: true, data: correction };
 }
@@ -265,16 +213,16 @@ export async function createDslReview(
     return { success: false, error: parsed.error.issues[0]?.message ?? 'Validation failed' };
   }
 
-  const auth = await requireAuth();
-  if (!canPerformDslReview(auth.role)) {
+  const { userId, orgId, role } = await requirePermission('create', 'persons');
+  if (!canPerformDslReview(role)) {
     return { success: false, error: 'Insufficient permissions for DSL review' };
   }
 
   const [review] = await db
     .insert(dslReviews)
     .values({
-      organisationId: auth.organisationId,
-      reviewerId: auth.userId,
+      organisationId: orgId,
+      reviewerId: userId,
       ...parsed.data,
     })
     .returning();
@@ -293,7 +241,7 @@ export async function createDslReview(
 
   if (concern) {
     await db.insert(safeguardingChronology).values({
-      organisationId: auth.organisationId,
+      organisationId: orgId,
       childId: concern.childId,
       eventDate: new Date(),
       source: 'dsl_review',
@@ -301,13 +249,13 @@ export async function createDslReview(
       title: `DSL Review: ${parsed.data.decision.replace(/_/g, ' ')}`,
       description: parsed.data.rationale.slice(0, 500),
       significance: 'significant',
-      createdById: auth.userId,
+      createdById: userId,
     });
   }
 
-  await auditLog(auth.userId, auth.organisationId, 'create', 'dsl_review', review.id, {
+  await auditLog('create', 'dsl_review', review.id, {
     after: { concernId: parsed.data.concernId, decision: parsed.data.decision },
-  });
+  }, { userId, organisationId: orgId });
 
   return { success: true, data: review };
 }
@@ -327,16 +275,16 @@ export async function createLadoReferral(
     return { success: false, error: parsed.error.issues[0]?.message ?? 'Validation failed' };
   }
 
-  const auth = await requireAuth();
-  if (!canAccessLado(auth.role)) {
+  const { userId, orgId, role } = await requirePermission('create', 'persons');
+  if (!canAccessLado(role)) {
     return { success: false, error: 'LADO records are restricted to DSL and senior leadership' };
   }
 
   const [referral] = await db
     .insert(ladoReferrals)
     .values({
-      organisationId: auth.organisationId,
-      createdById: auth.userId,
+      organisationId: orgId,
+      createdById: userId,
       isRestricted: true,
       ...parsed.data,
     })
@@ -344,7 +292,7 @@ export async function createLadoReferral(
 
   // Chronology entry (restricted)
   await db.insert(safeguardingChronology).values({
-    organisationId: auth.organisationId,
+    organisationId: orgId,
     childId: parsed.data.childId,
     eventDate: parsed.data.referralDate,
     source: 'lado_referral',
@@ -353,12 +301,12 @@ export async function createLadoReferral(
     description: `Allegation against ${parsed.data.allegationAgainstStaffName}`,
     significance: 'critical',
     isRestricted: true,
-    createdById: auth.userId,
+    createdById: userId,
   });
 
-  await auditLog(auth.userId, auth.organisationId, 'create', 'lado_referral', referral.id, {
+  await auditLog('create', 'lado_referral', referral.id, {
     after: { childId: parsed.data.childId },
-  });
+  }, { userId, organisationId: orgId });
 
   return { success: true, data: referral };
 }
@@ -374,8 +322,8 @@ export async function updateLadoReferral(
     return { success: false, error: parsed.error.issues[0]?.message ?? 'Validation failed' };
   }
 
-  const auth = await requireAuth();
-  if (!canAccessLado(auth.role)) {
+  const { userId, orgId, role } = await requirePermission('update', 'persons');
+  if (!canAccessLado(role)) {
     return { success: false, error: 'LADO records are restricted to DSL and senior leadership' };
   }
 
@@ -386,7 +334,7 @@ export async function updateLadoReferral(
     .where(
       and(
         eq(ladoReferrals.id, id),
-        eq(ladoReferrals.organisationId, auth.organisationId),
+        eq(ladoReferrals.organisationId, orgId),
       ),
     )
     .returning();
@@ -395,9 +343,9 @@ export async function updateLadoReferral(
     return { success: false, error: 'LADO referral not found' };
   }
 
-  await auditLog(auth.userId, auth.organisationId, 'update', 'lado_referral', id, {
+  await auditLog('update', 'lado_referral', id, {
     after: updates,
-  });
+  }, { userId, organisationId: orgId });
 
   return { success: true, data: referral };
 }
@@ -406,15 +354,15 @@ export async function updateLadoReferral(
  * Get LADO referrals. Restricted access.
  */
 export async function getLadoReferrals(): Promise<ActionResult> {
-  const auth = await requireAuth();
-  if (!canAccessLado(auth.role)) {
+  const { userId, orgId, role } = await requirePermission('read', 'persons');
+  if (!canAccessLado(role)) {
     return { success: false, error: 'LADO records are restricted to DSL and senior leadership' };
   }
 
   const referrals = await db
     .select()
     .from(ladoReferrals)
-    .where(eq(ladoReferrals.organisationId, auth.organisationId))
+    .where(eq(ladoReferrals.organisationId, orgId))
     .orderBy(desc(ladoReferrals.referralDate));
 
   return { success: true, data: referrals };
@@ -435,23 +383,23 @@ export async function createSection47(
     return { success: false, error: parsed.error.issues[0]?.message ?? 'Validation failed' };
   }
 
-  const auth = await requireAuth();
-  if (!canPerformDslReview(auth.role)) {
+  const { userId, orgId, role } = await requirePermission('create', 'persons');
+  if (!canPerformDslReview(role)) {
     return { success: false, error: 'Insufficient permissions' };
   }
 
   const [investigation] = await db
     .insert(section47Investigations)
     .values({
-      organisationId: auth.organisationId,
-      createdById: auth.userId,
+      organisationId: orgId,
+      createdById: userId,
       ...parsed.data,
     })
     .returning();
 
   // Chronology entry
   await db.insert(safeguardingChronology).values({
-    organisationId: auth.organisationId,
+    organisationId: orgId,
     childId: parsed.data.childId,
     eventDate: parsed.data.strategyMeetingDate ?? new Date(),
     source: 'section_47',
@@ -459,12 +407,12 @@ export async function createSection47(
     title: 'Section 47 Investigation Initiated',
     description: `Strategy meeting ${parsed.data.strategyMeetingDate ? 'scheduled' : 'to be scheduled'}`,
     significance: 'critical',
-    createdById: auth.userId,
+    createdById: userId,
   });
 
-  await auditLog(auth.userId, auth.organisationId, 'create', 'section_47', investigation.id, {
+  await auditLog('create', 'section_47', investigation.id, {
     after: { childId: parsed.data.childId },
-  });
+  }, { userId, organisationId: orgId });
 
   return { success: true, data: investigation };
 }
@@ -480,8 +428,8 @@ export async function updateSection47(
     return { success: false, error: parsed.error.issues[0]?.message ?? 'Validation failed' };
   }
 
-  const auth = await requireAuth();
-  if (!canPerformDslReview(auth.role)) {
+  const { userId, orgId, role } = await requirePermission('update', 'persons');
+  if (!canPerformDslReview(role)) {
     return { success: false, error: 'Insufficient permissions' };
   }
 
@@ -492,7 +440,7 @@ export async function updateSection47(
     .where(
       and(
         eq(section47Investigations.id, id),
-        eq(section47Investigations.organisationId, auth.organisationId),
+        eq(section47Investigations.organisationId, orgId),
       ),
     )
     .returning();
@@ -501,9 +449,9 @@ export async function updateSection47(
     return { success: false, error: 'Section 47 investigation not found' };
   }
 
-  await auditLog(auth.userId, auth.organisationId, 'update', 'section_47', id, {
+  await auditLog('update', 'section_47', id, {
     after: updates,
-  });
+  }, { userId, organisationId: orgId });
 
   return { success: true, data: investigation };
 }
@@ -523,23 +471,23 @@ export async function createMashReferral(
     return { success: false, error: parsed.error.issues[0]?.message ?? 'Validation failed' };
   }
 
-  const auth = await requireAuth();
-  if (!canPerformDslReview(auth.role)) {
+  const { userId, orgId, role } = await requirePermission('create', 'persons');
+  if (!canPerformDslReview(role)) {
     return { success: false, error: 'Insufficient permissions' };
   }
 
   const [referral] = await db
     .insert(mashReferrals)
     .values({
-      organisationId: auth.organisationId,
-      createdById: auth.userId,
+      organisationId: orgId,
+      createdById: userId,
       ...parsed.data,
     })
     .returning();
 
   // Chronology entry
   await db.insert(safeguardingChronology).values({
-    organisationId: auth.organisationId,
+    organisationId: orgId,
     childId: parsed.data.childId,
     eventDate: parsed.data.referralDate,
     source: 'mash_referral',
@@ -547,12 +495,12 @@ export async function createMashReferral(
     title: 'MASH Referral Submitted',
     description: parsed.data.referralReason.slice(0, 500),
     significance: 'significant',
-    createdById: auth.userId,
+    createdById: userId,
   });
 
-  await auditLog(auth.userId, auth.organisationId, 'create', 'mash_referral', referral.id, {
+  await auditLog('create', 'mash_referral', referral.id, {
     after: { childId: parsed.data.childId },
-  });
+  }, { userId, organisationId: orgId });
 
   return { success: true, data: referral };
 }
@@ -568,8 +516,8 @@ export async function updateMashReferral(
     return { success: false, error: parsed.error.issues[0]?.message ?? 'Validation failed' };
   }
 
-  const auth = await requireAuth();
-  if (!canPerformDslReview(auth.role)) {
+  const { userId, orgId, role } = await requirePermission('update', 'persons');
+  if (!canPerformDslReview(role)) {
     return { success: false, error: 'Insufficient permissions' };
   }
 
@@ -580,7 +528,7 @@ export async function updateMashReferral(
     .where(
       and(
         eq(mashReferrals.id, id),
-        eq(mashReferrals.organisationId, auth.organisationId),
+        eq(mashReferrals.organisationId, orgId),
       ),
     )
     .returning();
@@ -589,9 +537,9 @@ export async function updateMashReferral(
     return { success: false, error: 'MASH referral not found' };
   }
 
-  await auditLog(auth.userId, auth.organisationId, 'update', 'mash_referral', id, {
+  await auditLog('update', 'mash_referral', id, {
     after: updates,
-  });
+  }, { userId, organisationId: orgId });
 
   return { success: true, data: referral };
 }
@@ -606,21 +554,21 @@ export async function updateMashReferral(
 export async function getChildChronology(
   childId: string,
 ): Promise<ActionResult> {
-  const auth = await requireAuth();
+  const { userId, orgId, role } = await requirePermission('read', 'persons');
 
   const entries = await db
     .select()
     .from(safeguardingChronology)
     .where(
       and(
-        eq(safeguardingChronology.organisationId, auth.organisationId),
+        eq(safeguardingChronology.organisationId, orgId),
         eq(safeguardingChronology.childId, childId),
       ),
     )
     .orderBy(desc(safeguardingChronology.eventDate));
 
   // Filter out restricted entries for non-privileged users
-  const filteredEntries = canAccessLado(auth.role)
+  const filteredEntries = canAccessLado(role)
     ? entries
     : entries.filter((e) => !e.isRestricted);
 
@@ -638,22 +586,22 @@ export async function addManualChronologyEntry(
     return { success: false, error: parsed.error.issues[0]?.message ?? 'Validation failed' };
   }
 
-  const auth = await requireAuth();
+  const { userId, orgId, role } = await requirePermission('create', 'persons');
 
   const [entry] = await db
     .insert(safeguardingChronology)
     .values({
-      organisationId: auth.organisationId,
+      organisationId: orgId,
       source: 'manual',
       isManual: true,
-      createdById: auth.userId,
+      createdById: userId,
       ...parsed.data,
     })
     .returning();
 
-  await auditLog(auth.userId, auth.organisationId, 'create', 'chronology_entry', entry.id, {
+  await auditLog('create', 'chronology_entry', entry.id, {
     after: { childId: parsed.data.childId, title: parsed.data.title },
-  });
+  }, { userId, organisationId: orgId });
 
   return { success: true, data: entry };
 }

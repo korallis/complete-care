@@ -17,6 +17,8 @@ import {
 } from '@/lib/db/schema/outcomes';
 import { eq, and, desc, asc } from 'drizzle-orm';
 import type { ActionResult } from '@/types';
+import { requirePermission } from '@/lib/rbac';
+import { auditLog } from '@/lib/audit';
 import {
   createGoalSchema,
   updateGoalSchema,
@@ -34,10 +36,10 @@ import {
 // ---------------------------------------------------------------------------
 
 export async function createGoal(
-  organisationId: string,
-  userId: string,
   input: unknown,
 ): Promise<ActionResult<{ id: string }>> {
+  const { userId, orgId: organisationId } = await requirePermission('create', 'care_plans');
+
   const parsed = createGoalSchema.safeParse(input);
   if (!parsed.success) {
     return { success: false, error: parsed.error.issues[0].message };
@@ -53,13 +55,18 @@ export async function createGoal(
     })
     .returning({ id: goals.id });
 
+  await auditLog('create', 'goal', row.id, {
+    after: parsed.data,
+  }, { userId, organisationId });
+
   return { success: true, data: { id: row.id } };
 }
 
 export async function updateGoal(
-  organisationId: string,
   input: unknown,
 ): Promise<ActionResult> {
+  const { userId, orgId: organisationId } = await requirePermission('update', 'care_plans');
+
   const parsed = updateGoalSchema.safeParse(input);
   if (!parsed.success) {
     return { success: false, error: parsed.error.issues[0].message };
@@ -71,13 +78,17 @@ export async function updateGoal(
     .set({ ...data, updatedAt: new Date() })
     .where(and(eq(goals.id, id), eq(goals.organisationId, organisationId)));
 
+  await auditLog('update', 'goal', id, {
+    after: data,
+  }, { userId, organisationId });
+
   return { success: true, data: undefined };
 }
 
 export async function getGoalsForPerson(
-  organisationId: string,
   personId: string,
 ) {
+  const { orgId: organisationId } = await requirePermission('read', 'care_plans');
   return db
     .select()
     .from(goals)
@@ -87,7 +98,8 @@ export async function getGoalsForPerson(
     .orderBy(desc(goals.createdAt));
 }
 
-export async function getGoalById(organisationId: string, goalId: string) {
+export async function getGoalById(goalId: string) {
+  const { orgId: organisationId } = await requirePermission('read', 'care_plans');
   const [row] = await db
     .select()
     .from(goals)
@@ -100,10 +112,10 @@ export async function getGoalById(organisationId: string, goalId: string) {
 // ---------------------------------------------------------------------------
 
 export async function createGoalReview(
-  organisationId: string,
-  reviewerId: string,
   input: unknown,
 ): Promise<ActionResult<{ id: string }>> {
+  const { userId, orgId: organisationId } = await requirePermission('create', 'care_plans');
+
   const parsed = createGoalReviewSchema.safeParse(input);
   if (!parsed.success) {
     return { success: false, error: parsed.error.issues[0].message };
@@ -113,18 +125,22 @@ export async function createGoalReview(
     .insert(goalReviews)
     .values({
       organisationId,
-      reviewerId,
+      reviewerId: userId,
       ...parsed.data,
     })
     .returning({ id: goalReviews.id });
+
+  await auditLog('create', 'goal_review', row.id, {
+    after: parsed.data,
+  }, { userId, organisationId });
 
   return { success: true, data: { id: row.id } };
 }
 
 export async function getReviewsForGoal(
-  organisationId: string,
   goalId: string,
 ) {
+  const { orgId: organisationId } = await requirePermission('read', 'care_plans');
   return db
     .select()
     .from(goalReviews)
@@ -138,9 +154,9 @@ export async function getReviewsForGoal(
 }
 
 export async function getReviewSummaryForPerson(
-  organisationId: string,
   personId: string,
 ) {
+  const { orgId: organisationId } = await requirePermission('read', 'care_plans');
   // Get all goals for person, then get latest review per goal
   const personGoals = await db
     .select({ id: goals.id, title: goals.title, category: goals.category, status: goals.status })
@@ -192,9 +208,10 @@ export async function getReviewSummaryForPerson(
 // ---------------------------------------------------------------------------
 
 export async function createSkillDomain(
-  organisationId: string,
   input: unknown,
 ): Promise<ActionResult<{ id: string }>> {
+  const { orgId: organisationId } = await requirePermission('create', 'care_plans');
+
   const parsed = createSkillDomainSchema.safeParse(input);
   if (!parsed.success) {
     return { success: false, error: parsed.error.issues[0].message };
@@ -208,7 +225,8 @@ export async function createSkillDomain(
   return { success: true, data: { id: row.id } };
 }
 
-export async function getSkillDomains(organisationId: string) {
+export async function getSkillDomains() {
+  const { orgId: organisationId } = await requirePermission('read', 'care_plans');
   return db
     .select()
     .from(skillDomains)
@@ -217,9 +235,10 @@ export async function getSkillDomains(organisationId: string) {
 }
 
 export async function createSkill(
-  organisationId: string,
   input: unknown,
 ): Promise<ActionResult<{ id: string }>> {
+  const { orgId: organisationId } = await requirePermission('create', 'care_plans');
+
   const parsed = createSkillSchema.safeParse(input);
   if (!parsed.success) {
     return { success: false, error: parsed.error.issues[0].message };
@@ -234,9 +253,9 @@ export async function createSkill(
 }
 
 export async function getSkillsByDomain(
-  organisationId: string,
   domainId: string,
 ) {
+  const { orgId: organisationId } = await requirePermission('read', 'care_plans');
   return db
     .select()
     .from(skills)
@@ -254,10 +273,10 @@ export async function getSkillsByDomain(
 // ---------------------------------------------------------------------------
 
 export async function createSkillAssessment(
-  organisationId: string,
-  assessorId: string,
   input: unknown,
 ): Promise<ActionResult<{ id: string }>> {
+  const { userId, orgId: organisationId } = await requirePermission('create', 'assessments');
+
   const parsed = createSkillAssessmentSchema.safeParse(input);
   if (!parsed.success) {
     return { success: false, error: parsed.error.issues[0].message };
@@ -265,16 +284,20 @@ export async function createSkillAssessment(
 
   const [row] = await db
     .insert(skillAssessments)
-    .values({ organisationId, assessorId, ...parsed.data })
+    .values({ organisationId, assessorId: userId, ...parsed.data })
     .returning({ id: skillAssessments.id });
+
+  await auditLog('create', 'skill_assessment', row.id, {
+    after: parsed.data,
+  }, { userId, organisationId });
 
   return { success: true, data: { id: row.id } };
 }
 
 export async function getSkillAssessmentsForPerson(
-  organisationId: string,
   personId: string,
 ) {
+  const { orgId: organisationId } = await requirePermission('read', 'assessments');
   return db
     .select()
     .from(skillAssessments)
@@ -288,10 +311,10 @@ export async function getSkillAssessmentsForPerson(
 }
 
 export async function getSkillTrend(
-  organisationId: string,
   personId: string,
   skillId: string,
 ) {
+  const { orgId: organisationId } = await requirePermission('read', 'assessments');
   return db
     .select()
     .from(skillAssessments)
@@ -310,10 +333,10 @@ export async function getSkillTrend(
 // ---------------------------------------------------------------------------
 
 export async function createCommunityAccessRecord(
-  organisationId: string,
-  recordedById: string,
   input: unknown,
 ): Promise<ActionResult<{ id: string }>> {
+  const { userId, orgId: organisationId } = await requirePermission('create', 'care_plans');
+
   const parsed = createCommunityAccessSchema.safeParse(input);
   if (!parsed.success) {
     return { success: false, error: parsed.error.issues[0].message };
@@ -323,19 +346,23 @@ export async function createCommunityAccessRecord(
     .insert(communityAccess)
     .values({
       organisationId,
-      recordedBy: recordedById,
+      recordedBy: userId,
       ...parsed.data,
       skillsPractised: parsed.data.skillsPractised ?? null,
     })
     .returning({ id: communityAccess.id });
 
+  await auditLog('create', 'community_access', row.id, {
+    after: parsed.data,
+  }, { userId, organisationId });
+
   return { success: true, data: { id: row.id } };
 }
 
 export async function getCommunityAccessForPerson(
-  organisationId: string,
   personId: string,
 ) {
+  const { orgId: organisationId } = await requirePermission('read', 'care_plans');
   return db
     .select()
     .from(communityAccess)
@@ -353,10 +380,10 @@ export async function getCommunityAccessForPerson(
 // ---------------------------------------------------------------------------
 
 export async function createSupportHoursRecord(
-  organisationId: string,
-  recordedById: string,
   input: unknown,
 ): Promise<ActionResult<{ id: string }>> {
+  const { userId, orgId: organisationId } = await requirePermission('create', 'care_plans');
+
   const parsed = createSupportHoursSchema.safeParse(input);
   if (!parsed.success) {
     return { success: false, error: parsed.error.issues[0].message };
@@ -366,18 +393,23 @@ export async function createSupportHoursRecord(
     .insert(supportHours)
     .values({
       organisationId,
-      recordedBy: recordedById,
+      recordedBy: userId,
       ...parsed.data,
     })
     .returning({ id: supportHours.id });
+
+  await auditLog('create', 'support_hours', row.id, {
+    after: parsed.data,
+  }, { userId, organisationId });
 
   return { success: true, data: { id: row.id } };
 }
 
 export async function updateSupportHoursRecord(
-  organisationId: string,
   input: unknown,
 ): Promise<ActionResult> {
+  const { userId, orgId: organisationId } = await requirePermission('update', 'care_plans');
+
   const parsed = updateSupportHoursSchema.safeParse(input);
   if (!parsed.success) {
     return { success: false, error: parsed.error.issues[0].message };
@@ -394,13 +426,17 @@ export async function updateSupportHoursRecord(
       ),
     );
 
+  await auditLog('update', 'support_hours', id, {
+    after: data,
+  }, { userId, organisationId });
+
   return { success: true, data: undefined };
 }
 
 export async function getSupportHoursForPerson(
-  organisationId: string,
   personId: string,
 ) {
+  const { orgId: organisationId } = await requirePermission('read', 'care_plans');
   return db
     .select()
     .from(supportHours)

@@ -14,6 +14,9 @@ import {
 } from '@/lib/db/schema/weight-wounds';
 import { eq, and, desc, gte } from 'drizzle-orm';
 import type { ActionResult } from '@/types';
+import { requirePermission } from '@/lib/rbac';
+import { assertBelongsToOrg } from '@/lib/tenant';
+import { auditLog } from '@/lib/audit';
 import {
   weightScheduleSchema,
   weightRecordSchema,
@@ -33,9 +36,10 @@ import {
 // ---------------------------------------------------------------------------
 
 export async function createWeightSchedule(
-  organisationId: string,
   input: unknown,
 ): Promise<ActionResult<{ id: string }>> {
+  const { orgId: organisationId } = await requirePermission('create', 'clinical');
+
   const parsed = weightScheduleSchema.safeParse(input);
   if (!parsed.success) {
     return { success: false, error: parsed.error.issues[0].message };
@@ -54,10 +58,11 @@ export async function createWeightSchedule(
 }
 
 export async function updateWeightSchedule(
-  organisationId: string,
   scheduleId: string,
   input: unknown,
 ): Promise<ActionResult<{ id: string }>> {
+  const { orgId: organisationId } = await requirePermission('update', 'clinical');
+
   const parsed = weightScheduleSchema.partial().safeParse(input);
   if (!parsed.success) {
     return { success: false, error: parsed.error.issues[0].message };
@@ -81,7 +86,7 @@ export async function updateWeightSchedule(
   return { success: true, data: { id: updated.id } };
 }
 
-export async function getWeightSchedule(
+async function getWeightScheduleByOrg(
   organisationId: string,
   personId: string,
 ) {
@@ -100,15 +105,22 @@ export async function getWeightSchedule(
   return results[0] ?? null;
 }
 
+export async function getWeightSchedule(
+  personId: string,
+) {
+  const { orgId } = await requirePermission('read', 'clinical');
+  return getWeightScheduleByOrg(orgId, personId);
+}
+
 // ---------------------------------------------------------------------------
 // Weight Records
 // ---------------------------------------------------------------------------
 
 export async function recordWeight(
-  organisationId: string,
-  recordedById: string,
   input: unknown,
 ): Promise<ActionResult<{ id: string; bmi: number | null; bmiCategory: string | null; changeAlert: boolean }>> {
+  const { userId, orgId: organisationId } = await requirePermission('create', 'clinical');
+
   const parsed = weightRecordSchema.safeParse(input);
   if (!parsed.success) {
     return { success: false, error: parsed.error.issues[0].message };
@@ -119,7 +131,7 @@ export async function recordWeight(
 
   // Fall back to schedule height if not provided
   if (!heightCm) {
-    const schedule = await getWeightSchedule(organisationId, personId);
+    const schedule = await getWeightScheduleByOrg(organisationId, personId);
     if (schedule?.heightCm) {
       heightCm = schedule.heightCm;
     }
@@ -144,13 +156,13 @@ export async function recordWeight(
       bmi,
       bmiCategory,
       notes: parsed.data.notes,
-      recordedById,
+      recordedById: userId,
     })
     .returning({ id: weightRecords.id });
 
   // Check for significant weight change
   let changeAlert = false;
-  const schedule = await getWeightSchedule(organisationId, personId);
+  const schedule = await getWeightScheduleByOrg(organisationId, personId);
   if (schedule) {
     const thresholdDays = schedule.changeAlertDays;
     const cutoffDate = new Date();
@@ -184,10 +196,10 @@ export async function recordWeight(
 }
 
 export async function getWeightRecords(
-  organisationId: string,
   personId: string,
   limit = 100,
 ) {
+  const { orgId: organisationId } = await requirePermission('read', 'clinical');
   return db
     .select()
     .from(weightRecords)
@@ -206,10 +218,10 @@ export async function getWeightRecords(
 // ---------------------------------------------------------------------------
 
 export async function createWaterlowAssessment(
-  organisationId: string,
-  assessedById: string,
   input: unknown,
 ): Promise<ActionResult<{ id: string; totalScore: number; riskCategory: string }>> {
+  const { userId, orgId: organisationId } = await requirePermission('create', 'assessments');
+
   const parsed = waterlowAssessmentSchema.safeParse(input);
   if (!parsed.success) {
     return { success: false, error: parsed.error.issues[0].message };
@@ -228,18 +240,22 @@ export async function createWaterlowAssessment(
       totalScore,
       riskCategory,
       notes: parsed.data.notes,
-      assessedById,
+      assessedById: userId,
     })
     .returning({ id: waterlowAssessments.id });
+
+  await auditLog('create', 'waterlow_assessment', assessment.id, {
+    after: { totalScore, riskCategory },
+  }, { userId, organisationId });
 
   return { success: true, data: { id: assessment.id, totalScore, riskCategory } };
 }
 
 export async function getWaterlowAssessments(
-  organisationId: string,
   personId: string,
   limit = 50,
 ) {
+  const { orgId: organisationId } = await requirePermission('read', 'assessments');
   return db
     .select()
     .from(waterlowAssessments)
@@ -258,9 +274,10 @@ export async function getWaterlowAssessments(
 // ---------------------------------------------------------------------------
 
 export async function createWound(
-  organisationId: string,
   input: unknown,
 ): Promise<ActionResult<{ id: string }>> {
+  const { orgId: organisationId } = await requirePermission('create', 'clinical');
+
   const parsed = createWoundSchema.safeParse(input);
   if (!parsed.success) {
     return { success: false, error: parsed.error.issues[0].message };
@@ -286,9 +303,10 @@ export async function createWound(
 }
 
 export async function updateWound(
-  organisationId: string,
   input: unknown,
 ): Promise<ActionResult<{ id: string }>> {
+  const { orgId: organisationId } = await requirePermission('update', 'clinical');
+
   const parsed = updateWoundSchema.safeParse(input);
   if (!parsed.success) {
     return { success: false, error: parsed.error.issues[0].message };
@@ -312,10 +330,10 @@ export async function updateWound(
 }
 
 export async function getWounds(
-  organisationId: string,
   personId: string,
   statusFilter?: string,
 ) {
+  const { orgId: organisationId } = await requirePermission('read', 'clinical');
   const conditions = [
     eq(wounds.organisationId, organisationId),
     eq(wounds.personId, personId),
@@ -332,7 +350,7 @@ export async function getWounds(
     .orderBy(desc(wounds.createdAt));
 }
 
-export async function getWound(organisationId: string, woundId: string) {
+async function getWoundByOrg(organisationId: string, woundId: string) {
   const results = await db
     .select()
     .from(wounds)
@@ -344,22 +362,27 @@ export async function getWound(organisationId: string, woundId: string) {
   return results[0] ?? null;
 }
 
+export async function getWound(woundId: string) {
+  const { orgId } = await requirePermission('read', 'clinical');
+  return getWoundByOrg(orgId, woundId);
+}
+
 // ---------------------------------------------------------------------------
 // Wound Assessments
 // ---------------------------------------------------------------------------
 
 export async function createWoundAssessment(
-  organisationId: string,
-  assessedById: string,
   input: unknown,
 ): Promise<ActionResult<{ id: string }>> {
+  const { userId, orgId: organisationId } = await requirePermission('create', 'clinical');
+
   const parsed = woundAssessmentSchema.safeParse(input);
   if (!parsed.success) {
     return { success: false, error: parsed.error.issues[0].message };
   }
 
   // Verify wound belongs to this org
-  const wound = await getWound(organisationId, parsed.data.woundId);
+  const wound = await getWoundByOrg(organisationId, parsed.data.woundId);
   if (!wound) {
     return { success: false, error: 'Wound not found' };
   }
@@ -382,17 +405,21 @@ export async function createWoundAssessment(
       photoRef: parsed.data.photoRef ?? null,
       treatmentApplied: parsed.data.treatmentApplied,
       notes: parsed.data.notes,
-      assessedById,
+      assessedById: userId,
     })
     .returning({ id: woundAssessments.id });
+
+  await auditLog('create', 'wound_assessment', assessment.id, {
+    after: { woundId: parsed.data.woundId },
+  }, { userId, organisationId });
 
   return { success: true, data: { id: assessment.id } };
 }
 
 export async function getWoundAssessments(
-  organisationId: string,
   woundId: string,
 ) {
+  const { orgId: organisationId } = await requirePermission('read', 'clinical');
   return db
     .select()
     .from(woundAssessments)

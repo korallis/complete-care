@@ -5,11 +5,9 @@
  *
  * Every mutation:
  *  1. Validates input with Zod
- *  2. Enforces tenant isolation via organisationId
- *  3. Creates an audit log entry
- *
- * Auth/RBAC checks are stubbed with TODO comments — the auth infrastructure
- * (Auth.js v5) will be wired in by the auth feature module.
+ *  2. Checks auth & RBAC via requirePermission()
+ *  3. Enforces tenant isolation via organisationId
+ *  4. Creates an audit log entry
  */
 
 import { eq, and, desc } from 'drizzle-orm';
@@ -19,9 +17,11 @@ import {
   missingEpisodes,
   missingEpisodeTimeline,
   returnHomeInterviews,
-  auditLogs,
 } from '@/lib/db/schema';
 import type { ActionResult } from '@/types';
+import { requirePermission } from '@/lib/rbac';
+import { assertBelongsToOrg } from '@/lib/tenant';
+import { auditLog } from '@/lib/audit';
 import {
   createPhilomenaProfileSchema,
   updatePhilomenaProfileSchema,
@@ -37,43 +37,6 @@ import {
 } from './schema';
 
 // ---------------------------------------------------------------------------
-// Helpers
-// ---------------------------------------------------------------------------
-
-/**
- * Stub for getting the current authenticated user + org context.
- * Will be replaced once Auth.js v5 session is available.
- */
-async function getAuthContext(): Promise<{
-  userId: string;
-  organisationId: string;
-  role: string;
-}> {
-  // TODO: Replace with real auth session lookup
-  throw new Error(
-    'Auth context not yet wired — replace with Auth.js v5 session',
-  );
-}
-
-async function audit(
-  userId: string | null,
-  organisationId: string | null,
-  action: string,
-  entityType: string,
-  entityId: string,
-  changes?: Record<string, unknown>,
-) {
-  await db.insert(auditLogs).values({
-    userId,
-    organisationId,
-    action,
-    entityType,
-    entityId,
-    changes: changes ?? null,
-  });
-}
-
-// ---------------------------------------------------------------------------
 // Philomena Profile actions
 // ---------------------------------------------------------------------------
 
@@ -85,7 +48,7 @@ export async function createPhilomenaProfile(
     return { success: false, error: parsed.error.issues[0].message };
   }
 
-  const { userId, organisationId } = await getAuthContext();
+  const { userId, orgId: organisationId } = await requirePermission('create', 'persons');
   const data = parsed.data;
 
   const [profile] = await db
@@ -118,9 +81,9 @@ export async function createPhilomenaProfile(
     })
     .returning({ id: philomenaProfiles.id });
 
-  await audit(userId, organisationId, 'create', 'philomena_profile', profile.id, {
+  await auditLog('create', 'philomena_profile', profile.id, {
     after: data,
-  });
+  }, { userId, organisationId });
 
   return { success: true, data: { id: profile.id } };
 }
@@ -133,7 +96,7 @@ export async function updatePhilomenaProfile(
     return { success: false, error: parsed.error.issues[0].message };
   }
 
-  const { userId, organisationId } = await getAuthContext();
+  const { userId, orgId: organisationId } = await requirePermission('update', 'persons');
   const { id, ...data } = parsed.data;
 
   // If photo URL changed, update the photo timestamp
@@ -156,14 +119,14 @@ export async function updatePhilomenaProfile(
       ),
     );
 
-  await audit(userId, organisationId, 'update', 'philomena_profile', id, {
+  await auditLog('update', 'philomena_profile', id, {
     after: data,
-  });
+  }, { userId, organisationId });
 
   return { success: true, data: { id } };
 }
 
-export async function getPhilomenaProfile(
+async function getPhilomenaProfileByOrg(
   personId: string,
   organisationId: string,
 ) {
@@ -181,6 +144,13 @@ export async function getPhilomenaProfile(
   return profile ?? null;
 }
 
+export async function getPhilomenaProfile(
+  personId: string,
+) {
+  const { orgId } = await requirePermission('read', 'persons');
+  return getPhilomenaProfileByOrg(personId, orgId);
+}
+
 // ---------------------------------------------------------------------------
 // Missing Episode actions
 // ---------------------------------------------------------------------------
@@ -193,11 +163,11 @@ export async function createMissingEpisode(
     return { success: false, error: parsed.error.issues[0].message };
   }
 
-  const { userId, organisationId } = await getAuthContext();
+  const { userId, orgId: organisationId } = await requirePermission('create', 'persons');
   const data = parsed.data;
 
   // Look up existing Philomena profile for this child
-  const existingProfile = await getPhilomenaProfile(
+  const existingProfile = await getPhilomenaProfileByOrg(
     data.personId,
     organisationId,
   );
@@ -247,9 +217,9 @@ export async function createMissingEpisode(
     recordedById: userId,
   });
 
-  await audit(userId, organisationId, 'create', 'missing_episode', episode.id, {
+  await auditLog('create', 'missing_episode', episode.id, {
     after: { ...data, previousEpisodeCount: previousEpisodes.length },
-  });
+  }, { userId, organisationId });
 
   return { success: true, data: { id: episode.id } };
 }
@@ -262,7 +232,7 @@ export async function recordPoliceNotification(
     return { success: false, error: parsed.error.issues[0].message };
   }
 
-  const { userId, organisationId } = await getAuthContext();
+  const { userId, orgId: organisationId } = await requirePermission('update', 'persons');
   const data = parsed.data;
 
   await db
@@ -290,14 +260,9 @@ export async function recordPoliceNotification(
     metadata: { policeReference: data.policeReference },
   });
 
-  await audit(
-    userId,
-    organisationId,
-    'update',
-    'missing_episode',
-    data.episodeId,
-    { after: { policeNotified: true, policeReference: data.policeReference } },
-  );
+  await auditLog('update', 'missing_episode', data.episodeId, {
+    after: { policeNotified: true, policeReference: data.policeReference },
+  }, { userId, organisationId });
 
   return { success: true, data: undefined };
 }
@@ -310,7 +275,7 @@ export async function recordAuthorityNotification(
     return { success: false, error: parsed.error.issues[0].message };
   }
 
-  const { userId, organisationId } = await getAuthContext();
+  const { userId, orgId: organisationId } = await requirePermission('update', 'persons');
   const data = parsed.data;
 
   await db
@@ -338,14 +303,9 @@ export async function recordAuthorityNotification(
     metadata: { contact: data.placingAuthorityContact },
   });
 
-  await audit(
-    userId,
-    organisationId,
-    'update',
-    'missing_episode',
-    data.episodeId,
-    { after: { placingAuthorityNotified: true } },
-  );
+  await auditLog('update', 'missing_episode', data.episodeId, {
+    after: { placingAuthorityNotified: true },
+  }, { userId, organisationId });
 
   return { success: true, data: undefined };
 }
@@ -358,7 +318,7 @@ export async function recordReturn(
     return { success: false, error: parsed.error.issues[0].message };
   }
 
-  const { userId, organisationId } = await getAuthContext();
+  const { userId, orgId: organisationId } = await requirePermission('update', 'persons');
   const data = parsed.data;
 
   // Fetch the episode to get personId
@@ -435,12 +395,12 @@ export async function recordReturn(
     metadata: { rhiId: rhi.id, deadlineAt: rhiDeadline.toISOString() },
   });
 
-  await audit(userId, organisationId, 'update', 'missing_episode', data.episodeId, {
+  await auditLog('update', 'missing_episode', data.episodeId, {
     after: { status: 'returned', returnedAt: data.returnedAt },
-  });
-  await audit(userId, organisationId, 'create', 'return_home_interview', rhi.id, {
+  }, { userId, organisationId });
+  await auditLog('create', 'return_home_interview', rhi.id, {
     after: { episodeId: data.episodeId, deadlineAt: rhiDeadline },
-  });
+  }, { userId, organisationId });
 
   return { success: true, data: { rhiId: rhi.id } };
 }
@@ -453,7 +413,7 @@ export async function addTimelineEntry(
     return { success: false, error: parsed.error.issues[0].message };
   }
 
-  const { userId, organisationId } = await getAuthContext();
+  const { userId, orgId: organisationId } = await requirePermission('create', 'persons');
   const data = parsed.data;
 
   const [entry] = await db
@@ -469,14 +429,9 @@ export async function addTimelineEntry(
     })
     .returning({ id: missingEpisodeTimeline.id });
 
-  await audit(
-    userId,
-    organisationId,
-    'create',
-    'missing_episode_timeline',
-    entry.id,
-    { after: data },
-  );
+  await auditLog('create', 'missing_episode_timeline', entry.id, {
+    after: data,
+  }, { userId, organisationId });
 
   return { success: true, data: { id: entry.id } };
 }
@@ -493,7 +448,7 @@ export async function completeRhi(
     return { success: false, error: parsed.error.issues[0].message };
   }
 
-  const { userId, organisationId } = await getAuthContext();
+  const { userId, orgId: organisationId } = await requirePermission('update', 'persons');
   const { id, ...data } = parsed.data;
 
   await db
@@ -513,9 +468,9 @@ export async function completeRhi(
       ),
     );
 
-  await audit(userId, organisationId, 'update', 'return_home_interview', id, {
+  await auditLog('update', 'return_home_interview', id, {
     after: { ...data, status: 'completed' },
-  });
+  }, { userId, organisationId });
 
   return { success: true, data: undefined };
 }
@@ -528,7 +483,7 @@ export async function escalateRhi(
     return { success: false, error: parsed.error.issues[0].message };
   }
 
-  const { userId, organisationId } = await getAuthContext();
+  const { userId, orgId: organisationId } = await requirePermission('update', 'persons');
   const { id } = parsed.data;
 
   await db
@@ -546,9 +501,9 @@ export async function escalateRhi(
       ),
     );
 
-  await audit(userId, organisationId, 'update', 'return_home_interview', id, {
+  await auditLog('update', 'return_home_interview', id, {
     after: { status: 'escalated', escalatedToRi: true },
-  });
+  }, { userId, organisationId });
 
   return { success: true, data: undefined };
 }
@@ -559,27 +514,28 @@ export async function escalateRhi(
 
 export async function getMissingEpisodesForPerson(
   personId: string,
-  organisationId: string,
 ) {
+  const { orgId } = await requirePermission('read', 'persons');
   return db
     .select()
     .from(missingEpisodes)
     .where(
       and(
         eq(missingEpisodes.personId, personId),
-        eq(missingEpisodes.organisationId, organisationId),
+        eq(missingEpisodes.organisationId, orgId),
       ),
     )
     .orderBy(desc(missingEpisodes.absenceNoticedAt));
 }
 
-export async function getOpenMissingEpisodes(organisationId: string) {
+export async function getOpenMissingEpisodes() {
+  const { orgId } = await requirePermission('read', 'persons');
   return db
     .select()
     .from(missingEpisodes)
     .where(
       and(
-        eq(missingEpisodes.organisationId, organisationId),
+        eq(missingEpisodes.organisationId, orgId),
         eq(missingEpisodes.status, 'open'),
       ),
     )
@@ -588,40 +544,42 @@ export async function getOpenMissingEpisodes(organisationId: string) {
 
 export async function getEpisodeTimeline(
   episodeId: string,
-  organisationId: string,
 ) {
+  const { orgId } = await requirePermission('read', 'persons');
   return db
     .select()
     .from(missingEpisodeTimeline)
     .where(
       and(
         eq(missingEpisodeTimeline.episodeId, episodeId),
-        eq(missingEpisodeTimeline.organisationId, organisationId),
+        eq(missingEpisodeTimeline.organisationId, orgId),
       ),
     )
     .orderBy(missingEpisodeTimeline.occurredAt);
 }
 
-export async function getPendingRhis(organisationId: string) {
+export async function getPendingRhis() {
+  const { orgId } = await requirePermission('read', 'persons');
   return db
     .select()
     .from(returnHomeInterviews)
     .where(
       and(
-        eq(returnHomeInterviews.organisationId, organisationId),
+        eq(returnHomeInterviews.organisationId, orgId),
         eq(returnHomeInterviews.status, 'pending'),
       ),
     )
     .orderBy(returnHomeInterviews.deadlineAt);
 }
 
-export async function getOverdueRhis(organisationId: string) {
+export async function getOverdueRhis() {
+  const { orgId } = await requirePermission('read', 'persons');
   return db
     .select()
     .from(returnHomeInterviews)
     .where(
       and(
-        eq(returnHomeInterviews.organisationId, organisationId),
+        eq(returnHomeInterviews.organisationId, orgId),
         eq(returnHomeInterviews.status, 'overdue'),
       ),
     )
@@ -630,15 +588,15 @@ export async function getOverdueRhis(organisationId: string) {
 
 export async function getRhiForEpisode(
   episodeId: string,
-  organisationId: string,
 ) {
+  const { orgId } = await requirePermission('read', 'persons');
   const [rhi] = await db
     .select()
     .from(returnHomeInterviews)
     .where(
       and(
         eq(returnHomeInterviews.episodeId, episodeId),
-        eq(returnHomeInterviews.organisationId, organisationId),
+        eq(returnHomeInterviews.organisationId, orgId),
       ),
     )
     .limit(1);

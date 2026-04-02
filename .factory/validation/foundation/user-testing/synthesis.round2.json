@@ -1,0 +1,150 @@
+{
+  "milestone": "foundation",
+  "round": 2,
+  "status": "fail",
+  "assertionsSummary": {
+    "total": 66,
+    "passed": 48,
+    "failed": 15,
+    "blocked": 3
+  },
+  "passedAssertions": [
+    "VAL-AUTH-002",
+    "VAL-AUTH-003",
+    "VAL-AUTH-004",
+    "VAL-AUTH-005",
+    "VAL-AUTH-006",
+    "VAL-AUTH-007",
+    "VAL-AUTH-008",
+    "VAL-AUTH-009",
+    "VAL-AUTH-010",
+    "VAL-AUTH-011",
+    "VAL-AUTH-022",
+    "VAL-AUTH-014",
+    "VAL-AUTH-015",
+    "VAL-AUTH-016",
+    "VAL-AUTH-019",
+    "VAL-AUTH-020",
+    "VAL-AUTH-021",
+    "VAL-TENANT-001",
+    "VAL-TENANT-005",
+    "VAL-TENANT-006",
+    "VAL-TENANT-007",
+    "VAL-CROSS-013",
+    "VAL-TENANT-009",
+    "VAL-TENANT-010",
+    "VAL-TENANT-011",
+    "VAL-TENANT-013",
+    "VAL-TENANT-014",
+    "VAL-TENANT-015",
+    "VAL-TENANT-016",
+    "VAL-TENANT-017",
+    "VAL-CROSS-007",
+    "VAL-CROSS-017",
+    "VAL-CROSS-018",
+    "VAL-CROSS-019",
+    "VAL-MARKET-001",
+    "VAL-MARKET-002",
+    "VAL-MARKET-003",
+    "VAL-MARKET-004",
+    "VAL-MARKET-005",
+    "VAL-MARKET-006",
+    "VAL-MARKET-007",
+    "VAL-MARKET-008",
+    "VAL-MARKET-009",
+    "VAL-MARKET-010",
+    "VAL-MARKET-011",
+    "VAL-MARKET-012",
+    "VAL-MARKET-015",
+    "VAL-CROSS-023"
+  ],
+  "failedAssertions": [
+    {
+      "id": "VAL-AUTH-001",
+      "reason": "Registration still does not redirect to onboarding; it remains on /register with a success card."
+    },
+    {
+      "id": "VAL-AUTH-017",
+      "reason": "A real carer session could navigate directly to /round2-authrbac-20260401-beta-care/settings/billing, but the app returned a generic 404 page instead of a 403 Forbidden response or an Access Denied redirect/page. Visible UI text was '404' and 'This page could not be found.' while the URL stayed on the restricted billing route."
+    },
+    {
+      "id": "VAL-AUTH-018",
+      "reason": "The restricted action path still fails at the routing surface with 405 instead of returning a 403 permission denial for the viewer role."
+    },
+    {
+      "id": "VAL-CROSS-008",
+      "reason": "The promotion/JWT-refresh half works, but the required pre-promotion unauthorized redirect does not happen and the promoted admin still cannot load the billing surface because that route 404s."
+    },
+    {
+      "id": "VAL-TENANT-002",
+      "reason": "The empty-name branch validates correctly, but the over-limit branch does not. Instead of rejecting the value with a maximum-length message, the UI truncates it to 100 characters and proceeds."
+    },
+    {
+      "id": "VAL-TENANT-003",
+      "reason": "The Children's Residential selection does persist into organisation settings, but the rest of the UI does not adapt. The dashboard and persons page stayed generic and did not expose the expected children's-residential terminology or Ofsted-specific surfaces."
+    },
+    {
+      "id": "VAL-TENANT-004",
+      "reason": "The multi-select state persists correctly in settings, but the expected combined domain tooling does not appear on the live dashboard. Org B remained a generic shell instead of exposing both domiciliary-care and supported-living surfaces."
+    },
+    {
+      "id": "VAL-TENANT-008",
+      "reason": "The owner-facing team list does not show a revoked status; the invite simply disappears, and logged-out reuse of the link redirects to login instead of directly surfacing the revoked error."
+    },
+    {
+      "id": "VAL-TENANT-012",
+      "reason": "Required contact-email and address fields are still missing, and the updated organisation name did not reflect immediately across the dashboard header after save."
+    },
+    {
+      "id": "VAL-TENANT-018",
+      "reason": "The second organisation is created and added to the switcher, but the real user flow still ends on a broken /api/orgs/switch 404 instead of a clean post-create destination."
+    },
+    {
+      "id": "VAL-MARKET-013",
+      "reason": "Keyboard focus is visible and the landing page is tab-navigable, but the rerun accessibility audit still fails basic checks. Axe reported 2 serious violations: invalid aria-label usage on three testimonial star-rating divs and insufficient color contrast on four visible text elements (\"\u2605 You're here\", the comparison update note, the compliance subtitle, and the footer copyright text)."
+    },
+    {
+      "id": "VAL-MARKET-014",
+      "reason": "The landing page renders title, description, and Open Graph fields, but the SEO/social metadata is still populated with local development URLs instead of a public canonical/shareable origin. The rendered canonical URL is http://localhost:3200 and og:image is http://localhost:3200/og-image.png."
+    },
+    {
+      "id": "VAL-CROSS-001",
+      "reason": "The onboarding completion and redirect logic are now working, but the final dashboard still does not satisfy the full assertion because it shows generic placeholder widgets rather than domain-appropriate first-visit content, and the org's free-plan state is not observable in the tested UI."
+    },
+    {
+      "id": "VAL-CROSS-011",
+      "reason": "This rerun is no longer blocked by onboarding failure, but the completed dashboards still do not adapt by domain. The children's-residential dashboard lacked the required Ofsted-specific tools, and the domiciliary/supported-living dashboard lacked the required CQC-specific tools."
+    },
+    {
+      "id": "VAL-CROSS-016",
+      "reason": "The central audit page lacks the required user filter, and no entity-level audit tab was available from the implemented foundation routes."
+    }
+  ],
+  "blockedAssertions": [
+    {
+      "id": "VAL-AUTH-012",
+      "blockedBy": "The real Google sign-in entrypoint opened Google's OAuth error page instead of a usable consent/authentication flow. The visible page text showed 'Access blocked: Authorization Error' and 'Missing required parameter: client_id', so no new-user account creation, callback redirect, onboarding redirect, or session token could be verified."
+    },
+    {
+      "id": "VAL-AUTH-013",
+      "blockedBy": "Re-running the real Google sign-in entrypoint after creating namespace-scoped existing accounts produced the same Google OAuth error page before any Google account chooser or dashboard redirect. The existing-user linking/login path is therefore blocked by provider misconfiguration rather than by in-app account state."
+    },
+    {
+      "id": "VAL-CROSS-015",
+      "blockedBy": "The central audit page now works for organisation create/update entries, but the real UI still lacks accessible care-significant create/update/delete surfaces, so the assertion cannot be fully verified against persons, care plans, or daily notes."
+    }
+  ],
+  "appliedUpdates": [
+    {
+      "target": "user-testing.md",
+      "description": "Documented a reliable verification-link fallback: when browser automation hits a transient redirect error, reuse the tokenized /api/auth/verify-email endpoint or continue from the final redirected login success banner.",
+      "source": "flow-report"
+    },
+    {
+      "target": "user-testing.md",
+      "description": "Updated the runtime observations to reflect that the earlier audit_logs.ip_address schema mismatch is no longer blocking the foundation rerun surfaces; the remaining audit limitation is missing care-significant mutation UI/routes.",
+      "source": "flow-report"
+    }
+  ],
+  "previousRound": ".factory/validation/foundation/user-testing/synthesis.round1.json"
+}
