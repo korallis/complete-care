@@ -40,4 +40,6 @@ export * from './care-packages';
 export * from './clinical-alerts';
 export * from './rota';
 
+export * from './safeguarding';
+
 export * from './relations';

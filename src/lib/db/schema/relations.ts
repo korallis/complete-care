@@ -34,6 +34,7 @@ import { carePackages, visitTypes, scheduledVisits } from './care-packages';
 import { clinicalAlerts, personAlertThresholds } from './clinical-alerts';
 import { lacRecords, placementPlans, lacStatusChanges } from './lac';
 import { hospitalAdmissions, visitCancellations } from './rota';
+import { safeguardingConcerns, safeguardingReferrals } from './safeguarding';
 
 export const organisationsRelations = relations(organisations, ({ many }) => ({
   memberships: many(memberships),
@@ -88,6 +89,8 @@ export const organisationsRelations = relations(organisations, ({ many }) => ({
   lacStatusChanges: many(lacStatusChanges),
   hospitalAdmissions: many(hospitalAdmissions),
   visitCancellations: many(visitCancellations),
+  safeguardingConcerns: many(safeguardingConcerns),
+  safeguardingReferrals: many(safeguardingReferrals),
 }));
 
 export const usersRelations = relations(users, ({ many }) => ({
@@ -186,6 +189,7 @@ export const personsRelations = relations(persons, ({ one, many }) => ({
   lacRecords: many(lacRecords),
   placementPlans: many(placementPlans),
   hospitalAdmissions: many(hospitalAdmissions),
+  safeguardingConcerns: many(safeguardingConcerns),
 }));
 
 export const staffProfilesRelations = relations(staffProfiles, ({ one, many }) => ({
@@ -919,6 +923,41 @@ export const visitCancellationsRelations = relations(visitCancellations, ({ one 
   }),
   cancelledBy: one(users, {
     fields: [visitCancellations.cancelledById],
+    references: [users.id],
+  }),
+}));
+
+// ---------------------------------------------------------------------------
+// Safeguarding relations
+// ---------------------------------------------------------------------------
+
+export const safeguardingConcernsRelations = relations(safeguardingConcerns, ({ one, many }) => ({
+  organisation: one(organisations, {
+    fields: [safeguardingConcerns.organisationId],
+    references: [organisations.id],
+  }),
+  person: one(persons, {
+    fields: [safeguardingConcerns.personId],
+    references: [persons.id],
+  }),
+  raisedBy: one(users, {
+    fields: [safeguardingConcerns.raisedById],
+    references: [users.id],
+  }),
+  referrals: many(safeguardingReferrals),
+}));
+
+export const safeguardingReferralsRelations = relations(safeguardingReferrals, ({ one }) => ({
+  organisation: one(organisations, {
+    fields: [safeguardingReferrals.organisationId],
+    references: [organisations.id],
+  }),
+  concern: one(safeguardingConcerns, {
+    fields: [safeguardingReferrals.concernId],
+    references: [safeguardingConcerns.id],
+  }),
+  madeBy: one(users, {
+    fields: [safeguardingReferrals.madeById],
     references: [users.id],
   }),
 }));
