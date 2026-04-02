@@ -40,6 +40,11 @@ import { cdRegisters, cdRegisterEntries, transdermalPatches, cdStockReconciliati
 import { pbsPlans, abcIncidents, restrictivePractices } from './pbs';
 import { mcaAssessments, bestInterestDecisions, lpaAdrtRecords, dolsApplications, dolsRestrictions } from './mca-dols';
 import { shiftPatterns, rotaPeriods, shiftAssignments, conflictOverrides } from './shift-patterns';
+import { referrals, referralTransitions, matchingAssessments, admissionChecklistItems } from './admissions';
+import { philomenaProfiles, missingEpisodes, missingEpisodeTimeline, returnHomeInterviews } from './missing-from-care';
+import { approvedContacts, contactSchedules, contactRecords } from './contacts';
+import { goals, goalReviews, skillDomains, skills, skillAssessments, communityAccess, supportHours } from './outcomes';
+import { weightSchedules, weightRecords, waterlowAssessments, wounds, woundAssessments } from './weight-wounds';
 
 export const organisationsRelations = relations(organisations, ({ many }) => ({
   memberships: many(memberships),
@@ -120,6 +125,28 @@ export const organisationsRelations = relations(organisations, ({ many }) => ({
   rotaPeriods: many(rotaPeriods),
   shiftAssignments: many(shiftAssignments),
   conflictOverrides: many(conflictOverrides),
+  referrals: many(referrals),
+  referralTransitions: many(referralTransitions),
+  matchingAssessments: many(matchingAssessments),
+  admissionChecklistItems: many(admissionChecklistItems),
+  philomenaProfiles: many(philomenaProfiles),
+  missingEpisodes: many(missingEpisodes),
+  returnHomeInterviews: many(returnHomeInterviews),
+  approvedContacts: many(approvedContacts),
+  contactSchedules: many(contactSchedules),
+  contactRecords: many(contactRecords),
+  goals: many(goals),
+  goalReviews: many(goalReviews),
+  skillDomains: many(skillDomains),
+  skills: many(skills),
+  skillAssessments: many(skillAssessments),
+  communityAccess: many(communityAccess),
+  supportHours: many(supportHours),
+  weightSchedules: many(weightSchedules),
+  weightRecords: many(weightRecords),
+  waterlowAssessments: many(waterlowAssessments),
+  wounds: many(wounds),
+  woundAssessments: many(woundAssessments),
 }));
 
 export const usersRelations = relations(users, ({ many }) => ({
@@ -227,6 +254,19 @@ export const personsRelations = relations(persons, ({ one, many }) => ({
   lpaAdrtRecords: many(lpaAdrtRecords),
   dolsApplications: many(dolsApplications),
   dolsRestrictions: many(dolsRestrictions),
+  philomenaProfiles: many(philomenaProfiles),
+  missingEpisodes: many(missingEpisodes),
+  returnHomeInterviews: many(returnHomeInterviews),
+  approvedContacts: many(approvedContacts),
+  contactRecords: many(contactRecords),
+  goals: many(goals),
+  skillAssessments: many(skillAssessments),
+  communityAccess: many(communityAccess),
+  supportHours: many(supportHours),
+  weightSchedules: many(weightSchedules),
+  weightRecords: many(weightRecords),
+  waterlowAssessments: many(waterlowAssessments),
+  wounds: many(wounds),
 }));
 
 export const staffProfilesRelations = relations(staffProfiles, ({ one, many }) => ({
@@ -1328,4 +1368,147 @@ export const conflictOverridesRelations = relations(conflictOverrides, ({ one })
     fields: [conflictOverrides.overriddenBy],
     references: [users.id],
   }),
+}));
+
+// ---------------------------------------------------------------------------
+// Admissions/Referrals relations
+// ---------------------------------------------------------------------------
+
+export const referralsRelations = relations(referrals, ({ one, many }) => ({
+  organisation: one(organisations, { fields: [referrals.organisationId], references: [organisations.id] }),
+  transitions: many(referralTransitions),
+  assessments: many(matchingAssessments),
+  checklistItems: many(admissionChecklistItems),
+}));
+
+export const referralTransitionsRelations = relations(referralTransitions, ({ one }) => ({
+  organisation: one(organisations, { fields: [referralTransitions.organisationId], references: [organisations.id] }),
+  referral: one(referrals, { fields: [referralTransitions.referralId], references: [referrals.id] }),
+}));
+
+export const matchingAssessmentsRelations = relations(matchingAssessments, ({ one }) => ({
+  organisation: one(organisations, { fields: [matchingAssessments.organisationId], references: [organisations.id] }),
+  referral: one(referrals, { fields: [matchingAssessments.referralId], references: [referrals.id] }),
+}));
+
+export const admissionChecklistItemsRelations = relations(admissionChecklistItems, ({ one }) => ({
+  organisation: one(organisations, { fields: [admissionChecklistItems.organisationId], references: [organisations.id] }),
+  referral: one(referrals, { fields: [admissionChecklistItems.referralId], references: [referrals.id] }),
+}));
+
+// ---------------------------------------------------------------------------
+// Missing from Care relations
+// ---------------------------------------------------------------------------
+
+export const philomenaProfilesRelations = relations(philomenaProfiles, ({ one }) => ({
+  organisation: one(organisations, { fields: [philomenaProfiles.organisationId], references: [organisations.id] }),
+  person: one(persons, { fields: [philomenaProfiles.personId], references: [persons.id] }),
+}));
+
+export const missingEpisodesRelations = relations(missingEpisodes, ({ one, many }) => ({
+  organisation: one(organisations, { fields: [missingEpisodes.organisationId], references: [organisations.id] }),
+  person: one(persons, { fields: [missingEpisodes.personId], references: [persons.id] }),
+  timeline: many(missingEpisodeTimeline),
+  rhi: many(returnHomeInterviews),
+}));
+
+export const missingEpisodeTimelineRelations = relations(missingEpisodeTimeline, ({ one }) => ({
+  organisation: one(organisations, { fields: [missingEpisodeTimeline.organisationId], references: [organisations.id] }),
+  episode: one(missingEpisodes, { fields: [missingEpisodeTimeline.episodeId], references: [missingEpisodes.id] }),
+}));
+
+export const returnHomeInterviewsRelations = relations(returnHomeInterviews, ({ one }) => ({
+  organisation: one(organisations, { fields: [returnHomeInterviews.organisationId], references: [organisations.id] }),
+  person: one(persons, { fields: [returnHomeInterviews.personId], references: [persons.id] }),
+  episode: one(missingEpisodes, { fields: [returnHomeInterviews.episodeId], references: [missingEpisodes.id] }),
+}));
+
+// ---------------------------------------------------------------------------
+// Contact Management relations
+// ---------------------------------------------------------------------------
+
+export const approvedContactsRelations = relations(approvedContacts, ({ one }) => ({
+  organisation: one(organisations, { fields: [approvedContacts.organisationId], references: [organisations.id] }),
+  person: one(persons, { fields: [approvedContacts.personId], references: [persons.id] }),
+}));
+
+export const contactSchedulesRelations = relations(contactSchedules, ({ one }) => ({
+  organisation: one(organisations, { fields: [contactSchedules.organisationId], references: [organisations.id] }),
+  person: one(persons, { fields: [contactSchedules.personId], references: [persons.id] }),
+}));
+
+export const contactRecordsRelations = relations(contactRecords, ({ one }) => ({
+  organisation: one(organisations, { fields: [contactRecords.organisationId], references: [organisations.id] }),
+  person: one(persons, { fields: [contactRecords.personId], references: [persons.id] }),
+}));
+
+// ---------------------------------------------------------------------------
+// Outcomes / Skills / Goals relations
+// ---------------------------------------------------------------------------
+
+export const goalsRelations = relations(goals, ({ one, many }) => ({
+  organisation: one(organisations, { fields: [goals.organisationId], references: [organisations.id] }),
+  person: one(persons, { fields: [goals.personId], references: [persons.id] }),
+  reviews: many(goalReviews),
+}));
+
+export const goalReviewsRelations = relations(goalReviews, ({ one }) => ({
+  organisation: one(organisations, { fields: [goalReviews.organisationId], references: [organisations.id] }),
+  goal: one(goals, { fields: [goalReviews.goalId], references: [goals.id] }),
+}));
+
+export const skillDomainsRelations = relations(skillDomains, ({ one, many }) => ({
+  organisation: one(organisations, { fields: [skillDomains.organisationId], references: [organisations.id] }),
+  skills: many(skills),
+}));
+
+export const skillsRelations = relations(skills, ({ one, many }) => ({
+  domain: one(skillDomains, { fields: [skills.domainId], references: [skillDomains.id] }),
+  assessments: many(skillAssessments),
+}));
+
+export const skillAssessmentsRelations = relations(skillAssessments, ({ one }) => ({
+  organisation: one(organisations, { fields: [skillAssessments.organisationId], references: [organisations.id] }),
+  person: one(persons, { fields: [skillAssessments.personId], references: [persons.id] }),
+  skill: one(skills, { fields: [skillAssessments.skillId], references: [skills.id] }),
+}));
+
+export const communityAccessRelations = relations(communityAccess, ({ one }) => ({
+  organisation: one(organisations, { fields: [communityAccess.organisationId], references: [organisations.id] }),
+  person: one(persons, { fields: [communityAccess.personId], references: [persons.id] }),
+}));
+
+export const supportHoursRelations = relations(supportHours, ({ one }) => ({
+  organisation: one(organisations, { fields: [supportHours.organisationId], references: [organisations.id] }),
+  person: one(persons, { fields: [supportHours.personId], references: [persons.id] }),
+}));
+
+// ---------------------------------------------------------------------------
+// Weight / Wound relations
+// ---------------------------------------------------------------------------
+
+export const weightSchedulesRelations = relations(weightSchedules, ({ one }) => ({
+  organisation: one(organisations, { fields: [weightSchedules.organisationId], references: [organisations.id] }),
+  person: one(persons, { fields: [weightSchedules.personId], references: [persons.id] }),
+}));
+
+export const weightRecordsRelations = relations(weightRecords, ({ one }) => ({
+  organisation: one(organisations, { fields: [weightRecords.organisationId], references: [organisations.id] }),
+  person: one(persons, { fields: [weightRecords.personId], references: [persons.id] }),
+}));
+
+export const waterlowAssessmentsRelations = relations(waterlowAssessments, ({ one }) => ({
+  organisation: one(organisations, { fields: [waterlowAssessments.organisationId], references: [organisations.id] }),
+  person: one(persons, { fields: [waterlowAssessments.personId], references: [persons.id] }),
+}));
+
+export const woundsRelations = relations(wounds, ({ one, many }) => ({
+  organisation: one(organisations, { fields: [wounds.organisationId], references: [organisations.id] }),
+  person: one(persons, { fields: [wounds.personId], references: [persons.id] }),
+  assessments: many(woundAssessments),
+}));
+
+export const woundAssessmentsRelations = relations(woundAssessments, ({ one }) => ({
+  organisation: one(organisations, { fields: [woundAssessments.organisationId], references: [organisations.id] }),
+  wound: one(wounds, { fields: [woundAssessments.woundId], references: [wounds.id] }),
 }));

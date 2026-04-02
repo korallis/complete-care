@@ -45,5 +45,10 @@ export * from './pbs';
 export * from './mca-dols';
 export * from './shift-patterns';
 export * from './controlled-drugs';
+export * from './admissions';
+export * from './missing-from-care';
+export * from './contacts';
+export * from './outcomes';
+export * from './weight-wounds';
 
 export * from './relations';
