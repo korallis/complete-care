@@ -1,11 +1,11 @@
 'use server';
 
-import { and, asc, eq, gte, inArray, isNotNull, lte } from 'drizzle-orm';
+import { and, asc, eq, gte, inArray, isNotNull, lte, or } from 'drizzle-orm';
 import { db } from '@/lib/db';
 import { payrollExports, shiftAssignments, shiftPatterns, timesheets, users } from '@/lib/db/schema';
 import { auditLog } from '@/lib/audit';
 import { requirePermission } from '@/lib/rbac';
-import type { ActionResult } from '@/types/index';
+import type { ActionResult } from '@/types';
 import {
   calculateActualHours,
   generatePayroll,
@@ -131,15 +131,26 @@ export async function listTimesheetsForPeriod({
     conditions.push(eq(timesheets.staffId, staffId));
   }
 
-  return db
-    .select({
-      ...timesheets,
-      staffName: users.name,
-    })
+  const rows = await db
+    .select()
     .from(timesheets)
-    .leftJoin(users, eq(timesheets.staffId, users.id))
     .where(and(...conditions))
     .orderBy(asc(timesheets.shiftDate), asc(timesheets.scheduledStart));
+
+  const staffIds = [...new Set(rows.map((row) => row.staffId))];
+  const staffRows = staffIds.length > 0
+    ? await db
+        .select({ id: users.id, name: users.name })
+        .from(users)
+        .where(inArray(users.id, staffIds))
+    : [];
+
+  const staffNameMap = new Map(staffRows.map((row) => [row.id, row.name]));
+
+  return rows.map((row) => ({
+    ...row,
+    staffName: staffNameMap.get(row.staffId) ?? null,
+  }));
 }
 
 export async function getPayrollSummaryForPeriod({
@@ -181,7 +192,7 @@ export async function generateTimesheetsForPeriod({
         and(
           eq(shiftAssignments.organisationId, orgId),
           isNotNull(shiftAssignments.staffId),
-          inArray(shiftAssignments.status, ASSIGNABLE_SHIFT_STATUSES),
+          or(...ASSIGNABLE_SHIFT_STATUSES.map((status) => eq(shiftAssignments.status, status))),
           gte(shiftAssignments.shiftDate, startsAt),
           lte(shiftAssignments.shiftDate, endsAt),
         ),
@@ -292,7 +303,7 @@ export async function approveTimesheetsForPeriod({
           eq(timesheets.organisationId, orgId),
           gte(timesheets.shiftDate, startDate),
           lte(timesheets.shiftDate, endDate),
-          inArray(timesheets.status, APPROVABLE_TIMESHEET_STATUSES),
+          or(...APPROVABLE_TIMESHEET_STATUSES.map((status) => eq(timesheets.status, status))),
         ),
       )
       .returning({ id: timesheets.id });
