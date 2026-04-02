@@ -60,5 +60,10 @@ export * from './scheduling';
 export * from './timesheets';
 export * from './consent';
 export * from './visit-tasks';
+export * from './invoicing';
+export * from './reports';
+export * from './personal-budgets';
+export * from './reg45';
+export * from './eol-care';
 
 export * from './relations';

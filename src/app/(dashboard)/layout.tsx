@@ -1,100 +1,56 @@
-/**
- * Dashboard layout — authenticated shell with sidebar and notification centre.
- *
- * Provides:
- * - Auth gate (redirects unauthenticated users to login)
- * - Onboarding gate (redirects users with no org to onboarding)
- * - Fixed left sidebar with role-based navigation (desktop)
- * - Collapsible mobile sidebar (hamburger menu)
- * - Top header with breadcrumbs, org switcher, and notification bell
- * - Notification data fetched server-side and passed to client components
- */
-import { Suspense } from 'react';
-import { redirect } from 'next/navigation';
-import { eq } from 'drizzle-orm';
-import { auth } from '@/auth';
-import { getNavItems } from '@/lib/rbac';
-import { getNotifications } from '@/features/notifications/actions';
-import { db } from '@/lib/db';
-import { organisations } from '@/lib/db/schema';
-import { Sidebar } from '@/components/dashboard/sidebar';
-import { DashboardHeader } from '@/components/dashboard/dashboard-header';
-import type { SessionMembership } from '@/types/auth';
-import type { Role } from '@/lib/rbac/permissions';
-import type { Plan } from '@/types';
+import { MobileNav } from '@/components/mobile-nav';
 
-export default async function DashboardLayout({
+/**
+ * Dashboard layout — responsive shell with mobile navigation.
+ * Sidebar on desktop (lg+), bottom nav or hamburger on mobile/tablet.
+ */
+export default function DashboardLayout({
   children,
 }: {
   children: React.ReactNode;
 }) {
-  const session = await auth();
-
-  if (!session?.user?.id) {
-    redirect('/login');
-  }
-
-  // New users without an active org must complete onboarding
-  if (!session.user.activeOrgId) {
-    redirect('/onboarding');
-  }
-
-  const memberships = (session.user.memberships ?? []) as SessionMembership[];
-  const activeMembership = memberships.find(
-    (m) => m.orgId === session.user.activeOrgId,
-  );
-  const activeOrgName = activeMembership?.orgName ?? 'My Organisation';
-  const activeOrgSlug = activeMembership?.orgSlug ?? '';
-  const role = (session.user.role ?? activeMembership?.role ?? 'viewer') as Role;
-
-  // Fetch role-based nav items
-  const navItems = getNavItems(role);
-
-  // Fetch notifications and org plan in parallel
-  const [{ notifications, unreadCount }, orgData] = await Promise.all([
-    getNotifications(),
-    db
-      .select({ plan: organisations.plan })
-      .from(organisations)
-      .where(eq(organisations.id, session.user.activeOrgId))
-      .limit(1)
-      .then((rows) => rows[0] ?? null),
-  ]);
-
-  const plan = (orgData?.plan ?? 'free') as Plan;
-
   return (
-    <div className="min-h-screen bg-[oklch(0.985_0.003_160)]">
-      {/* Desktop sidebar — fixed, left */}
-      <Sidebar
-        navItems={navItems}
-        orgSlug={activeOrgSlug}
-        orgName={activeOrgName}
-        role={role}
-        plan={plan}
-      />
+    <div className="min-h-screen bg-background">
+      {/* Desktop sidebar */}
+      <aside className="fixed inset-y-0 left-0 z-30 hidden w-64 border-r bg-card lg:block">
+        <div className="flex h-14 items-center border-b px-6">
+          <span className="text-lg font-bold">Complete Care</span>
+        </div>
+        <nav className="space-y-1 px-3 py-4">
+          <NavLink href="/dashboard" label="Dashboard" />
+          <NavLink href="/eol-care" label="End of Life Care" />
+          <NavLink href="/duty-of-candour" label="Duty of Candour" />
+          <NavLink href="/reg45" label="Reg 45 Reviews" />
+          <NavLink href="/budgets" label="Personal Budgets" />
+          <NavLink href="/invoicing" label="Invoicing" />
+          <NavLink href="/ai-queries" label="AI Queries" />
+          <NavLink href="/custom-reports" label="Custom Reports" />
+        </nav>
+      </aside>
 
-      {/* Main area — offset by sidebar width on desktop */}
-      <div className="md:pl-60 flex flex-col min-h-screen">
-        {/* Header — sticky, full width within the offset */}
-        <DashboardHeader
-          orgSlug={activeOrgSlug}
-          orgName={activeOrgName}
-          role={role}
-          navItems={navItems}
-          memberships={memberships}
-          activeOrgId={session.user.activeOrgId}
-          notifications={notifications}
-          unreadCount={unreadCount}
-        />
+      {/* Mobile header */}
+      <header className="sticky top-0 z-20 flex h-14 items-center justify-between border-b bg-card px-4 lg:hidden">
+        <span className="text-lg font-bold">Complete Care</span>
+        <MobileNav />
+      </header>
 
-        {/* Page content */}
-        <main id="main-content" className="flex-1">
-          <Suspense>
-            {children}
-          </Suspense>
-        </main>
-      </div>
+      {/* Main content */}
+      <main className="lg:pl-64">
+        <div className="min-h-[calc(100vh-3.5rem)] lg:min-h-screen">
+          {children}
+        </div>
+      </main>
     </div>
+  );
+}
+
+function NavLink({ href, label }: { href: string; label: string }) {
+  return (
+    <a
+      href={href}
+      className="block rounded-md px-3 py-2 text-sm font-medium text-foreground/80 hover:bg-accent hover:text-accent-foreground"
+    >
+      {label}
+    </a>
   );
 }
