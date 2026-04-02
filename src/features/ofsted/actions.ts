@@ -195,6 +195,28 @@ export async function getStandardsWithCounts(): Promise<StandardWithCounts[]> {
 }
 
 /**
+ * Get a single standard for the authenticated organisation.
+ */
+export async function getStandardById(
+  standardId: string,
+): Promise<OfstedStandard | null> {
+  const { orgId } = await requirePermission('read', 'ofsted');
+
+  const [standard] = await db
+    .select()
+    .from(ofstedStandards)
+    .where(
+      and(
+        eq(ofstedStandards.id, standardId),
+        eq(ofstedStandards.organisationId, orgId),
+      ),
+    )
+    .limit(1);
+
+  return standard ?? null;
+}
+
+/**
  * Get overall compliance dashboard data.
  */
 export async function getComplianceDashboard(): Promise<ComplianceDashboardData> {

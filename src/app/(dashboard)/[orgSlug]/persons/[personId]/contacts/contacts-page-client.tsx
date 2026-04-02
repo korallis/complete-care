@@ -280,7 +280,10 @@ export function ContactsPageClient({
               onCancel={() => setShowAddContact(false)}
             />
           )}
-          <ApprovedContactsTable contacts={contacts} />
+          <ApprovedContactsTable
+            contacts={contacts}
+            onSchedule={(contact) => openScheduleForm(contact.id)}
+          />
         </section>
       )}
 
