@@ -204,6 +204,7 @@ export async function assignInvestigator(
   investigatorId: string,
   _userId: string,
 ) {
+  void _userId;
   const { orgId, userId } = await requirePermission('update', 'medications');
   assertBelongsToOrg(organisationId, orgId);
 
@@ -528,6 +529,7 @@ export async function deactivateHomelyRemedyProtocol(
   protocolId: string,
   _userId: string,
 ) {
+  void _userId;
   const { orgId, userId } = await requirePermission('update', 'medications');
   assertBelongsToOrg(organisationId, orgId);
 
