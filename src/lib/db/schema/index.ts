@@ -65,5 +65,7 @@ export * from './reports';
 export * from './personal-budgets';
 export * from './reg45';
 export * from './eol-care';
+export * from './evv';
+export * from './keyworker';
 
 export * from './relations';
