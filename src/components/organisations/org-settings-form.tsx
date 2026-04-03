@@ -9,7 +9,7 @@ import { updateOrgSettings } from '@/features/organisations/actions';
 
 const CARE_DOMAINS = [
   {
-    id: 'domiciliary',
+    id: 'domiciliary_care',
     label: 'Domiciliary Care',
     description: 'Home visits, scheduling, EVV',
   },
@@ -19,7 +19,7 @@ const CARE_DOMAINS = [
     description: 'PBS plans, outcomes tracking',
   },
   {
-    id: 'childrens_residential',
+    id: 'childrens_homes',
     label: "Children's Residential",
     description: 'Ofsted compliance, safeguarding',
   },

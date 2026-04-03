@@ -5,7 +5,7 @@
  *
  * Steps:
  * 1. Create organisation (name + auto-generated URL slug)
- * 2. Select care domains (domiciliary, supported_living, childrens_residential)
+ * 2. Select care domains (domiciliary_care, supported_living, childrens_homes)
  * 3. Invite team members (bulk email + role — optional, skippable)
  *
  * On completion (step 3 submit or skip), calls createOrganisationWithInvites,
@@ -42,7 +42,7 @@ const ORG_TYPES = [
 
 const CARE_DOMAINS = [
   {
-    id: 'domiciliary',
+    id: 'domiciliary_care',
     label: 'Domiciliary Care',
     description: 'Home visits, scheduling, electronic visit verification',
     icon: (
@@ -84,7 +84,7 @@ const CARE_DOMAINS = [
     ),
   },
   {
-    id: 'childrens_residential',
+    id: 'childrens_homes',
     label: "Children's Residential Homes",
     description: 'Ofsted compliance, safeguarding, LAC documentation',
     icon: (

@@ -19,6 +19,7 @@ import { and, eq, desc } from 'drizzle-orm';
 import { encode } from '@auth/core/jwt';
 import { cookies } from 'next/headers';
 import { db } from '@/lib/db';
+import { getAuthSessionCookieName, shouldUseSecureAuthCookies } from '@/lib/auth/cookie-settings';
 import { users, loginAttempts, memberships, organisations } from '@/lib/db/schema';
 import {
   loginSchema,
@@ -27,11 +28,6 @@ import {
   LOCKOUT_DURATION_MS,
 } from '@/lib/auth/validation';
 import type { Role } from '@/lib/rbac/permissions';
-
-const COOKIE_NAME =
-  process.env.NODE_ENV === 'production'
-    ? '__Secure-authjs.session-token'
-    : 'authjs.session-token';
 
 const SESSION_MAX_AGE = 30 * 24 * 60 * 60; // 30 days
 
@@ -53,6 +49,8 @@ export async function POST(request: NextRequest) {
   }
 
   const { email, password } = parsed.data;
+  const secureCookies = shouldUseSecureAuthCookies(request);
+  const cookieName = getAuthSessionCookieName(request);
   const normalizedEmail = email.toLowerCase().trim();
 
   // Check rate limiting
@@ -159,15 +157,15 @@ export async function POST(request: NextRequest) {
   const sessionToken = await encode({
     token: tokenPayload,
     secret,
-    salt: COOKIE_NAME,
+    salt: cookieName,
     maxAge: SESSION_MAX_AGE,
   });
 
   // Set session cookie
   const cookieStore = await cookies();
-  cookieStore.set(COOKIE_NAME, sessionToken, {
+  cookieStore.set(cookieName, sessionToken, {
     httpOnly: true,
-    secure: process.env.NODE_ENV === 'production',
+    secure: secureCookies,
     sameSite: 'lax',
     path: '/',
     maxAge: SESSION_MAX_AGE,
@@ -178,7 +176,7 @@ export async function POST(request: NextRequest) {
   // show "your session expired" vs "please log in for the first time."
   cookieStore.set('session_hint', '1', {
     httpOnly: true,
-    secure: process.env.NODE_ENV === 'production',
+    secure: secureCookies,
     sameSite: 'lax',
     path: '/',
     maxAge: 7 * 24 * 60 * 60, // 7 days

@@ -5,19 +5,32 @@
  * Returns 200 on success.
  */
 
-import { NextResponse } from 'next/server';
+import { NextRequest, NextResponse } from 'next/server';
 import { cookies } from 'next/headers';
+import { getAuthSessionCookieName, shouldUseSecureAuthCookies } from '@/lib/auth/cookie-settings';
 
-const COOKIE_NAME =
-  process.env.NODE_ENV === 'production'
-    ? '__Secure-authjs.session-token'
-    : 'authjs.session-token';
-
-export async function POST() {
+export async function POST(request: NextRequest) {
   const cookieStore = await cookies();
-  cookieStore.delete(COOKIE_NAME);
+  const cookieName = getAuthSessionCookieName(request);
+  const secureCookies = shouldUseSecureAuthCookies(request);
+
+  cookieStore.set(cookieName, '', {
+    httpOnly: true,
+    secure: secureCookies,
+    sameSite: 'lax',
+    path: '/',
+    expires: new Date(0),
+    maxAge: 0,
+  });
   // Clear session_hint so the next login is not treated as session expiry
-  cookieStore.delete('session_hint');
+  cookieStore.set('session_hint', '', {
+    httpOnly: true,
+    secure: secureCookies,
+    sameSite: 'lax',
+    path: '/',
+    expires: new Date(0),
+    maxAge: 0,
+  });
 
   return NextResponse.json({ message: 'Logged out successfully' }, { status: 200 });
 }

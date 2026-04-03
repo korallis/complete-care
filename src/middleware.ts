@@ -18,6 +18,7 @@
 import NextAuth from 'next-auth';
 import { NextResponse } from 'next/server';
 import { authConfig } from './auth.config';
+import { shouldUseSecureAuthCookies } from '@/lib/auth/cookie-settings';
 
 const { auth } = NextAuth(authConfig);
 
@@ -48,7 +49,7 @@ export default auth((req) => {
     // This cookie outlives the inactivity timeout so we can detect expiry.
     response.cookies.set('session_hint', '1', {
       httpOnly: true,
-      secure: process.env.NODE_ENV === 'production',
+      secure: shouldUseSecureAuthCookies(req),
       sameSite: 'lax',
       path: '/',
       maxAge: SESSION_HINT_MAX_AGE,

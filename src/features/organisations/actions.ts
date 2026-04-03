@@ -58,6 +58,27 @@ const ORG_TYPE_VALUES = [
   'other',
 ] as const;
 
+
+const CARE_DOMAIN_VALUES = [
+  'domiciliary_care',
+  'supported_living',
+  'childrens_homes',
+  'domiciliary',
+  'childrens_residential',
+] as const;
+
+const CARE_DOMAIN_CANONICAL_MAP = {
+  domiciliary: 'domiciliary_care',
+  domiciliary_care: 'domiciliary_care',
+  supported_living: 'supported_living',
+  childrens_residential: 'childrens_homes',
+  childrens_homes: 'childrens_homes',
+} as const;
+
+function normalizeCareDomains(domains: readonly string[]) {
+  return [...new Set(domains.map((domain) => CARE_DOMAIN_CANONICAL_MAP[domain as keyof typeof CARE_DOMAIN_CANONICAL_MAP] ?? domain))];
+}
+
 const createOrganisationSchema = z.object({
   name: z
     .string()
@@ -74,7 +95,7 @@ const createOrganisationSchema = z.object({
   orgType: z.enum(ORG_TYPE_VALUES).optional(),
   domains: z
     .array(
-      z.enum(['domiciliary', 'supported_living', 'childrens_residential']),
+      z.enum(CARE_DOMAIN_VALUES),
     )
     .min(1, 'At least one care domain must be selected'),
 });
@@ -94,7 +115,7 @@ const updateOrgSettingsSchema = z.object({
     ),
   domains: z
     .array(
-      z.enum(['domiciliary', 'supported_living', 'childrens_residential']),
+      z.enum(CARE_DOMAIN_VALUES),
     )
     .min(1, 'At least one care domain must be selected'),
 });
@@ -151,7 +172,8 @@ export async function createOrganisation(
     };
   }
 
-  const { name, slug, orgType, domains } = parsed.data;
+  const { name, slug, orgType } = parsed.data;
+  const domains = normalizeCareDomains(parsed.data.domains);
 
   // Check slug uniqueness
   const [existing] = await db
@@ -228,7 +250,7 @@ const createOrgWithInvitesSchema = z.object({
   orgType: z.enum(ORG_TYPE_VALUES).optional(),
   domains: z
     .array(
-      z.enum(['domiciliary', 'supported_living', 'childrens_residential']),
+      z.enum(CARE_DOMAIN_VALUES),
     )
     .min(1, 'At least one care domain must be selected'),
   invites: z
@@ -454,7 +476,8 @@ export async function updateOrgSettings(
     };
   }
 
-  const { name, slug, domains } = parsed.data;
+  const { name, slug } = parsed.data;
+  const domains = normalizeCareDomains(parsed.data.domains);
 
   // Fetch current org to capture before state for audit
   const [currentOrg] = await db

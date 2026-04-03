@@ -71,6 +71,16 @@ type AssessmentSkills = NonNullable<
   typeof independentLivingAssessments.$inferInsert['skills']
 >;
 
+function isOptionalSchemaDrift(error: unknown): boolean {
+  return (
+    !!error &&
+    typeof error === 'object' &&
+    'code' in error &&
+    (error as { code?: string }).code !== undefined &&
+    ['42P01', '42703'].includes((error as { code?: string }).code ?? '')
+  );
+}
+
 async function getOrgSlug(orgId: string): Promise<string | null> {
   const [org] = await db
     .select({ slug: organisations.slug })
@@ -177,7 +187,8 @@ export async function getReg44Overview(): Promise<Reg44Overview> {
 export async function getReg44AutoSummary() {
   const { orgId } = await requirePermission('read', 'ofsted');
 
-  const [visits, meetingsCount, complaintsCount, eventsCount, overdueRecommendations] = await Promise.all([
+  try {
+    const [visits, meetingsCount, complaintsCount, eventsCount, overdueRecommendations] = await Promise.all([
     db.select({ count: count() }).from(reg44Visits).where(eq(reg44Visits.organisationId, orgId)),
     db.select({ count: count() }).from(meetings).where(eq(meetings.organisationId, orgId)),
     db.select({ count: count() }).from(complaints).where(eq(complaints.organisationId, orgId)),
@@ -193,12 +204,24 @@ export async function getReg44AutoSummary() {
       ),
   ]);
 
-  return {
-    qualityOfCare: `${visits[0]?.count ?? 0} Reg 44 visits logged with ${(meetingsCount[0]?.count ?? 0)} children’s meetings available for evidence.`,
-    viewsOfChildren: `${meetingsCount[0]?.count ?? 0} children’s meeting record(s) can inform the monthly report narrative.`,
-    complaintsAndConcerns: `${complaintsCount[0]?.count ?? 0} complaint record(s) and ${eventsCount[0]?.count ?? 0} notifiable event(s) are available for auto-summary.`,
-    recommendations: `${overdueRecommendations[0]?.count ?? 0} overdue recommendation(s) currently flagged.`,
-  };
+    return {
+      qualityOfCare: `${visits[0]?.count ?? 0} Reg 44 visits logged with ${(meetingsCount[0]?.count ?? 0)} children’s meetings available for evidence.`,
+      viewsOfChildren: `${meetingsCount[0]?.count ?? 0} children’s meeting record(s) can inform the monthly report narrative.`,
+      complaintsAndConcerns: `${complaintsCount[0]?.count ?? 0} complaint record(s) and ${eventsCount[0]?.count ?? 0} notifiable event(s) are available for auto-summary.`,
+      recommendations: `${overdueRecommendations[0]?.count ?? 0} overdue recommendation(s) currently flagged.`,
+    };
+  } catch (error) {
+    if (isOptionalSchemaDrift(error)) {
+      return {
+        qualityOfCare: 'Reg 44 visit evidence will populate once supporting monitoring tables are provisioned.',
+        viewsOfChildren: "Children's voice evidence will appear here when meetings and records are available.",
+        complaintsAndConcerns: 'Complaints and notifiable-event summaries are unavailable until optional safeguarding tables are synced.',
+        recommendations: 'Recommendation summaries will populate once related reporting data is available.',
+      };
+    }
+
+    throw error;
+  }
 }
 
 export async function listReg44Visits() {
@@ -1015,7 +1038,8 @@ export type TransitionPlanSummary = {
 export async function getTransitionDashboard() {
   const { orgId } = await requirePermission('read', 'care_plans');
 
-  const [plans, milestones, assessments, eligiblePeople] = await Promise.all([
+  try {
+    const [plans, milestones, assessments, eligiblePeople] = await Promise.all([
     db
       .select()
       .from(pathwayPlans)
@@ -1067,8 +1091,18 @@ export async function getTransitionDashboard() {
     });
   }
 
-  return {
-    plans: summaries,
-    eligiblePeople,
-  };
+    return {
+      plans: summaries,
+      eligiblePeople,
+    };
+  } catch (error) {
+    if (isOptionalSchemaDrift(error)) {
+      return {
+        plans: [],
+        eligiblePeople: [],
+      };
+    }
+
+    throw error;
+  }
 }

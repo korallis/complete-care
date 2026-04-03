@@ -5,8 +5,10 @@
  * Care domain types — determines which features and terminology are used
  */
 export type CareDomain =
+  | 'domiciliary_care'
   | 'domiciliary'
   | 'supported_living'
+  | 'childrens_homes'
   | 'childrens_residential';
 
 /**
