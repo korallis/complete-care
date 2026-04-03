@@ -69,7 +69,7 @@ function mapShiftType(shiftType: string, shiftDate: string): GeneratedShiftAssig
   return day === 0 || day === 6 ? 'weekend' : 'day';
 }
 
-export function deriveTimesheetPayRate(multiplier: string | number | null | undefined): number {
+function deriveTimesheetPayRate(multiplier: string | number | null | undefined): number {
   const parsedMultiplier = Number(multiplier ?? 1);
   if (!Number.isFinite(parsedMultiplier) || parsedMultiplier <= 0) {
     return DEFAULT_BASE_PAY_RATE;
@@ -78,7 +78,7 @@ export function deriveTimesheetPayRate(multiplier: string | number | null | unde
   return Math.round(DEFAULT_BASE_PAY_RATE * parsedMultiplier * 100) / 100;
 }
 
-export function buildPayrollExportFilename(startDate: string, endDate: string): string {
+function buildPayrollExportFilename(startDate: string, endDate: string): string {
   return `payroll-${startDate}-to-${endDate}.csv`;
 }
 

@@ -33,7 +33,7 @@ export default async function NewPpPlusPage({
         </p>
       </div>
 
-      <PpPlusFormWrapper orgSlug={orgSlug} personId={personId} />
+      <PpPlusFormWrapper personId={personId} />
     </div>
   );
 }
