@@ -4,18 +4,25 @@
  * RestraintList — displays restraint records for a child.
  */
 
+import { useState } from 'react';
 import Link from 'next/link';
+import { toast } from 'sonner';
 import type { Restraint } from '@/lib/db/schema';
 import {
   RESTRAINT_TECHNIQUE_LABELS,
   type RestraintTechnique,
 } from '../constants';
+import type { reviewRestraint, updateRestraint } from '../actions';
 
 type RestraintListProps = {
   restraints: Restraint[];
   orgSlug: string;
   personId: string;
   canCreate: boolean;
+  canUpdate: boolean;
+  canApprove: boolean;
+  onUpdateDebrief: typeof updateRestraint;
+  onReview: typeof reviewRestraint;
 };
 
 function formatDateTime(dateStr: string): string {
@@ -28,12 +35,30 @@ function formatDateTime(dateStr: string): string {
   });
 }
 
-function RestraintCard({ restraint }: { restraint: Restraint }) {
+function RestraintCard({
+  restraint,
+  canUpdate,
+  canApprove,
+  onSaveDebrief,
+  onSignOff,
+}: {
+  restraint: Restraint;
+  canUpdate: boolean;
+  canApprove: boolean;
+  onSaveDebrief: (restraintId: string, input: { childDebrief: string; staffDebrief: string }) => Promise<void>;
+  onSignOff: (restraintId: string, managementReview: string) => Promise<void>;
+}) {
   const techniqueLabel =
     RESTRAINT_TECHNIQUE_LABELS[restraint.technique as RestraintTechnique] ??
     restraint.technique;
 
-  const hasDebrief = restraint.childDebrief || restraint.staffDebrief;
+  const [childDebrief, setChildDebrief] = useState(restraint.childDebrief ?? '');
+  const [staffDebrief, setStaffDebrief] = useState(restraint.staffDebrief ?? '');
+  const [managementReview, setManagementReview] = useState('');
+  const [isSavingDebrief, setIsSavingDebrief] = useState(false);
+  const [isSavingReview, setIsSavingReview] = useState(false);
+
+  const hasDebrief = !!restraint.childDebrief?.trim() && !!restraint.staffDebrief?.trim();
   const hasReview = !!restraint.managementReview;
   const injuryCheck = restraint.injuryCheck as {
     childInjured?: boolean;
@@ -42,6 +67,31 @@ function RestraintCard({ restraint }: { restraint: Restraint }) {
   } | null;
   const anyInjury = injuryCheck?.childInjured || injuryCheck?.staffInjured;
   const medicalRequired = injuryCheck?.medicalAttentionRequired;
+  const canSubmitDebrief = childDebrief.trim().length > 0 && staffDebrief.trim().length > 0;
+
+  async function handleSaveDebrief() {
+    if (!canSubmitDebrief) return;
+    setIsSavingDebrief(true);
+    try {
+      await onSaveDebrief(restraint.id, {
+        childDebrief: childDebrief.trim(),
+        staffDebrief: staffDebrief.trim(),
+      });
+    } finally {
+      setIsSavingDebrief(false);
+    }
+  }
+
+  async function handleSignOff() {
+    if (!managementReview.trim()) return;
+    setIsSavingReview(true);
+    try {
+      await onSignOff(restraint.id, managementReview.trim());
+      setManagementReview('');
+    } finally {
+      setIsSavingReview(false);
+    }
+  }
 
   return (
     <div className="rounded-xl border border-[oklch(0.91_0.005_160)] bg-white p-5">
@@ -111,6 +161,100 @@ function RestraintCard({ restraint }: { restraint: Restraint }) {
                 </span>
               )}
             </div>
+
+            {(restraint.childDebrief || restraint.staffDebrief || restraint.managementReview) && (
+              <div className="mt-4 space-y-2 rounded-lg bg-[oklch(0.985_0.003_160)] p-3">
+                {restraint.childDebrief && (
+                  <p className="text-xs text-[oklch(0.5_0_0)]">
+                    <span className="font-medium text-[oklch(0.35_0.04_160)]">Child debrief:</span>{' '}
+                    {restraint.childDebrief}
+                  </p>
+                )}
+                {restraint.staffDebrief && (
+                  <p className="text-xs text-[oklch(0.5_0_0)]">
+                    <span className="font-medium text-[oklch(0.35_0.04_160)]">Staff debrief:</span>{' '}
+                    {restraint.staffDebrief}
+                  </p>
+                )}
+                {restraint.managementReview && (
+                  <p className="text-xs text-[oklch(0.5_0_0)]">
+                    <span className="font-medium text-[oklch(0.35_0.04_160)]">Manager sign-off:</span>{' '}
+                    {restraint.managementReview}
+                  </p>
+                )}
+              </div>
+            )}
+
+            {canUpdate && !hasDebrief && (
+              <div className="mt-4 space-y-3 rounded-lg border border-amber-200 bg-amber-50 p-4">
+                <div>
+                  <h3 className="text-sm font-semibold text-amber-900">Complete mandatory debrief</h3>
+                  <p className="text-xs text-amber-800">
+                    Record both child and staff debriefs before management sign-off.
+                  </p>
+                </div>
+                <div className="space-y-3">
+                  <div>
+                    <label className="mb-1 block text-xs font-medium text-amber-900">
+                      Child debrief
+                    </label>
+                    <textarea
+                      aria-label="Child debrief"
+                      value={childDebrief}
+                      onChange={(event) => setChildDebrief(event.target.value)}
+                      rows={2}
+                      className="block w-full rounded-lg border border-amber-200 bg-white px-3 py-2 text-sm text-[oklch(0.22_0.04_160)]"
+                    />
+                  </div>
+                  <div>
+                    <label className="mb-1 block text-xs font-medium text-amber-900">
+                      Staff debrief
+                    </label>
+                    <textarea
+                      aria-label="Staff debrief"
+                      value={staffDebrief}
+                      onChange={(event) => setStaffDebrief(event.target.value)}
+                      rows={2}
+                      className="block w-full rounded-lg border border-amber-200 bg-white px-3 py-2 text-sm text-[oklch(0.22_0.04_160)]"
+                    />
+                  </div>
+                </div>
+                <button
+                  type="button"
+                  disabled={!canSubmitDebrief || isSavingDebrief}
+                  onClick={() => void handleSaveDebrief()}
+                  className="rounded-md bg-amber-700 px-3 py-2 text-xs font-medium text-white disabled:opacity-50"
+                >
+                  {isSavingDebrief ? 'Saving…' : 'Save debrief'}
+                </button>
+              </div>
+            )}
+
+            {canApprove && hasDebrief && !hasReview && (
+              <div className="mt-4 space-y-3 rounded-lg border border-blue-200 bg-blue-50 p-4">
+                <div>
+                  <h3 className="text-sm font-semibold text-blue-900">Manager sign-off</h3>
+                  <p className="text-xs text-blue-800">
+                    Record the management review once both debriefs are complete.
+                  </p>
+                </div>
+                <textarea
+                  aria-label="Manager sign-off"
+                  value={managementReview}
+                  onChange={(event) => setManagementReview(event.target.value)}
+                  rows={3}
+                  className="block w-full rounded-lg border border-blue-200 bg-white px-3 py-2 text-sm text-[oklch(0.22_0.04_160)]"
+                />
+                <button
+                  type="button"
+                  disabled={!managementReview.trim() || isSavingReview}
+                  onClick={() => void handleSignOff()}
+                  className="rounded-md bg-blue-700 px-3 py-2 text-xs font-medium text-white disabled:opacity-50"
+                >
+                  {isSavingReview ? 'Saving…' : 'Record manager sign-off'}
+                </button>
+              </div>
+            )}
           </div>
         </div>
       </div>
@@ -119,11 +263,50 @@ function RestraintCard({ restraint }: { restraint: Restraint }) {
 }
 
 export function RestraintList({
-  restraints,
+  restraints: initialRestraints,
   orgSlug,
   personId,
   canCreate,
+  canUpdate,
+  canApprove,
+  onUpdateDebrief,
+  onReview,
 }: RestraintListProps) {
+  const [restraints, setRestraints] = useState(initialRestraints);
+
+  async function handleSaveDebrief(
+    restraintId: string,
+    input: { childDebrief: string; staffDebrief: string },
+  ) {
+    const result = await onUpdateDebrief(restraintId, input);
+    if (!result.success || !result.data) {
+      toast.error(!result.success ? result.error ?? 'Failed to save debrief' : 'Failed to save debrief');
+      return;
+    }
+
+    setRestraints((current) =>
+      current.map((item) => (item.id === restraintId ? result.data! : item)),
+    );
+    toast.success('Debrief saved');
+  }
+
+  async function handleSignOff(restraintId: string, managementReview: string) {
+    const result = await onReview(restraintId, managementReview);
+    if (!result.success || !result.data) {
+      toast.error(
+        !result.success
+          ? result.error ?? 'Failed to record manager sign-off'
+          : 'Failed to record manager sign-off',
+      );
+      return;
+    }
+
+    setRestraints((current) =>
+      current.map((item) => (item.id === restraintId ? result.data! : item)),
+    );
+    toast.success('Manager sign-off recorded');
+  }
+
   if (restraints.length === 0) {
     return (
       <div className="rounded-xl border border-dashed border-[oklch(0.88_0.005_160)] bg-[oklch(0.985_0.003_160)] p-8 text-center">
@@ -164,7 +347,14 @@ export function RestraintList({
   return (
     <div className="space-y-3">
       {restraints.map((r) => (
-        <RestraintCard key={r.id} restraint={r} />
+        <RestraintCard
+          key={r.id}
+          restraint={r}
+          canUpdate={canUpdate}
+          canApprove={canApprove}
+          onSaveDebrief={handleSaveDebrief}
+          onSignOff={handleSignOff}
+        />
       ))}
     </div>
   );

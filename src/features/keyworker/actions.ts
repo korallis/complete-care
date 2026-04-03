@@ -90,6 +90,11 @@ const createRestraintSchema = z.object({
   staffDebrief: z.string().optional(),
 });
 
+const updateRestraintDebriefSchema = z.object({
+  childDebrief: z.string().trim().min(1, 'Child debrief is required'),
+  staffDebrief: z.string().trim().min(1, 'Staff debrief is required'),
+});
+
 const createSanctionSchema = z.object({
   personId: z.string().uuid(),
   dateTime: z.string().min(1),
@@ -415,6 +420,59 @@ export async function reviewRestraint(
   } catch (error) {
     if (error instanceof UnauthorizedError) return { success: false, error: error.message };
     return { success: false, error: 'Failed to review restraint record' };
+  }
+}
+
+export async function updateRestraint(
+  id: string,
+  input: z.infer<typeof updateRestraintDebriefSchema>,
+): Promise<ActionResult<typeof restraints.$inferSelect>> {
+  try {
+    const { orgId, userId } = await requirePermission('update', 'incidents');
+
+    const parsed = updateRestraintDebriefSchema.safeParse(input);
+    if (!parsed.success) {
+      return { success: false, error: parsed.error.issues[0]?.message ?? 'Validation failed' };
+    }
+
+    const [existing] = await db
+      .select()
+      .from(restraints)
+      .where(eq(restraints.id, id))
+      .limit(1);
+
+    if (!existing) return { success: false, error: 'Restraint record not found' };
+    assertBelongsToOrg(existing.organisationId, orgId);
+
+    const [updated] = await db
+      .update(restraints)
+      .set({
+        childDebrief: parsed.data.childDebrief,
+        staffDebrief: parsed.data.staffDebrief,
+        updatedAt: new Date(),
+      })
+      .where(eq(restraints.id, id))
+      .returning();
+
+    await auditLog('update', 'restraint', id, {
+      before: {
+        childDebriefCompleted: !!existing.childDebrief?.trim(),
+        staffDebriefCompleted: !!existing.staffDebrief?.trim(),
+      },
+      after: {
+        childDebriefCompleted: true,
+        staffDebriefCompleted: true,
+      },
+    }, { userId, organisationId: orgId });
+
+    const slug = await getOrgSlug(orgId);
+    if (slug) revalidatePath(`/${slug}/persons/${existing.personId}/keyworker`);
+
+    return { success: true, data: updated };
+  } catch (error) {
+    if (error instanceof UnauthorizedError) return { success: false, error: error.message };
+    console.error('[updateRestraint] Error:', error);
+    return { success: false, error: 'Failed to update restraint record' };
   }
 }
 

@@ -8,6 +8,8 @@ import {
   listRestraints,
   listSanctions,
   listChildrensVoice,
+  reviewRestraint,
+  updateRestraint,
 } from '@/features/keyworker/actions';
 import { hasPermission } from '@/lib/rbac/permissions';
 import { SessionList } from '@/features/keyworker/components/session-list';
@@ -57,6 +59,8 @@ export default async function KeyworkerPage({ params }: KeyworkerPageProps) {
   const role = (session.user.role ?? activeMembership.role ?? 'viewer') as Role;
   const canCreate = hasPermission(role, 'create', 'care_plans');
   const canCreateIncident = hasPermission(role, 'create', 'incidents');
+  const canUpdateIncident = hasPermission(role, 'update', 'incidents');
+  const canApproveIncident = hasPermission(role, 'approve', 'incidents');
 
   const person = await getPerson(personId);
   if (!person) notFound();
@@ -249,6 +253,10 @@ export default async function KeyworkerPage({ params }: KeyworkerPageProps) {
           orgSlug={orgSlug}
           personId={personId}
           canCreate={canCreateIncident}
+          canUpdate={canUpdateIncident}
+          canApprove={canApproveIncident}
+          onUpdateDebrief={updateRestraint}
+          onReview={reviewRestraint}
         />
       </section>
 

@@ -27,17 +27,26 @@
     {
       "id": "fix-children-core-behavioral-enforcement",
       "ledgerStatus": "pending",
-      "classification": "real_pending",
-      "recommendedLedgerStatus": "keep_pending",
+      "classification": "ledger_stale_implementation_landed",
+      "recommendedLedgerStatus": "implementation_complete_validation_pending",
       "evidence": {
         "commits": [
           "fae0e83"
         ],
         "artifacts": [
+          ".factory/validation/children-core-behavioral-reconciliation-2026-04-03.md",
           ".factory/validation/children-core/user-testing/synthesis.json"
         ],
+        "paths": [
+          "src/components/person-dashboard/dashboard-tabs.tsx",
+          "src/app/(dashboard)/[orgSlug]/persons/[personId]/meetings/page.tsx",
+          "src/app/(dashboard)/[orgSlug]/persons/[personId]/complaints/page.tsx",
+          "src/features/keyworker/actions.ts",
+          "src/features/keyworker/components/restraint-list.tsx",
+          "src/components/care-notes/care-note-card.tsx"
+        ],
         "notes": [
-          "VAL-CHILD-017/018/021/022/023 still failing in latest children-core synthesis"
+          "VAL-CHILD-017/018/021/022/023 are now backed by live routes and restraint debrief/sign-off UI; stale validator artifacts still need rerun."
         ]
       }
     },
