@@ -1,0 +1,258 @@
+{
+  "generatedAt": "2026-04-03T06:00:00Z",
+  "worker": "worker-5",
+  "kind": "remaining-ledger-reconciliation",
+  "missionLedgers": {
+    "features": "/Users/leebarry/.factory/missions/0151c86a-d61e-40f6-af14-f9e925a367f3/features.json",
+    "validationState": "/Users/leebarry/.factory/missions/0151c86a-d61e-40f6-af14-f9e925a367f3/validation-state.json"
+  },
+  "reviewedFeatures": [
+    {
+      "id": "fix-children-core-contacts-ofsted",
+      "ledgerStatus": "in_progress",
+      "classification": "real_pending",
+      "recommendedLedgerStatus": "keep_in_progress",
+      "evidence": {
+        "commits": [
+          "ccf4989"
+        ],
+        "artifacts": [
+          ".factory/validation/children-core/user-testing/synthesis.json"
+        ],
+        "notes": [
+          "VAL-CHILD-001/002/003 still failing in latest children-core synthesis"
+        ]
+      }
+    },
+    {
+      "id": "fix-children-core-behavioral-enforcement",
+      "ledgerStatus": "pending",
+      "classification": "real_pending",
+      "recommendedLedgerStatus": "keep_pending",
+      "evidence": {
+        "commits": [
+          "fae0e83"
+        ],
+        "artifacts": [
+          ".factory/validation/children-core/user-testing/synthesis.json"
+        ],
+        "notes": [
+          "VAL-CHILD-017/018/021/022/023 still failing in latest children-core synthesis"
+        ]
+      }
+    },
+    {
+      "id": "user-testing-validator-children-core",
+      "ledgerStatus": "pending",
+      "classification": "real_pending",
+      "recommendedLedgerStatus": "keep_pending",
+      "evidence": {
+        "artifacts": [
+          ".factory/validation/children-core/user-testing/synthesis.json",
+          "/Users/leebarry/.factory/missions/0151c86a-d61e-40f6-af14-f9e925a367f3/handoffs/2026-04-02T11-35-57-197Z__user-testing-validator-children-core__9aabad7e-0cd1-4dac-a4f9-e11ae65a9dfe.json"
+        ],
+        "notes": [
+          "Latest repo-side children-core synthesis remains fail"
+        ]
+      }
+    },
+    {
+      "id": "m5-reg44-monitoring",
+      "ledgerStatus": "pending",
+      "classification": "ledger_stale_implementation_landed",
+      "recommendedLedgerStatus": "implementation_complete_validation_pending",
+      "evidence": {
+        "commits": [
+          "ace8f04",
+          "07fb6e9"
+        ],
+        "artifacts": [
+          ".factory/validation/reg44-transition-evidence-2026-04-02.md"
+        ],
+        "paths": [
+          "src/features/reg44/actions.ts",
+          "src/app/(dashboard)/[orgSlug]/reg44/page.tsx"
+        ]
+      }
+    },
+    {
+      "id": "m5-transition-planning",
+      "ledgerStatus": "pending",
+      "classification": "ledger_stale_implementation_landed",
+      "recommendedLedgerStatus": "implementation_complete_validation_pending",
+      "evidence": {
+        "commits": [
+          "ace8f04",
+          "07fb6e9"
+        ],
+        "artifacts": [
+          ".factory/validation/reg44-transition-evidence-2026-04-02.md"
+        ],
+        "paths": [
+          "src/features/reg44/actions.ts",
+          "src/app/(dashboard)/[orgSlug]/reg44/transition/page.tsx"
+        ]
+      }
+    },
+    {
+      "id": "m7-travel-safety",
+      "ledgerStatus": "pending",
+      "classification": "ledger_stale_implementation_landed",
+      "recommendedLedgerStatus": "implementation_complete_validation_pending",
+      "evidence": {
+        "commits": [
+          "7a3f847",
+          "b091884"
+        ],
+        "paths": [
+          "src/features/travel-safety/actions.ts",
+          "src/app/(dashboard)/[orgSlug]/travel-safety/page.tsx",
+          "src/__tests__/features/travel-safety/actions.test.ts"
+        ],
+        "notes": [
+          "Route optimisation is heuristic/placeholder-based but the lane's scoped implementation is present"
+        ]
+      }
+    },
+    {
+      "id": "m8-controlled-drugs",
+      "ledgerStatus": "pending",
+      "classification": "ledger_stale_implementation_landed",
+      "recommendedLedgerStatus": "implementation_complete_validation_pending",
+      "evidence": {
+        "commits": [
+          "28c4d64",
+          "ac13526"
+        ],
+        "paths": [
+          "src/features/emar/actions/controlled-drugs.ts",
+          "src/__tests__/features/emar/cd-register.test.ts",
+          "src/__tests__/features/emar/validation-schemas.test.ts"
+        ]
+      }
+    },
+    {
+      "id": "m8-medication-alerts",
+      "ledgerStatus": "pending",
+      "classification": "ledger_stale_implementation_landed",
+      "recommendedLedgerStatus": "implementation_complete_validation_pending",
+      "evidence": {
+        "commits": [
+          "28c4d64",
+          "ac13526"
+        ],
+        "paths": [
+          "src/features/emar/actions/medication-alerts.ts",
+          "src/__tests__/features/emar/medication-alert-actions.test.ts"
+        ]
+      }
+    },
+    {
+      "id": "m8-stock-management",
+      "ledgerStatus": "pending",
+      "classification": "ledger_stale_implementation_landed",
+      "recommendedLedgerStatus": "implementation_complete_validation_pending",
+      "evidence": {
+        "commits": [
+          "ac13526",
+          "b0e1fd7"
+        ],
+        "paths": [
+          "src/features/emar/stock/actions.ts",
+          "src/__tests__/features/emar/stock-actions.test.ts"
+        ]
+      }
+    },
+    {
+      "id": "m8-medication-errors-handover",
+      "ledgerStatus": "pending",
+      "classification": "ledger_stale_implementation_landed",
+      "recommendedLedgerStatus": "implementation_complete_validation_pending",
+      "evidence": {
+        "commits": [
+          "ac13526"
+        ],
+        "paths": [
+          "src/features/emar/errors/actions.ts",
+          "src/__tests__/features/emar/medication-error-actions.test.ts"
+        ]
+      }
+    },
+    {
+      "id": "m10-auto-scheduling",
+      "ledgerStatus": "pending",
+      "classification": "ledger_stale_implementation_landed",
+      "recommendedLedgerStatus": "implementation_complete_validation_pending",
+      "evidence": {
+        "commits": [
+          "edc6992"
+        ],
+        "paths": [
+          "src/features/scheduling/engine.ts",
+          "src/features/scheduling/engine.test.ts",
+          "src/app/(dashboard)/[orgSlug]/scheduling/page.tsx"
+        ]
+      }
+    },
+    {
+      "id": "m10-timesheets-payroll",
+      "ledgerStatus": "pending",
+      "classification": "ledger_stale_implementation_landed",
+      "recommendedLedgerStatus": "implementation_complete_validation_pending",
+      "evidence": {
+        "commits": [
+          "b7e70d4",
+          "27d97b9"
+        ],
+        "artifacts": [
+          ".factory/validation/rostering-timesheets-payroll-family-portal-review-2026-04-02.md"
+        ],
+        "paths": [
+          "src/features/timesheets/actions.ts",
+          "src/features/timesheets/generator.test.ts",
+          "src/app/(dashboard)/[orgSlug]/rostering/page.tsx",
+          "src/app/(dashboard)/[orgSlug]/rostering/payroll/route.ts"
+        ]
+      }
+    },
+    {
+      "id": "m10-consent-photos",
+      "ledgerStatus": "pending",
+      "classification": "ledger_stale_implementation_landed",
+      "recommendedLedgerStatus": "implementation_complete_validation_pending",
+      "evidence": {
+        "commits": [
+          "8608bae",
+          "edc6992"
+        ],
+        "paths": [
+          "src/features/consent/actions.ts",
+          "src/features/consent/manager.test.ts",
+          "src/app/(dashboard)/[orgSlug]/persons/[personId]/consent/page.tsx"
+        ]
+      }
+    },
+    {
+      "id": "m12-gdpr-data",
+      "ledgerStatus": "pending",
+      "classification": "ledger_stale_implementation_landed",
+      "recommendedLedgerStatus": "implementation_complete_validation_pending",
+      "evidence": {
+        "commits": [
+          "9341bb7",
+          "0193a8e",
+          "d5037dd",
+          "024895b"
+        ],
+        "artifacts": [
+          ".factory/validation/gdpr-evidence-2026-04-02.md"
+        ],
+        "paths": [
+          "src/features/gdpr/actions.ts",
+          "src/app/(dashboard)/[orgSlug]/settings/gdpr/page.tsx",
+          "src/__tests__/features/gdpr/components.test.tsx"
+        ]
+      }
+    }
+  ]
+}
