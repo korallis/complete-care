@@ -3,6 +3,7 @@
 import Link from 'next/link';
 import { usePathname } from 'next/navigation';
 import {
+  Award,
   LayoutDashboard,
   Users,
   ClipboardList,
@@ -11,7 +12,9 @@ import {
   Pill,
   AlertTriangle,
   UserCheck,
+  Building,
   Calendar,
+  CalendarClock,
   ShieldCheck,
   BarChart2,
   FileSearch,
@@ -35,11 +38,14 @@ const ICON_MAP: Record<string, LucideIcon> = {
   'alert-triangle': AlertTriangle,
   'user-check': UserCheck,
   calendar: Calendar,
+  'calendar-clock': CalendarClock,
   'shield-check': ShieldCheck,
   'bar-chart-2': BarChart2,
   'file-search': FileSearch,
   settings: Settings,
+  building: Building,
   'building-2': Building2,
+  award: Award,
   'credit-card': CreditCard,
   'users-round': UsersRound,
   'check-square': CheckSquare,

@@ -112,7 +112,12 @@ export default async function OrgDashboardPage({
   return (
     <div className="min-h-full bg-[linear-gradient(180deg,rgba(255,255,255,0.03),rgba(255,255,255,0.015))] px-4 py-5 text-white sm:px-6 sm:py-6 lg:px-8 lg:py-8">
       <div className="mx-auto max-w-7xl space-y-6">
-        {isNewUser && <WelcomeBanner userName={session.user.name ?? undefined} />}
+        {isNewUser && (
+          <WelcomeBanner
+            userName={session.user.name ?? undefined}
+            orgSlug={orgSlug}
+          />
+        )}
 
         <section className="grid gap-6 xl:grid-cols-[1.18fr_0.82fr]">
           <div className="rounded-[2rem] border border-white/10 bg-[linear-gradient(180deg,rgba(255,255,255,0.06),rgba(255,255,255,0.03))] p-6 shadow-[0_28px_80px_-42px_rgba(2,6,23,0.85)] sm:p-8">
