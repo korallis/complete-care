@@ -1,14 +1,11 @@
-'use client';
-
 import { SdqForm } from '@/features/education/components/sdq-form';
 import { createSdqAssessment } from '@/features/education/actions';
 
 interface SdqFormWrapperProps {
-  orgSlug: string;
   personId: string;
 }
 
-export function SdqFormWrapper({ orgSlug, personId }: SdqFormWrapperProps) {
+export function SdqFormWrapper({ personId }: SdqFormWrapperProps) {
   async function handleSubmit(
     _prev: { success: boolean; error?: string },
     formData: FormData,

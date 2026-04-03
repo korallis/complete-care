@@ -33,7 +33,7 @@ export default async function NewSdqPage({
         </p>
       </div>
 
-      <SdqFormWrapper orgSlug={orgSlug} personId={personId} />
+      <SdqFormWrapper personId={personId} />
     </div>
   );
 }

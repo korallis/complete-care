@@ -33,7 +33,7 @@ export default async function NewSchoolRecordPage({
         </p>
       </div>
 
-      <SchoolRecordFormWrapper orgSlug={orgSlug} personId={personId} />
+      <SchoolRecordFormWrapper personId={personId} />
     </div>
   );
 }

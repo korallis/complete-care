@@ -36,11 +36,7 @@ export default async function NewPepPage({
         </p>
       </div>
 
-      <PepFormWrapper
-        orgSlug={orgSlug}
-        personId={personId}
-        schools={schools}
-      />
+      <PepFormWrapper personId={personId} schools={schools} />
     </div>
   );
 }

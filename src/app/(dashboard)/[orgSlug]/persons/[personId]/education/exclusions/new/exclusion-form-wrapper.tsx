@@ -1,16 +1,12 @@
-'use client';
-
 import { ExclusionForm } from '@/features/education/components/exclusion-form';
 import { createExclusionRecord } from '@/features/education/actions';
 
 interface ExclusionFormWrapperProps {
-  orgSlug: string;
   personId: string;
   schoolRecordId: string;
 }
 
 export function ExclusionFormWrapper({
-  orgSlug,
   personId,
   schoolRecordId,
 }: ExclusionFormWrapperProps) {

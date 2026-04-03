@@ -37,7 +37,6 @@ export default async function NewExclusionPage({
       </div>
 
       <ExclusionFormWrapper
-        orgSlug={orgSlug}
         personId={personId}
         schoolRecordId={currentSchoolRecordId}
       />

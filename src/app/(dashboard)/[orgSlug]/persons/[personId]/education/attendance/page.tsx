@@ -37,7 +37,6 @@ export default async function AttendancePage({
       </div>
 
       <AttendanceFormWrapper
-        orgSlug={orgSlug}
         personId={personId}
         schoolRecordId={currentSchoolRecordId}
       />

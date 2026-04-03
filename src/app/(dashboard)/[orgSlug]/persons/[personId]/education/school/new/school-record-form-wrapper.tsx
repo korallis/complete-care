@@ -1,15 +1,11 @@
-'use client';
-
 import { SchoolRecordForm } from '@/features/education/components/school-record-form';
 import { createSchoolRecord } from '@/features/education/actions';
 
 interface SchoolRecordFormWrapperProps {
-  orgSlug: string;
   personId: string;
 }
 
 export function SchoolRecordFormWrapper({
-  orgSlug,
   personId,
 }: SchoolRecordFormWrapperProps) {
   async function handleSubmit(
