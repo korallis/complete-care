@@ -9,13 +9,19 @@
  * All actions are tenant-scoped, RBAC-protected, and audit-logged.
  */
 
-import { and, asc, eq } from 'drizzle-orm';
+import { and, asc, desc, eq, gte, inArray, lte } from 'drizzle-orm';
 import { db } from '@/lib/db';
 import { auditLog } from '@/lib/audit';
 import {
+  cdRegisters,
+  cdStockReconciliations,
   handoverReports,
+  medicationAdministrations,
+  medicationErrors,
+  medications,
   medicationStock,
   memberships,
+  prnAdministrations,
   reorderRequests,
   stockBatches,
   stockTransactions,
@@ -30,7 +36,9 @@ import {
   createReorderRequestSchema,
   updateReorderStatusSchema,
   createHandoverReportSchema,
+  type CreateHandoverReport,
   type ExpiryAlert,
+  type HandoverSummary,
 } from './types';
 
 const OPEN_REORDER_STATUSES = new Set([
@@ -107,6 +115,211 @@ async function loadHandoverReport(reportId: string) {
     .limit(1);
 
   return rows[0] ?? null;
+}
+
+async function compileHandoverSummary(
+  organisationId: string,
+  shiftStartAt: Date,
+  shiftEndAt: Date,
+): Promise<HandoverSummary> {
+  const [administrations, prnUsageRows, errorRows, registers] = await Promise.all([
+    db
+      .select({
+        personId: medicationAdministrations.personId,
+        medicationName: medications.drugName,
+        scheduledTime: medicationAdministrations.scheduledTime,
+        administeredAt: medicationAdministrations.administeredAt,
+        status: medicationAdministrations.status,
+        reason: medicationAdministrations.reason,
+      })
+      .from(medicationAdministrations)
+      .innerJoin(medications, eq(medicationAdministrations.medicationId, medications.id))
+      .where(
+        and(
+          eq(medicationAdministrations.organisationId, organisationId),
+          gte(medicationAdministrations.scheduledTime, shiftStartAt),
+          lte(medicationAdministrations.scheduledTime, shiftEndAt),
+        ),
+      )
+      .orderBy(asc(medicationAdministrations.scheduledTime)),
+    db
+      .select({
+        personId: prnAdministrations.personId,
+        medicationName: medications.drugName,
+        administeredAt: prnAdministrations.administeredAt,
+        preDoseAssessment: prnAdministrations.preDoseAssessment,
+        postDoseAssessment: prnAdministrations.postDoseAssessment,
+      })
+      .from(prnAdministrations)
+      .innerJoin(medications, eq(prnAdministrations.medicationId, medications.id))
+      .where(
+        and(
+          eq(prnAdministrations.organisationId, organisationId),
+          gte(prnAdministrations.administeredAt, shiftStartAt),
+          lte(prnAdministrations.administeredAt, shiftEndAt),
+        ),
+      )
+      .orderBy(asc(prnAdministrations.administeredAt)),
+    db
+      .select({
+        errorId: medicationErrors.id,
+        type: medicationErrors.errorType,
+        severity: medicationErrors.severity,
+        personId: medicationErrors.personId,
+      })
+      .from(medicationErrors)
+      .where(
+        and(
+          eq(medicationErrors.organisationId, organisationId),
+          gte(medicationErrors.occurredAt, shiftStartAt),
+          lte(medicationErrors.occurredAt, shiftEndAt),
+        ),
+      )
+      .orderBy(desc(medicationErrors.occurredAt)),
+    db
+      .select({
+        id: cdRegisters.id,
+        medicationName: cdRegisters.name,
+        currentBalance: cdRegisters.currentBalance,
+      })
+      .from(cdRegisters)
+      .where(
+        and(
+          eq(cdRegisters.organisationId, organisationId),
+          eq(cdRegisters.status, 'active'),
+        ),
+      )
+      .orderBy(asc(cdRegisters.name)),
+  ]);
+
+  const lateThresholdMs = 60 * 60 * 1000;
+  const administrationsTotal = administrations.length;
+  const onTime = administrations.filter((row) => {
+    if (!row.administeredAt) return false;
+    if (!['given', 'self_administered'].includes(row.status)) return false;
+    return row.administeredAt.getTime() - row.scheduledTime.getTime() <= lateThresholdMs;
+  }).length;
+  const late = administrations.filter((row) => {
+    if (!row.administeredAt) return false;
+    if (!['given', 'self_administered'].includes(row.status)) return false;
+    return row.administeredAt.getTime() - row.scheduledTime.getTime() > lateThresholdMs;
+  }).length;
+  const missed = administrations.filter((row) =>
+    ['withheld', 'omitted', 'not_available'].includes(row.status),
+  ).length;
+
+  const refusals: HandoverSummary['refusals'] = administrations
+    .filter((row) => row.status === 'refused')
+    .map((row) => ({
+      personId: row.personId,
+      medicationName: row.medicationName,
+      time: row.scheduledTime.toISOString(),
+      reason: row.reason ?? 'No reason recorded',
+    }));
+
+  const prnUsage: HandoverSummary['prnUsage'] = prnUsageRows.map((row) => ({
+    personId: row.personId,
+    medicationName: row.medicationName,
+    time: row.administeredAt.toISOString(),
+    reason:
+      row.preDoseAssessment?.notes ??
+      row.preDoseAssessment?.symptoms?.join(', ') ??
+      'PRN indication recorded',
+    effectiveness: row.postDoseAssessment?.effectAchieved ?? null,
+  }));
+
+  const errors: HandoverSummary['errors'] = errorRows.map((row) => ({
+    errorId: row.errorId,
+    type: row.type,
+    severity: row.severity,
+    personId: row.personId,
+  }));
+
+  const latestReconciliations = new Map<
+    string,
+    { expectedBalance: number; actualCount: number; hasDiscrepancy: boolean }
+  >();
+
+  if (registers.length > 0) {
+    const reconciliationRows = await db
+      .select({
+        registerId: cdStockReconciliations.registerId,
+        expectedBalance: cdStockReconciliations.expectedBalance,
+        actualCount: cdStockReconciliations.actualCount,
+        hasDiscrepancy: cdStockReconciliations.hasDiscrepancy,
+        reconciliationDate: cdStockReconciliations.reconciliationDate,
+      })
+      .from(cdStockReconciliations)
+      .where(
+        and(
+          eq(cdStockReconciliations.organisationId, organisationId),
+          inArray(
+            cdStockReconciliations.registerId,
+            registers.map((register) => register.id),
+          ),
+          lte(cdStockReconciliations.reconciliationDate, shiftEndAt),
+        ),
+      )
+      .orderBy(desc(cdStockReconciliations.reconciliationDate));
+
+    for (const row of reconciliationRows) {
+      if (!latestReconciliations.has(row.registerId)) {
+        latestReconciliations.set(row.registerId, row);
+      }
+    }
+  }
+
+  const cdBalances: HandoverSummary['cdBalances'] = registers.map((register) => {
+    const latest = latestReconciliations.get(register.id);
+    return {
+      medicationName: register.medicationName,
+      expectedBalance: latest?.expectedBalance ?? register.currentBalance,
+      actualBalance: latest?.actualCount ?? register.currentBalance,
+      discrepancy: latest?.hasDiscrepancy ?? false,
+    };
+  });
+
+  const notes: string[] = [];
+  if (administrationsTotal === 0 && prnUsage.length === 0 && errors.length === 0) {
+    notes.push('No medication activity was recorded in the selected shift window.');
+  } else {
+    notes.push(
+      `${administrationsTotal} administration record${administrationsTotal === 1 ? '' : 's'} reviewed.`,
+    );
+    if (late > 0) {
+      notes.push(`${late} administration${late === 1 ? '' : 's'} were recorded late.`);
+    }
+    if (refusals.length > 0) {
+      notes.push(`${refusals.length} refusal${refusals.length === 1 ? '' : 's'} require follow-up.`);
+    }
+    if (errors.length > 0) {
+      notes.push(`${errors.length} medication error${errors.length === 1 ? '' : 's'} logged this shift.`);
+    }
+    if (prnUsage.length > 0) {
+      notes.push(`${prnUsage.length} PRN administration${prnUsage.length === 1 ? '' : 's'} given.`);
+    }
+  }
+
+  const discrepantCdCount = cdBalances.filter((row) => row.discrepancy).length;
+  if (discrepantCdCount > 0) {
+    notes.push(
+      `${discrepantCdCount} controlled-drug balance${discrepantCdCount === 1 ? '' : 's'} show a discrepancy.`,
+    );
+  }
+
+  return {
+    administrations: {
+      total: administrationsTotal,
+      onTime,
+      late,
+      missed,
+    },
+    refusals,
+    prnUsage,
+    errors,
+    cdBalances,
+    notes: notes.join(' '),
+  };
 }
 
 async function hasOpenReorderRequest(organisationId: string, medicationStockId: string) {
@@ -438,6 +651,7 @@ export async function acknowledgeExpiryAlert(
   batchId: string,
   _userId: string,
 ) {
+  void _userId;
   const { orgId, userId } = await requirePermission('update', 'medications');
   assertBelongsToOrg(organisationId, orgId);
 
@@ -596,6 +810,7 @@ export async function recordStockTransaction(
  * Called after each stock transaction or on a schedule.
  */
 export async function checkAndGenerateReorders(organisationId: string, _userId: string) {
+  void _userId;
   const { orgId, userId } = await requirePermission('update', 'medications');
   assertBelongsToOrg(organisationId, orgId);
 
@@ -774,6 +989,7 @@ export async function notifyPharmacy(
   reorderId: string,
   _userId: string,
 ) {
+  void _userId;
   const { orgId, userId } = await requirePermission('update', 'medications');
   assertBelongsToOrg(organisationId, orgId);
 
@@ -823,16 +1039,20 @@ export async function generateHandoverReport(
   const parsed = createHandoverReportSchema.parse(data);
   const { orgId, userId } = await requirePermission('create', 'medications');
   assertBelongsToOrg(organisationId, orgId);
+  const typedParsed = parsed as CreateHandoverReport;
+  const shiftStartAt = new Date(typedParsed.shiftStartAt);
+  const shiftEndAt = new Date(typedParsed.shiftEndAt);
+  const summary = await compileHandoverSummary(orgId, shiftStartAt, shiftEndAt);
 
   const [report] = await db
     .insert(handoverReports)
     .values({
       organisationId: orgId,
       shiftType: parsed.shiftType,
-      shiftStartAt: new Date(parsed.shiftStartAt),
-      shiftEndAt: new Date(parsed.shiftEndAt),
+      shiftStartAt,
+      shiftEndAt,
       generatedById: userId,
-      summary: parsed.summary,
+      summary,
       handoverNotes: parsed.handoverNotes ?? null,
     })
     .returning();

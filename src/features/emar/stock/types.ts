@@ -202,7 +202,7 @@ export const createHandoverReportSchema = z.object({
   shiftType: z.enum(SHIFT_TYPES),
   shiftStartAt: z.string().datetime(),
   shiftEndAt: z.string().datetime(),
-  summary: z.custom<HandoverSummary>(),
+  summary: z.custom<HandoverSummary>().optional(),
   handoverNotes: z.string().max(5000).optional(),
 });
 
