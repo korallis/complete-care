@@ -22,14 +22,7 @@ The authoritative ledgers currently live outside this repo. This pass does **not
      - commit `ccf4989` — additional recovery work landed
      - `.factory/validation/children-core/user-testing/synthesis.json`
 
-2. `fix-children-core-behavioral-enforcement`
-   - Ledger state: `pending`
-   - Why still real: children-core synthesis still records failures for `VAL-CHILD-017`, `VAL-CHILD-018`, `VAL-CHILD-021`, `VAL-CHILD-022`, and `VAL-CHILD-023`.
-   - Evidence anchors:
-     - commit `fae0e83` — lane-C recovery landed
-     - `.factory/validation/children-core/user-testing/synthesis.json`
-
-3. `user-testing-validator-children-core`
+2. `user-testing-validator-children-core`
    - Ledger state: `pending`
    - Why still real: the latest repo-side synthesis for children-core is still `fail` with `1 passed / 22 failed / 3 blocked`, so the validator lane is not reconciled to green yet.
    - Evidence anchors:
@@ -37,7 +30,19 @@ The authoritative ledgers currently live outside this repo. This pass does **not
      - mission handoff `2026-04-02T11-35-57-197Z__user-testing-validator-children-core__9aabad7e-0cd1-4dac-a4f9-e11ae65a9dfe.json`
 
 ### Ledger-stale / implementation already landed in repo
-1. `m5-reg44-monitoring`
+1. `fix-children-core-behavioral-enforcement`
+   - Proposed ledger interpretation: implementation-complete, validator evidence stale and awaiting refresh.
+   - Evidence anchors:
+     - commit `fae0e83` — lane-C recovery landed
+     - 2026-04-03 repo reconciliation pass — restraint debrief/sign-off workflow exposed in the live register
+     - `.factory/validation/children-core-behavioral-reconciliation-2026-04-03.md`
+     - `src/components/person-dashboard/dashboard-tabs.tsx`
+     - `src/app/(dashboard)/[orgSlug]/persons/[personId]/meetings/page.tsx`
+     - `src/app/(dashboard)/[orgSlug]/persons/[personId]/complaints/page.tsx`
+     - `src/features/keyworker/actions.ts`
+     - `src/features/keyworker/components/restraint-list.tsx`
+
+2. `m5-reg44-monitoring`
    - Proposed ledger interpretation: implementation-complete, evidence-ready, awaiting external ledger update.
    - Evidence anchors:
      - commit `ace8f04` — Reg44 monitoring live instead of placeholder shells
@@ -138,9 +143,9 @@ The authoritative ledgers currently live outside this repo. This pass does **not
 ## Recommended external ledger updates
 - Keep these as truly active:
   - `fix-children-core-contacts-ofsted`
-  - `fix-children-core-behavioral-enforcement`
   - `user-testing-validator-children-core`
 - Reconcile these away from `pending` in the external mission `features.json` because repo evidence shows they already landed:
+  - `fix-children-core-behavioral-enforcement`
   - `m5-reg44-monitoring`
   - `m5-transition-planning`
   - `m7-travel-safety`
