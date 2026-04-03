@@ -76,7 +76,7 @@ export function MarketingFooter() {
                 </h3>
                 <ul className="mt-5 space-y-3 text-sm text-white/70">
                   {group.links.map((link) => (
-                    <li key={link.href}>
+                    <li key={`${group.title}-${link.label}`}>
                       <Link href={link.href} className="transition-colors hover:text-white">
                         {link.label}
                       </Link>
