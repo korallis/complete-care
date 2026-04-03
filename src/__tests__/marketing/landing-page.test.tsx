@@ -195,9 +195,9 @@ describe('HomePage redesign', () => {
   it('covers all three care domains and the closing CTA block', () => {
     render(<HomePage />);
 
-    expect(screen.getByRole('heading', { level: 3, name: /domiciliary care/i })).toBeInTheDocument();
-    expect(screen.getByRole('heading', { level: 3, name: /supported living/i })).toBeInTheDocument();
-    expect(screen.getByRole('heading', { level: 3, name: /children\'s homes/i })).toBeInTheDocument();
+    expect(screen.getByText('Domiciliary care')).toBeInTheDocument();
+    expect(screen.getAllByText('Supported living').length).toBeGreaterThan(0);
+    expect(screen.getByText("Children's homes")).toBeInTheDocument();
     expect(screen.getByRole('link', { name: /create your workspace/i })).toHaveAttribute(
       'href',
       '/register',

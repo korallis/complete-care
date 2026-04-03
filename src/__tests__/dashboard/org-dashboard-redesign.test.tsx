@@ -4,6 +4,8 @@ import { renderToStaticMarkup } from 'react-dom/server';
 const mockAuth = vi.fn();
 const mockRedirect = vi.fn();
 const mockNotFound = vi.fn();
+const redirectSignal = new Error('redirect');
+const notFoundSignal = new Error('notFound');
 
 vi.mock('@/auth', () => ({
   auth: mockAuth,
@@ -93,14 +95,19 @@ describe('OrgDashboardPage redesign', () => {
 
   it('redirects to login when no authenticated user is present', async () => {
     mockAuth.mockResolvedValueOnce(null);
+    mockRedirect.mockImplementationOnce(() => {
+      throw redirectSignal;
+    });
     const { default: OrgDashboardPage } = await import(
       '@/app/(dashboard)/[orgSlug]/dashboard/page'
     );
 
-    await OrgDashboardPage({
-      params: Promise.resolve({ orgSlug: 'acme' }),
-      searchParams: Promise.resolve({}),
-    });
+    await expect(
+      OrgDashboardPage({
+        params: Promise.resolve({ orgSlug: 'acme' }),
+        searchParams: Promise.resolve({}),
+      }),
+    ).rejects.toBe(redirectSignal);
 
     expect(mockRedirect).toHaveBeenCalledWith('/login');
   });
@@ -113,14 +120,19 @@ describe('OrgDashboardPage redesign', () => {
         activeOrgId: null,
       },
     });
+    mockRedirect.mockImplementationOnce(() => {
+      throw redirectSignal;
+    });
     const { default: OrgDashboardPage } = await import(
       '@/app/(dashboard)/[orgSlug]/dashboard/page'
     );
 
-    await OrgDashboardPage({
-      params: Promise.resolve({ orgSlug: 'acme' }),
-      searchParams: Promise.resolve({}),
-    });
+    await expect(
+      OrgDashboardPage({
+        params: Promise.resolve({ orgSlug: 'acme' }),
+        searchParams: Promise.resolve({}),
+      }),
+    ).rejects.toBe(redirectSignal);
 
     expect(mockRedirect).toHaveBeenCalledWith('/onboarding');
   });
@@ -144,14 +156,19 @@ describe('OrgDashboardPage redesign', () => {
         ],
       },
     });
+    mockRedirect.mockImplementationOnce(() => {
+      throw redirectSignal;
+    });
     const { default: OrgDashboardPage } = await import(
       '@/app/(dashboard)/[orgSlug]/dashboard/page'
     );
 
-    await OrgDashboardPage({
-      params: Promise.resolve({ orgSlug: 'acme' }),
-      searchParams: Promise.resolve({}),
-    });
+    await expect(
+      OrgDashboardPage({
+        params: Promise.resolve({ orgSlug: 'acme' }),
+        searchParams: Promise.resolve({}),
+      }),
+    ).rejects.toBe(redirectSignal);
 
     expect(mockRedirect).toHaveBeenCalledWith(
       '/api/orgs/switch?slug=acme&returnTo=/acme/dashboard',
@@ -172,14 +189,19 @@ describe('OrgDashboardPage redesign', () => {
         ],
       },
     });
+    mockNotFound.mockImplementationOnce(() => {
+      throw notFoundSignal;
+    });
     const { default: OrgDashboardPage } = await import(
       '@/app/(dashboard)/[orgSlug]/dashboard/page'
     );
 
-    await OrgDashboardPage({
-      params: Promise.resolve({ orgSlug: 'acme' }),
-      searchParams: Promise.resolve({}),
-    });
+    await expect(
+      OrgDashboardPage({
+        params: Promise.resolve({ orgSlug: 'acme' }),
+        searchParams: Promise.resolve({}),
+      }),
+    ).rejects.toBe(notFoundSignal);
 
     expect(mockNotFound).toHaveBeenCalled();
   });
