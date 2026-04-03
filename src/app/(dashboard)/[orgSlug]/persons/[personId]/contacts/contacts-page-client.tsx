@@ -282,7 +282,11 @@ export function ContactsPageClient({
           )}
           <ApprovedContactsTable
             contacts={contacts}
-            onSchedule={(contact) => openScheduleForm(contact.id)}
+            onSchedule={
+              canManage
+                ? (contact) => openScheduleForm(contact.id)
+                : undefined
+            }
           />
         </section>
       )}

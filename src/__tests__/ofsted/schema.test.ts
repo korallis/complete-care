@@ -66,11 +66,33 @@ describe('createEvidenceSchema', () => {
     expect(result.success).toBe(true);
   });
 
-  it('accepts minimal input (required fields only)', () => {
+  it('rejects manual evidence without a narrative description', () => {
     const result = createEvidenceSchema.safeParse({
       standardId: '550e8400-e29b-41d4-a716-446655440000',
       subRequirementId: 'reg6_1',
       evidenceType: 'manual',
+    });
+    expect(result.success).toBe(false);
+  });
+
+  it('rejects blank linked evidence without a linked record or description', () => {
+    const result = createEvidenceSchema.safeParse({
+      standardId: '550e8400-e29b-41d4-a716-446655440000',
+      subRequirementId: 'reg6_1',
+      evidenceType: 'care_plan',
+      evidenceId: null,
+      description: null,
+    });
+    expect(result.success).toBe(false);
+  });
+
+  it('accepts linked evidence when a narrative description is provided', () => {
+    const result = createEvidenceSchema.safeParse({
+      standardId: '550e8400-e29b-41d4-a716-446655440000',
+      subRequirementId: 'reg6_1',
+      evidenceType: 'care_plan',
+      evidenceId: null,
+      description: 'Placement plan objective references quality of care actions.',
     });
     expect(result.success).toBe(true);
     if (result.success) {
@@ -165,6 +187,15 @@ describe('updateEvidenceSchema', () => {
   it('validates field constraints on partial', () => {
     const result = updateEvidenceSchema.safeParse({
       evidenceType: 'invalid_type',
+    });
+    expect(result.success).toBe(false);
+  });
+
+  it('rejects clearing manual evidence down to an empty payload', () => {
+    const result = updateEvidenceSchema.safeParse({
+      evidenceType: 'manual',
+      evidenceId: null,
+      description: null,
     });
     expect(result.success).toBe(false);
   });
