@@ -1,20 +1,8 @@
-/**
- * Landing Page Component Tests
- *
- * Tests the marketing landing page components:
- * - MarketingNav renders correctly with all navigation links
- * - MarketingNav mobile menu toggle works
- * - MarketingFooter renders with all required links
- */
-
 import { describe, it, expect, vi } from 'vitest';
 import { render, screen, fireEvent } from '@testing-library/react';
+import HomePage from '@/app/(marketing)/page';
 import { MarketingNav } from '@/components/marketing/nav';
 import { MarketingFooter } from '@/components/marketing/footer';
-
-// ---------------------------------------------------------------------------
-// Mocks
-// ---------------------------------------------------------------------------
 
 vi.mock('next/link', () => ({
   default: ({
@@ -34,140 +22,189 @@ vi.mock('next/link', () => ({
   ),
 }));
 
-// ---------------------------------------------------------------------------
-// MarketingNav Tests
-// ---------------------------------------------------------------------------
-
 describe('MarketingNav', () => {
-  it('renders the brand logo link', () => {
+  it('renders the redesigned brand lockup link', () => {
     render(<MarketingNav />);
-    const logoLink = screen.getByRole('link', { name: /complete care/i });
+    const logoLink = screen.getByRole('link', {
+      name: /complete care care operations system/i,
+    });
+
     expect(logoLink).toBeInTheDocument();
     expect(logoLink).toHaveAttribute('href', '/');
   });
 
-  it('renders desktop navigation links', () => {
+  it('renders the current desktop navigation structure', () => {
     render(<MarketingNav />);
-    // Features link
-    const featuresLinks = screen.getAllByRole('link', { name: /features/i });
-    expect(featuresLinks.length).toBeGreaterThanOrEqual(1);
 
-    // Pricing link
-    const pricingLinks = screen.getAllByRole('link', { name: /pricing/i });
-    expect(pricingLinks.length).toBeGreaterThanOrEqual(1);
+    expect(screen.getByRole('link', { name: 'Domains' })).toHaveAttribute(
+      'href',
+      '/#domains',
+    );
+    expect(screen.getByRole('link', { name: 'Workflow' })).toHaveAttribute(
+      'href',
+      '/#workflow',
+    );
+    expect(screen.getByRole('link', { name: 'Why it lands' })).toHaveAttribute(
+      'href',
+      '/#evidence',
+    );
+    expect(screen.getByRole('link', { name: 'Pricing' })).toHaveAttribute(
+      'href',
+      '/pricing',
+    );
   });
 
-  it('renders Get Started Free CTA link pointing to /register', () => {
+  it('renders the redesigned primary CTA and sign-in link', () => {
     render(<MarketingNav />);
-    const ctaLinks = screen.getAllByRole('link', { name: /get started free/i });
-    expect(ctaLinks.length).toBeGreaterThanOrEqual(1);
-    expect(ctaLinks[0]).toHaveAttribute('href', '/register');
+
+    expect(screen.getByRole('link', { name: /start with one service/i })).toHaveAttribute(
+      'href',
+      '/register',
+    );
+    expect(screen.getByRole('link', { name: /sign in/i })).toHaveAttribute(
+      'href',
+      '/login',
+    );
   });
 
-  it('renders Sign in link pointing to /login', () => {
-    render(<MarketingNav />);
-    const signInLinks = screen.getAllByRole('link', { name: /sign in/i });
-    expect(signInLinks.length).toBeGreaterThanOrEqual(1);
-    expect(signInLinks[0]).toHaveAttribute('href', '/login');
-  });
-
-  it('renders hamburger menu button for mobile', () => {
-    render(<MarketingNav />);
-    const menuButton = screen.getByRole('button', { name: /open menu/i });
-    expect(menuButton).toBeInTheDocument();
-  });
-
-  it('toggles mobile menu open on button click', () => {
-    render(<MarketingNav />);
-    const menuButton = screen.getByRole('button', { name: /open menu/i });
-
-    // Close button should not be present initially
-    expect(screen.queryByRole('button', { name: /close menu/i })).not.toBeInTheDocument();
-
-    // Click to open
-    fireEvent.click(menuButton);
-
-    // Mobile menu should appear (close button now visible)
-    expect(screen.getByRole('button', { name: /close menu/i })).toBeInTheDocument();
-  });
-
-  it('closes mobile menu when close button is clicked', () => {
+  it('opens and closes the mobile menu', () => {
     render(<MarketingNav />);
 
-    // Open menu
     fireEvent.click(screen.getByRole('button', { name: /open menu/i }));
+    expect(screen.getByRole('button', { name: /close menu/i })).toBeInTheDocument();
+    expect(screen.getAllByRole('link', { name: 'Why it lands' }).length).toBeGreaterThan(0);
 
-    // Close menu
     fireEvent.click(screen.getByRole('button', { name: /close menu/i }));
-
-    // Should show open button again
     expect(screen.getByRole('button', { name: /open menu/i })).toBeInTheDocument();
   });
 
-  it('nav element has accessible label', () => {
+  it('exposes the main navigation landmark', () => {
     render(<MarketingNav />);
     expect(screen.getByRole('navigation', { name: /main navigation/i })).toBeInTheDocument();
   });
 });
 
-// ---------------------------------------------------------------------------
-// MarketingFooter Tests
-// ---------------------------------------------------------------------------
-
 describe('MarketingFooter', () => {
-  it('renders the brand logo link', () => {
+  it('renders the redesigned brand statement and badges', () => {
     render(<MarketingFooter />);
-    const logoLinks = screen.getAllByRole('link', { name: /complete care/i });
-    expect(logoLinks.length).toBeGreaterThanOrEqual(1);
-  });
 
-  it('renders pricing link in footer', () => {
-    render(<MarketingFooter />);
-    const pricingLink = screen.getByRole('link', { name: /pricing/i });
-    expect(pricingLink).toBeInTheDocument();
-    expect(pricingLink).toHaveAttribute('href', '/pricing');
-  });
-
-  it('renders privacy policy link', () => {
-    render(<MarketingFooter />);
-    const privacyLink = screen.getByRole('link', { name: /privacy policy/i });
-    expect(privacyLink).toBeInTheDocument();
-    expect(privacyLink).toHaveAttribute('href', '/privacy');
-  });
-
-  it('renders terms of service link', () => {
-    render(<MarketingFooter />);
-    const termsLink = screen.getByRole('link', { name: /terms of service/i });
-    expect(termsLink).toBeInTheDocument();
-    expect(termsLink).toHaveAttribute('href', '/terms');
-  });
-
-  it('renders Book a Demo link', () => {
-    render(<MarketingFooter />);
-    const demoLink = screen.getByRole('link', { name: /book a demo/i });
-    expect(demoLink).toBeInTheDocument();
-    expect(demoLink).toHaveAttribute('href', '/demo');
-  });
-
-  it('renders CQC compliance badge', () => {
-    render(<MarketingFooter />);
-    expect(screen.getByText(/cqc compliant/i)).toBeInTheDocument();
-  });
-
-  it('renders Ofsted Ready badge', () => {
-    render(<MarketingFooter />);
+    expect(screen.getByRole('link', { name: /complete care built for real care work/i })).toBeInTheDocument();
+    expect(screen.getByText(/one operating system for domiciliary care, supported living/i)).toBeInTheDocument();
+    expect(screen.getByText(/cqc aware/i)).toBeInTheDocument();
     expect(screen.getByText(/ofsted ready/i)).toBeInTheDocument();
+    expect(screen.getByText(/multi-service teams/i)).toBeInTheDocument();
   });
 
-  it('renders all three care domain links', () => {
+  it('renders the footer navigation groups and key links', () => {
     render(<MarketingFooter />);
-    expect(screen.getByRole('link', { name: /domiciliary care/i })).toBeInTheDocument();
-    expect(screen.getByRole('link', { name: /supported living/i })).toBeInTheDocument();
-    expect(screen.getByRole('link', { name: /children's homes/i })).toBeInTheDocument();
+
+    expect(screen.getByText('Platform')).toBeInTheDocument();
+    expect(screen.getByText('Use cases')).toBeInTheDocument();
+    expect(screen.getByText('Company')).toBeInTheDocument();
+
+    expect(screen.getByRole('link', { name: 'Security' })).toHaveAttribute(
+      'href',
+      '/privacy',
+    );
+    expect(screen.getByRole('link', { name: 'Book a demo' })).toHaveAttribute(
+      'href',
+      '/demo',
+    );
+    expect(screen.getByRole('link', { name: 'Contact' })).toHaveAttribute(
+      'href',
+      'mailto:hello@completecare.co.uk',
+    );
+    expect(screen.getByRole('link', { name: 'Terms' })).toHaveAttribute(
+      'href',
+      '/terms',
+    );
+    expect(screen.getByRole('link', { name: 'Privacy' })).toHaveAttribute(
+      'href',
+      '/privacy',
+    );
   });
 
-  it('includes copyright text', () => {
+  it('keeps all three care-domain anchors in the footer', () => {
     render(<MarketingFooter />);
-    expect(screen.getByText(/complete care ltd/i)).toBeInTheDocument();
+
+    expect(screen.getByRole('link', { name: /domiciliary care/i })).toHaveAttribute(
+      'href',
+      '/#domains',
+    );
+    expect(screen.getByRole('link', { name: /supported living/i })).toHaveAttribute(
+      'href',
+      '/#domains',
+    );
+    expect(screen.getByRole('link', { name: /children\'s homes/i })).toHaveAttribute(
+      'href',
+      '/#domains',
+    );
+  });
+
+  it('includes the updated closing note', () => {
+    render(<MarketingFooter />);
+
+    expect(screen.getByText(/complete care ltd\. registered in england & wales/i)).toBeInTheDocument();
+    expect(screen.getByText(/designed for calm operations, inspection confidence, and better daily handover/i)).toBeInTheDocument();
+  });
+});
+
+describe('HomePage redesign', () => {
+  it('renders the new hero thesis and top-level CTAs', () => {
+    render(<HomePage />);
+
+    expect(
+      screen.getByRole('heading', {
+        level: 1,
+        name: /a calmer system for care teams who carry serious work/i,
+      }),
+    ).toBeInTheDocument();
+    expect(screen.getByRole('link', { name: /start with one service/i })).toHaveAttribute(
+      'href',
+      '/register',
+    );
+    expect(screen.getByRole('link', { name: /book a guided walkthrough/i })).toHaveAttribute(
+      'href',
+      '/demo',
+    );
+  });
+
+  it('renders the redesigned narrative sections instead of a stock feature grid cadence', () => {
+    render(<HomePage />);
+
+    expect(
+      screen.getByRole('heading', {
+        level: 2,
+        name: /three care domains, one shared operating language/i,
+      }),
+    ).toBeInTheDocument();
+    expect(
+      screen.getByRole('heading', {
+        level: 2,
+        name: /from first referral to inspection day, the interface should lower friction/i,
+      }),
+    ).toBeInTheDocument();
+    expect(
+      screen.getByRole('heading', {
+        level: 2,
+        name: /the old pattern is more tools, more tabs, more stress/i,
+      }),
+    ).toBeInTheDocument();
+  });
+
+  it('covers all three care domains and the closing CTA block', () => {
+    render(<HomePage />);
+
+    expect(screen.getByText('Domiciliary care')).toBeInTheDocument();
+    expect(screen.getAllByText('Supported living').length).toBeGreaterThan(0);
+    expect(screen.getByText("Children's homes")).toBeInTheDocument();
+    expect(screen.getByRole('link', { name: /create your workspace/i })).toHaveAttribute(
+      'href',
+      '/register',
+    );
+    expect(screen.getByRole('link', { name: /see a guided demo/i })).toHaveAttribute(
+      'href',
+      '/demo',
+    );
   });
 });
