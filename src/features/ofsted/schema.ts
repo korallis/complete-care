@@ -14,35 +14,99 @@ import { EVIDENCE_STATUSES, LEGAL_STATUSES, SOP_STATUSES, EVIDENCE_TYPES } from 
 
 const DATE_REGEX = /^\d{4}-\d{2}-\d{2}$/;
 
+function hasEvidenceDescription(value: string | null | undefined) {
+  return typeof value === 'string' && value.trim().length > 0;
+}
+
+function hasEvidenceLink(value: string | null | undefined) {
+  return typeof value === 'string' && value.length > 0;
+}
+
 // ---------------------------------------------------------------------------
 // Evidence schemas
 // ---------------------------------------------------------------------------
 
-export const createEvidenceSchema = z.object({
-  standardId: z.string().uuid('Invalid standard ID'),
-  subRequirementId: z.string().min(1, 'Sub-requirement ID is required'),
-  evidenceType: z.enum(EVIDENCE_TYPES),
-  evidenceId: z.string().uuid('Invalid evidence record ID').optional().nullable(),
-  description: z
-    .string()
-    .max(2000, 'Description must be 2000 characters or fewer')
-    .optional()
-    .nullable(),
-  status: z.enum(EVIDENCE_STATUSES).default('evidenced'),
-});
+export const createEvidenceSchema = z
+  .object({
+    standardId: z.string().uuid('Invalid standard ID'),
+    subRequirementId: z.string().min(1, 'Sub-requirement ID is required'),
+    evidenceType: z.enum(EVIDENCE_TYPES),
+    evidenceId: z
+      .string()
+      .uuid('Invalid evidence record ID')
+      .optional()
+      .nullable(),
+    description: z
+      .string()
+      .max(2000, 'Description must be 2000 characters or fewer')
+      .optional()
+      .nullable(),
+    status: z.enum(EVIDENCE_STATUSES).default('evidenced'),
+  })
+  .superRefine((data, ctx) => {
+    const hasDescription = hasEvidenceDescription(data.description);
+    const hasLinkedRecord = hasEvidenceLink(data.evidenceId);
+
+    if (!hasDescription && !hasLinkedRecord) {
+      ctx.addIssue({
+        code: z.ZodIssueCode.custom,
+        message: 'Add a description or link a record as evidence',
+        path: ['description'],
+      });
+    }
+
+    if (data.evidenceType === 'manual' && !hasDescription) {
+      ctx.addIssue({
+        code: z.ZodIssueCode.custom,
+        message: 'Manual evidence requires a description',
+        path: ['description'],
+      });
+    }
+  });
 
 export type CreateEvidenceInput = z.infer<typeof createEvidenceSchema>;
 
-export const updateEvidenceSchema = z.object({
-  description: z
-    .string()
-    .max(2000, 'Description must be 2000 characters or fewer')
-    .optional()
-    .nullable(),
-  status: z.enum(EVIDENCE_STATUSES).optional(),
-  evidenceType: z.enum(EVIDENCE_TYPES).optional(),
-  evidenceId: z.string().uuid('Invalid evidence record ID').optional().nullable(),
-});
+export const updateEvidenceSchema = z
+  .object({
+    description: z
+      .string()
+      .max(2000, 'Description must be 2000 characters or fewer')
+      .optional()
+      .nullable(),
+    status: z.enum(EVIDENCE_STATUSES).optional(),
+    evidenceType: z.enum(EVIDENCE_TYPES).optional(),
+    evidenceId: z
+      .string()
+      .uuid('Invalid evidence record ID')
+      .optional()
+      .nullable(),
+  })
+  .superRefine((data, ctx) => {
+    const hasDescription = hasEvidenceDescription(data.description);
+    const hasLinkedRecord = hasEvidenceLink(data.evidenceId);
+    const touchedEvidenceFields =
+      data.description !== undefined || data.evidenceId !== undefined;
+
+    if (touchedEvidenceFields && !hasDescription && !hasLinkedRecord) {
+      ctx.addIssue({
+        code: z.ZodIssueCode.custom,
+        message: 'Add a description or link a record as evidence',
+        path: ['description'],
+      });
+    }
+
+    if (
+      data.evidenceType === 'manual' &&
+      data.description !== undefined &&
+      !hasDescription
+    ) {
+      ctx.addIssue({
+        code: z.ZodIssueCode.custom,
+        message: 'Manual evidence requires a description',
+        path: ['description'],
+      });
+    }
+  });
 
 export type UpdateEvidenceInput = z.infer<typeof updateEvidenceSchema>;
 

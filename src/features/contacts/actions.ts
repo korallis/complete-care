@@ -358,14 +358,56 @@ export async function createContactRecord(
       and(
         eq(approvedContacts.id, data.approvedContactId),
         eq(approvedContacts.organisationId, orgId),
+        eq(approvedContacts.personId, data.personId),
+        eq(approvedContacts.isActive, true),
       ),
     );
 
   if (!approvedContact) {
     return {
       success: false,
-      error: 'Contact is not in the approved register.',
+      error: 'Contact is not in the approved register for this child.',
     };
+  }
+
+  if (!approvedContact.allowedContactTypes.includes(data.contactType)) {
+    return {
+      success: false,
+      error: `Contact type "${data.contactType}" is not permitted for this contact.`,
+    };
+  }
+
+  if (data.contactScheduleId) {
+    const [linkedSchedule] = await db
+      .select()
+      .from(contactSchedules)
+      .where(
+        and(
+          eq(contactSchedules.id, data.contactScheduleId),
+          eq(contactSchedules.organisationId, orgId),
+        ),
+      );
+
+    if (!linkedSchedule) {
+      return { success: false, error: 'Scheduled contact not found.' };
+    }
+
+    if (
+      linkedSchedule.personId !== data.personId ||
+      linkedSchedule.approvedContactId !== data.approvedContactId
+    ) {
+      return {
+        success: false,
+        error: 'Scheduled contact does not match the selected child/contact.',
+      };
+    }
+
+    if (linkedSchedule.contactType !== data.contactType) {
+      return {
+        success: false,
+        error: 'Scheduled contact type does not match the recorded contact.',
+      };
+    }
   }
 
   const [record] = await db
