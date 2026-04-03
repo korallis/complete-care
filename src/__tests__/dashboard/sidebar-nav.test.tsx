@@ -19,9 +19,13 @@ import { getNavItems } from '@/lib/rbac/nav-items';
 // ---------------------------------------------------------------------------
 
 const mockPathname = vi.fn().mockReturnValue('/acme/dashboard');
+const mockSearchParams = {
+  get: vi.fn<(key: string) => string | null>().mockReturnValue(null),
+};
 
 vi.mock('next/navigation', () => ({
   usePathname: () => mockPathname(),
+  useSearchParams: () => mockSearchParams,
   useRouter: () => ({ push: vi.fn() }),
 }));
 
@@ -62,6 +66,7 @@ function renderSidebarNav(role: Parameters<typeof getNavItems>[0] = 'manager') {
 describe('SidebarNav', () => {
   beforeEach(() => {
     mockPathname.mockReturnValue('/acme/dashboard');
+    mockSearchParams.get.mockReturnValue(null);
   });
 
   describe('renders nav items', () => {
@@ -181,6 +186,45 @@ describe('SidebarNav', () => {
       render(<SidebarNav items={items} orgSlug="test-org" />);
       const dashboardLink = screen.getByRole('link', { name: /dashboard/i });
       expect(dashboardLink).toHaveAttribute('href', '/test-org/dashboard');
+    });
+
+    it('routes person-scoped care links through the people workspace fallback', () => {
+      const items = getNavItems('owner');
+      render(<SidebarNav items={items} orgSlug="test-org" />);
+
+      expect(
+        screen.getByRole('link', { name: /care plans/i }),
+      ).toHaveAttribute('href', '/test-org/persons?nav=care-plans');
+      expect(
+        screen.getByRole('link', { name: /daily notes/i }),
+      ).toHaveAttribute('href', '/test-org/persons?nav=care-notes');
+      expect(
+        screen.getByRole('link', { name: /assessments/i }),
+      ).toHaveAttribute('href', '/test-org/persons?nav=risk-assessments');
+      expect(
+        screen.getByRole('link', { name: /medications/i }),
+      ).toHaveAttribute('href', '/test-org/persons?nav=emar');
+      expect(
+        screen.getByRole('link', { name: /incidents/i }),
+      ).toHaveAttribute('href', '/test-org/persons?nav=incidents');
+    });
+  });
+
+  describe('fallback active state', () => {
+    it('marks the fallback care link active when the nav query matches', () => {
+      mockPathname.mockReturnValue('/acme/persons');
+      mockSearchParams.get.mockImplementation((key: string) =>
+        key === 'nav' ? 'care-plans' : null,
+      );
+
+      renderSidebarNav('owner');
+
+      expect(
+        screen.getByRole('link', { name: /care plans/i }),
+      ).toHaveAttribute('aria-current', 'page');
+      expect(
+        screen.getByRole('link', { name: /people/i }),
+      ).not.toHaveAttribute('aria-current');
     });
   });
 

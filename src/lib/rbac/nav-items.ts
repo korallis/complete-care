@@ -38,6 +38,27 @@ export type NavItem = {
   section: NavSection;
 };
 
+const PERSON_SCOPED_NAV_FALLBACKS: Record<string, string> = {
+  '/care-plans': 'care-plans',
+  '/notes': 'care-notes',
+  '/assessments': 'risk-assessments',
+  '/medications': 'emar',
+  '/incidents': 'incidents',
+};
+
+export function getNavFallbackQuery(href: string): string | null {
+  return PERSON_SCOPED_NAV_FALLBACKS[href] ?? null;
+}
+
+export function getOrgScopedNavHref(orgSlug: string, href: string): string {
+  const fallbackQuery = getNavFallbackQuery(href);
+  if (!fallbackQuery) {
+    return `/${orgSlug}${href}`;
+  }
+
+  return `/${orgSlug}/persons?nav=${fallbackQuery}`;
+}
+
 // ---------------------------------------------------------------------------
 // Navigation items per role
 // ---------------------------------------------------------------------------
