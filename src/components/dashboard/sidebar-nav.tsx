@@ -1,7 +1,7 @@
 'use client';
 
 import Link from 'next/link';
-import { usePathname } from 'next/navigation';
+import { usePathname, useSearchParams } from 'next/navigation';
 import {
   Award,
   LayoutDashboard,
@@ -26,7 +26,12 @@ import {
   type LucideIcon,
 } from 'lucide-react';
 import { cn } from '@/lib/utils';
-import type { NavItem, NavSection } from '@/lib/rbac/nav-items';
+import {
+  getNavFallbackQuery,
+  getOrgScopedNavHref,
+  type NavItem,
+  type NavSection,
+} from '@/lib/rbac/nav-items';
 
 const ICON_MAP: Record<string, LucideIcon> = {
   'layout-dashboard': LayoutDashboard,
@@ -68,6 +73,8 @@ interface SidebarNavProps {
 
 export function SidebarNav({ items, orgSlug, onNavigate }: SidebarNavProps) {
   const pathname = usePathname();
+  const searchParams = useSearchParams();
+  const activeNavFallback = searchParams.get('nav');
 
   const sections = items.reduce<Record<NavSection, NavItem[]>>(
     (acc, item) => {
@@ -98,10 +105,20 @@ export function SidebarNav({ items, orgSlug, onNavigate }: SidebarNavProps) {
             <ul className="space-y-1" role="list">
               {sections[section].map((item) => {
                 const Icon = ICON_MAP[item.icon] ?? Settings;
-                const fullHref = `/${orgSlug}${item.href}`;
-                const isActive =
-                  pathname === fullHref ||
-                  (item.href !== '/dashboard' && pathname.startsWith(fullHref));
+                const fullHref = getOrgScopedNavHref(orgSlug, item.href);
+                const fullPathname = fullHref.split('?')[0];
+                const fallbackQuery = getNavFallbackQuery(item.href);
+                const isPeopleFallback =
+                  item.href === '/persons' &&
+                  pathname === `/${orgSlug}/persons` &&
+                  activeNavFallback !== null;
+                const isActive = fallbackQuery
+                  ? pathname === `/${orgSlug}/persons` &&
+                    activeNavFallback === fallbackQuery
+                  : !isPeopleFallback &&
+                    (pathname === fullPathname ||
+                      (item.href !== '/dashboard' &&
+                        pathname.startsWith(fullPathname)));
 
                 return (
                   <li key={item.href}>
