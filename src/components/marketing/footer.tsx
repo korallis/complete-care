@@ -1,122 +1,102 @@
 import Link from 'next/link';
-import { Heart } from 'lucide-react';
+import { HeartHandshake } from 'lucide-react';
+
+const FOOTER_GROUPS = [
+  {
+    title: 'Platform',
+    links: [
+      { label: 'Domains', href: '/#domains' },
+      { label: 'Workflow', href: '/#workflow' },
+      { label: 'Pricing', href: '/pricing' },
+      { label: 'Security', href: '/privacy' },
+    ],
+  },
+  {
+    title: 'Use cases',
+    links: [
+      { label: 'Domiciliary care', href: '/#domains' },
+      { label: 'Supported living', href: '/#domains' },
+      { label: "Children's homes", href: '/#domains' },
+      { label: 'Compliance teams', href: '/#evidence' },
+    ],
+  },
+  {
+    title: 'Company',
+    links: [
+      { label: 'Book a demo', href: '/demo' },
+      { label: 'Contact', href: 'mailto:hello@completecare.co.uk' },
+      { label: 'Terms', href: '/terms' },
+      { label: 'Privacy', href: '/privacy' },
+    ],
+  },
+];
 
 export function MarketingFooter() {
   return (
-    <footer className="bg-[oklch(0.12_0.02_160)] text-white">
-      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-16">
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-10 lg:gap-12">
-          {/* Brand */}
-          <div className="lg:col-span-1">
-            <Link href="/" className="flex items-center gap-2.5 mb-4">
-              <div
-                className="w-8 h-8 rounded-xl bg-[oklch(0.35_0.08_160)] flex items-center justify-center"
-                aria-hidden="true"
-              >
-                <Heart className="w-4 h-4 text-white" aria-hidden="true" />
+    <footer className="mt-24 border-t border-white/10 bg-[oklch(0.15_0.012_232)] text-white">
+      <div className="section-frame py-16 sm:py-20">
+        <div className="grid gap-14 lg:grid-cols-[1.2fr_2fr] lg:gap-20">
+          <div className="max-w-md">
+            <Link href="/" className="flex items-center gap-3">
+              <div className="flex h-11 w-11 items-center justify-center rounded-2xl bg-[oklch(0.28_0.05_200)] text-white shadow-[inset_0_1px_0_rgba(255,255,255,0.16)]">
+                <HeartHandshake className="h-4.5 w-4.5" aria-hidden="true" />
               </div>
-              <span className="text-[15px] font-bold text-white tracking-tight">
-                Complete Care
-              </span>
+              <div>
+                <span className="font-display block text-lg font-semibold tracking-[-0.04em]">
+                  Complete Care
+                </span>
+                <span className="block pt-1 text-[0.65rem] uppercase tracking-[0.24em] text-white/45">
+                  built for real care work
+                </span>
+              </div>
             </Link>
-            <p className="text-sm text-[oklch(0.68_0.02_160)] leading-relaxed max-w-xs">
-              The UK&apos;s only care management platform built natively for
-              domiciliary care, supported living, and children&apos;s residential
-              homes.
+            <p className="mt-6 max-w-sm text-sm leading-7 text-white/68">
+              One operating system for domiciliary care, supported living, and
+              children&apos;s residential homes — designed to help teams stay calm,
+              compliant, and coordinated.
             </p>
-            <p className="text-xs text-[oklch(0.52_0.01_160)] mt-4">
-              Compliant with CQC & Ofsted requirements
-            </p>
+            <div className="mt-8 flex flex-wrap gap-2">
+              <span className="rounded-full border border-white/10 bg-white/6 px-3 py-1.5 text-[0.68rem] uppercase tracking-[0.18em] text-white/60">
+                CQC aware
+              </span>
+              <span className="rounded-full border border-white/10 bg-white/6 px-3 py-1.5 text-[0.68rem] uppercase tracking-[0.18em] text-white/60">
+                Ofsted ready
+              </span>
+              <span className="rounded-full border border-white/10 bg-white/6 px-3 py-1.5 text-[0.68rem] uppercase tracking-[0.18em] text-white/60">
+                multi-service teams
+              </span>
+            </div>
           </div>
 
-          {/* Platform */}
-          <div>
-            <h3 className="text-xs font-semibold text-[oklch(0.78_0.02_160)] uppercase tracking-widest mb-4">
-              Platform
-            </h3>
-            <ul className="space-y-2.5">
-              {[
-                { label: 'Features', href: '/#features' },
-                { label: 'Pricing', href: '/pricing' },
-                { label: 'Security', href: '/privacy' },
-                { label: 'Compliance', href: '/#compare' },
-              ].map((link) => (
-                <li key={link.href}>
-                  <Link
-                    href={link.href}
-                    className="text-sm text-[oklch(0.62_0.01_160)] hover:text-white transition-colors"
-                  >
-                    {link.label}
-                  </Link>
-                </li>
-              ))}
-            </ul>
-          </div>
-
-          {/* Care Domains */}
-          <div>
-            <h3 className="text-xs font-semibold text-[oklch(0.78_0.02_160)] uppercase tracking-widest mb-4">
-              Care Domains
-            </h3>
-            <ul className="space-y-2.5">
-              {[
-                { label: 'Domiciliary Care', href: '/#features' },
-                { label: 'Supported Living', href: '/#features' },
-                { label: "Children's Homes", href: '/#features' },
-              ].map((link) => (
-                <li key={link.label}>
-                  <Link
-                    href={link.href}
-                    className="text-sm text-[oklch(0.62_0.01_160)] hover:text-white transition-colors"
-                  >
-                    {link.label}
-                  </Link>
-                </li>
-              ))}
-            </ul>
-          </div>
-
-          {/* Legal */}
-          <div>
-            <h3 className="text-xs font-semibold text-[oklch(0.78_0.02_160)] uppercase tracking-widest mb-4">
-              Company
-            </h3>
-            <ul className="space-y-2.5">
-              {[
-                { label: 'Privacy Policy', href: '/privacy' },
-                { label: 'Terms of Service', href: '/terms' },
-                { label: 'Contact Us', href: 'mailto:hello@completecare.co.uk' },
-                { label: 'Book a Demo', href: '/demo' },
-              ].map((link) => (
-                <li key={link.href}>
-                  <Link
-                    href={link.href}
-                    className="text-sm text-[oklch(0.62_0.01_160)] hover:text-white transition-colors"
-                  >
-                    {link.label}
-                  </Link>
-                </li>
-              ))}
-            </ul>
+          <div className="grid gap-10 sm:grid-cols-3">
+            {FOOTER_GROUPS.map((group) => (
+              <div key={group.title}>
+                <h3 className="text-[0.68rem] font-semibold uppercase tracking-[0.24em] text-white/42">
+                  {group.title}
+                </h3>
+                <ul className="mt-5 space-y-3 text-sm text-white/70">
+                  {group.links.map((link) => (
+                    <li key={link.href}>
+                      <Link href={link.href} className="transition-colors hover:text-white">
+                        {link.label}
+                      </Link>
+                    </li>
+                  ))}
+                </ul>
+              </div>
+            ))}
           </div>
         </div>
 
-        {/* Bottom bar */}
-        <div className="mt-12 pt-8 border-t border-[oklch(0.22_0.02_160)] flex flex-col sm:flex-row items-center justify-between gap-4">
-          <p className="text-xs text-[oklch(0.48_0.01_160)]">
-            © {new Date().getFullYear()} Complete Care Ltd. All rights reserved. Registered in
-            England & Wales.
+        <div className="mt-14 flex flex-col gap-3 border-t border-white/10 pt-6 text-xs text-white/42 sm:flex-row sm:items-center sm:justify-between">
+          <p>
+            © {new Date().getFullYear()} Complete Care Ltd. Registered in England &amp;
+            Wales.
           </p>
-          <div className="flex items-center gap-2">
-            <span className="inline-flex items-center gap-1.5 bg-[oklch(0.18_0.025_160)] text-[oklch(0.72_0.06_160)] text-xs font-medium px-2.5 py-1 rounded-full">
-              <span className="w-1.5 h-1.5 rounded-full bg-[oklch(0.72_0.15_160)] inline-block" aria-hidden="true" />
-              CQC Compliant
-            </span>
-            <span className="inline-flex items-center gap-1.5 bg-[oklch(0.18_0.025_160)] text-[oklch(0.72_0.06_160)] text-xs font-medium px-2.5 py-1 rounded-full">
-              <span className="w-1.5 h-1.5 rounded-full bg-[oklch(0.72_0.15_160)] inline-block" aria-hidden="true" />
-              Ofsted Ready
-            </span>
-          </div>
+          <p>
+            Designed for calm operations, inspection confidence, and better daily
+            handover.
+          </p>
         </div>
       </div>
     </footer>

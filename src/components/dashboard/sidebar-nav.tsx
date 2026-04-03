@@ -1,12 +1,5 @@
 'use client';
 
-/**
- * SidebarNav — interactive sidebar navigation with active state tracking.
- *
- * Client Component: needs usePathname() for active link detection.
- * Renders grouped nav items (sections with headers) for the current user's role.
- */
-
 import Link from 'next/link';
 import { usePathname } from 'next/navigation';
 import {
@@ -32,10 +25,6 @@ import {
 import { cn } from '@/lib/utils';
 import type { NavItem, NavSection } from '@/lib/rbac/nav-items';
 
-// ---------------------------------------------------------------------------
-// Icon registry — maps icon names from nav-items.ts to Lucide components
-// ---------------------------------------------------------------------------
-
 const ICON_MAP: Record<string, LucideIcon> = {
   'layout-dashboard': LayoutDashboard,
   users: Users,
@@ -56,12 +45,8 @@ const ICON_MAP: Record<string, LucideIcon> = {
   'check-square': CheckSquare,
 };
 
-// ---------------------------------------------------------------------------
-// Section config — label and display order for each NavSection
-// ---------------------------------------------------------------------------
-
 const SECTION_CONFIG: Record<NavSection, { label: string; order: number }> = {
-  main: { label: '', order: 0 },
+  main: { label: 'Overview', order: 0 },
   care: { label: 'People & Care', order: 1 },
   schedule: { label: 'Schedule', order: 2 },
   staff: { label: 'Staff', order: 3 },
@@ -69,21 +54,15 @@ const SECTION_CONFIG: Record<NavSection, { label: string; order: number }> = {
   admin: { label: 'Administration', order: 5 },
 };
 
-// ---------------------------------------------------------------------------
-// Component
-// ---------------------------------------------------------------------------
-
 interface SidebarNavProps {
   items: NavItem[];
   orgSlug: string;
-  /** Called when a nav link is clicked (used to close mobile drawer) */
   onNavigate?: () => void;
 }
 
 export function SidebarNav({ items, orgSlug, onNavigate }: SidebarNavProps) {
   const pathname = usePathname();
 
-  // Group items by section
   const sections = items.reduce<Record<NavSection, NavItem[]>>(
     (acc, item) => {
       if (!acc[item.section]) acc[item.section] = [];
@@ -93,26 +72,24 @@ export function SidebarNav({ items, orgSlug, onNavigate }: SidebarNavProps) {
     {} as Record<NavSection, NavItem[]>,
   );
 
-  // Sort sections by display order
   const sortedSections = (Object.keys(sections) as NavSection[]).sort(
     (a, b) => SECTION_CONFIG[a].order - SECTION_CONFIG[b].order,
   );
 
   return (
-    <nav aria-label="Main navigation" className="flex-1 overflow-y-auto px-3 py-2">
-      <ul className="space-y-0.5" role="list">
+    <nav aria-label="Main navigation" className="flex-1 overflow-y-auto px-3 py-3">
+      <ul className="space-y-4" role="list">
         {sortedSections.map((section) => (
           <li key={section}>
-            {/* Section header (skip for 'main' section) */}
-            {section !== 'main' && SECTION_CONFIG[section].label && (
+            {SECTION_CONFIG[section].label && (
               <div
-                className="px-3 pt-5 pb-1.5 text-[10px] font-semibold uppercase tracking-widest text-[oklch(0.65_0_0)]"
+                className="px-3 pb-2 text-[0.62rem] font-semibold uppercase tracking-[0.24em] text-white/34"
                 aria-hidden="true"
               >
                 {SECTION_CONFIG[section].label}
               </div>
             )}
-            <ul className="space-y-0.5" role="list">
+            <ul className="space-y-1" role="list">
               {sections[section].map((item) => {
                 const Icon = ICON_MAP[item.icon] ?? Settings;
                 const fullHref = `/${orgSlug}${item.href}`;
@@ -127,21 +104,30 @@ export function SidebarNav({ items, orgSlug, onNavigate }: SidebarNavProps) {
                       onClick={onNavigate}
                       aria-current={isActive ? 'page' : undefined}
                       className={cn(
-                        'group flex items-center gap-3 rounded-lg px-3 py-2 text-sm font-medium transition-all duration-150',
+                        'group flex items-center gap-3 rounded-2xl px-3.5 py-3 text-sm font-medium transition-all duration-200',
                         isActive
-                          ? 'bg-[oklch(0.22_0.04_160)] text-white shadow-sm'
-                          : 'text-[oklch(0.38_0_0)] hover:bg-[oklch(0.96_0.007_160)] hover:text-[oklch(0.22_0.04_160)]',
+                          ? 'bg-[oklch(0.3_0.05_200)] text-white shadow-[0_18px_40px_-28px_rgba(56,189,248,0.8)]'
+                          : 'text-white/66 hover:bg-white/7 hover:text-white',
                       )}
                     >
-                      <Icon
+                      <span
                         className={cn(
-                          'h-4 w-4 flex-shrink-0 transition-colors',
+                          'flex h-8 w-8 flex-shrink-0 items-center justify-center rounded-full border transition-colors',
                           isActive
-                            ? 'text-white'
-                            : 'text-[oklch(0.6_0_0)] group-hover:text-[oklch(0.22_0.04_160)]',
+                            ? 'border-white/12 bg-white/10'
+                            : 'border-white/8 bg-transparent group-hover:border-white/16 group-hover:bg-white/6',
                         )}
-                        aria-hidden="true"
-                      />
+                      >
+                        <Icon
+                          className={cn(
+                            'h-4 w-4 transition-colors',
+                            isActive
+                              ? 'text-white'
+                              : 'text-white/54 group-hover:text-white/82',
+                          )}
+                          aria-hidden="true"
+                        />
+                      </span>
                       <span className="truncate">{item.label}</span>
                     </Link>
                   </li>

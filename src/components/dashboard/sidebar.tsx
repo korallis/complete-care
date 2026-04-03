@@ -1,12 +1,5 @@
-/**
- * Sidebar — desktop fixed sidebar (Server Component wrapper).
- *
- * Renders the logo, org context, and role-based navigation.
- * SidebarNav handles the interactive active-state tracking (Client Component).
- */
-
 import Link from 'next/link';
-import { Heart } from 'lucide-react';
+import { HeartHandshake } from 'lucide-react';
 import { SidebarNav } from './sidebar-nav';
 import { PlanBadge } from '@/components/billing/plan-badge';
 import type { NavItem } from '@/lib/rbac/nav-items';
@@ -26,56 +19,49 @@ export function Sidebar({ navItems, orgSlug, orgName, role, plan }: SidebarProps
 
   return (
     <aside
-      className="
-        hidden md:flex flex-col
-        fixed inset-y-0 left-0 z-20
-        w-60 border-r border-[oklch(0.91_0.005_160)]
-        bg-white
-      "
+      className="fixed inset-y-0 left-0 z-20 hidden w-72 flex-col border-r border-white/8 bg-[radial-gradient(circle_at_top,_rgba(56,189,248,0.14),_transparent_24%),linear-gradient(180deg,oklch(0.19_0.016_232),oklch(0.14_0.012_232))] text-white md:flex"
       aria-label="Sidebar navigation"
     >
-      {/* Logo + org context */}
-      <div className="flex flex-col gap-px border-b border-[oklch(0.91_0.005_160)] px-4 py-3.5">
-        {/* Brand */}
-        <Link href="/" className="flex items-center gap-2.5 mb-2">
-          <div className="w-7 h-7 rounded-lg bg-[oklch(0.22_0.04_160)] flex items-center justify-center flex-shrink-0">
-            <Heart className="w-3.5 h-3.5 text-white" aria-hidden="true" />
+      <div className="border-b border-white/8 px-5 py-5">
+        <Link href="/" className="flex items-center gap-3">
+          <div className="flex h-11 w-11 items-center justify-center rounded-2xl bg-white/10 shadow-[inset_0_1px_0_rgba(255,255,255,0.14)]">
+            <HeartHandshake className="h-4.5 w-4.5" aria-hidden="true" />
           </div>
-          <span className="text-[13px] font-semibold text-[oklch(0.22_0.04_160)] tracking-tight">
-            Complete Care
-          </span>
+          <div>
+            <span className="font-display block text-[1rem] font-semibold tracking-[-0.04em]">
+              Complete Care
+            </span>
+            <span className="block pt-1 text-[0.62rem] uppercase tracking-[0.24em] text-white/42">
+              operational workspace
+            </span>
+          </div>
         </Link>
 
-        {/* Current org */}
-        <div className="flex items-center gap-2 rounded-md bg-[oklch(0.97_0.005_160)] px-2.5 py-2">
-          <div
-            className="w-6 h-6 rounded-md bg-[oklch(0.22_0.04_160)] flex items-center justify-center text-white text-[10px] font-bold flex-shrink-0 select-none"
-            aria-hidden="true"
-          >
-            {orgName.charAt(0).toUpperCase()}
-          </div>
-          <div className="min-w-0 flex-1">
-            <p className="text-xs font-semibold text-[oklch(0.22_0.04_160)] truncate leading-tight">
-              {orgName}
-            </p>
-            <div className="flex items-center gap-1.5 mt-0.5">
-              <p className="text-[10px] text-[oklch(0.58_0_0)] capitalize leading-tight">
-                {roleLabel}
-              </p>
-              {plan && <PlanBadge plan={plan} />}
+        <div className="mt-5 rounded-[1.5rem] border border-white/8 bg-white/6 p-3.5 shadow-[inset_0_1px_0_rgba(255,255,255,0.04)]">
+          <div className="flex items-center gap-3">
+            <div
+              className="flex h-10 w-10 items-center justify-center rounded-2xl bg-[oklch(0.3_0.05_200)] text-sm font-semibold text-white"
+              aria-hidden="true"
+            >
+              {orgName.charAt(0).toUpperCase()}
+            </div>
+            <div className="min-w-0 flex-1">
+              <p className="truncate text-sm font-semibold text-white">{orgName}</p>
+              <div className="mt-1 flex items-center gap-2">
+                <p className="text-[0.7rem] uppercase tracking-[0.18em] text-white/42">
+                  {roleLabel}
+                </p>
+                {plan && <PlanBadge plan={plan} />}
+              </div>
             </div>
           </div>
         </div>
       </div>
 
-      {/* Navigation */}
       <SidebarNav items={navItems} orgSlug={orgSlug} />
 
-      {/* Footer */}
-      <div className="border-t border-[oklch(0.91_0.005_160)] px-4 py-3">
-        <p className="text-[10px] text-[oklch(0.68_0_0)] text-center">
-          © {new Date().getFullYear()} Complete Care
-        </p>
+      <div className="border-t border-white/8 px-5 py-4 text-[0.68rem] uppercase tracking-[0.18em] text-white/34">
+        Calm coordination for every shift.
       </div>
     </aside>
   );

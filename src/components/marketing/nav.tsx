@@ -2,129 +2,115 @@
 
 import Link from 'next/link';
 import { useState } from 'react';
-import { Menu, X, Heart } from 'lucide-react';
+import { Menu, X, HeartHandshake } from 'lucide-react';
+
+const LINKS = [
+  { href: '/#domains', label: 'Domains' },
+  { href: '/#workflow', label: 'Workflow' },
+  { href: '/#evidence', label: 'Why it lands' },
+  { href: '/pricing', label: 'Pricing' },
+];
 
 export function MarketingNav() {
   const [mobileOpen, setMobileOpen] = useState(false);
 
   return (
-    <header className="fixed top-0 inset-x-0 z-50 bg-white/95 backdrop-blur-sm border-b border-[oklch(0.91_0.005_160)]">
+    <header className="fixed inset-x-0 top-0 z-50 px-3 pt-3 sm:px-6">
       <nav
-        className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 h-16 flex items-center justify-between"
+        className="mx-auto flex h-16 w-full max-w-7xl items-center justify-between rounded-full border border-white/55 bg-[oklch(0.985_0.002_95)/0.82] px-4 shadow-[0_24px_80px_-36px_rgba(15,23,42,0.32)] backdrop-blur-xl sm:px-6"
         aria-label="Main navigation"
       >
-        {/* Logo */}
-        <Link href="/" className="flex items-center gap-2.5 flex-shrink-0">
-          <div
-            className="w-8 h-8 rounded-xl bg-[oklch(0.22_0.04_160)] flex items-center justify-center"
-            aria-hidden="true"
-          >
-            <Heart className="w-4 h-4 text-white" aria-hidden="true" />
+        <Link href="/" className="flex flex-shrink-0 items-center gap-3">
+          <div className="flex h-10 w-10 items-center justify-center rounded-2xl bg-[oklch(0.18_0.018_232)] text-white shadow-[inset_0_1px_0_rgba(255,255,255,0.14)]">
+            <HeartHandshake className="h-4 w-4" aria-hidden="true" />
           </div>
-          <span className="text-[15px] font-bold text-[oklch(0.15_0.03_160)] tracking-tight">
-            Complete Care
-          </span>
+          <div className="leading-none">
+            <span className="font-display block text-[0.95rem] font-semibold tracking-[-0.04em] text-[oklch(0.19_0.015_235)]">
+              Complete Care
+            </span>
+            <span className="block pt-1 text-[0.62rem] uppercase tracking-[0.24em] text-[oklch(0.45_0.015_220)]">
+              care operations system
+            </span>
+          </div>
         </Link>
 
-        {/* Desktop nav links */}
-        <div className="hidden md:flex items-center gap-8">
-          <Link
-            href="/#features"
-            className="text-sm text-[oklch(0.45_0.01_160)] hover:text-[oklch(0.22_0.04_160)] transition-colors font-medium"
-          >
-            Features
-          </Link>
-          <Link
-            href="/#compare"
-            className="text-sm text-[oklch(0.45_0.01_160)] hover:text-[oklch(0.22_0.04_160)] transition-colors font-medium"
-          >
-            Why Us
-          </Link>
-          <Link
-            href="/pricing"
-            className="text-sm text-[oklch(0.45_0.01_160)] hover:text-[oklch(0.22_0.04_160)] transition-colors font-medium"
-          >
-            Pricing
-          </Link>
+        <div className="hidden items-center gap-8 md:flex">
+          {LINKS.map((link) => (
+            <Link
+              key={link.href}
+              href={link.href}
+              className="text-sm font-medium text-[oklch(0.42_0.018_225)] transition-colors hover:text-[oklch(0.22_0.05_205)]"
+            >
+              {link.label}
+            </Link>
+          ))}
         </div>
 
-        {/* Desktop CTAs */}
-        <div className="hidden md:flex items-center gap-3">
+        <div className="hidden items-center gap-3 md:flex">
           <Link
             href="/login"
-            className="text-sm font-medium text-[oklch(0.35_0.02_160)] hover:text-[oklch(0.22_0.04_160)] transition-colors px-3 py-2"
+            className="rounded-full px-4 py-2 text-sm font-medium text-[oklch(0.32_0.018_225)] transition-colors hover:text-[oklch(0.19_0.015_235)]"
           >
             Sign in
           </Link>
           <Link
             href="/register"
-            className="inline-flex items-center gap-1.5 bg-[oklch(0.22_0.04_160)] text-white text-sm font-semibold px-4 py-2 rounded-lg hover:bg-[oklch(0.28_0.05_160)] transition-colors"
+            className="inline-flex items-center rounded-full bg-[oklch(0.19_0.015_235)] px-4 py-2.5 text-sm font-semibold text-white transition-transform duration-200 hover:-translate-y-px"
           >
-            Get Started Free
+            Start with one service
           </Link>
         </div>
 
-        {/* Mobile hamburger */}
         <button
           type="button"
-          className="md:hidden p-2 rounded-lg text-[oklch(0.45_0.01_160)] hover:bg-[oklch(0.96_0.005_160)] transition-colors"
-          onClick={() => setMobileOpen(!mobileOpen)}
+          className="inline-flex h-11 w-11 items-center justify-center rounded-full border border-[oklch(0.86_0.015_220)] text-[oklch(0.34_0.018_225)] transition-colors hover:bg-white md:hidden"
+          onClick={() => setMobileOpen((value) => !value)}
           aria-label={mobileOpen ? 'Close menu' : 'Open menu'}
           aria-expanded={mobileOpen}
           aria-controls="mobile-menu"
         >
           {mobileOpen ? (
-            <X className="w-5 h-5" aria-hidden="true" />
+            <X className="h-5 w-5" aria-hidden="true" />
           ) : (
-            <Menu className="w-5 h-5" aria-hidden="true" />
+            <Menu className="h-5 w-5" aria-hidden="true" />
           )}
         </button>
       </nav>
 
-      {/* Mobile menu */}
       {mobileOpen && (
-        <div
-          id="mobile-menu"
-          className="md:hidden border-t border-[oklch(0.91_0.005_160)] bg-white"
-        >
-          <div className="px-4 py-4 space-y-1">
-            <Link
-              href="/#features"
-              className="block px-3 py-2.5 rounded-lg text-sm font-medium text-[oklch(0.35_0.02_160)] hover:bg-[oklch(0.96_0.005_160)] transition-colors"
-              onClick={() => setMobileOpen(false)}
-            >
-              Features
-            </Link>
-            <Link
-              href="/#compare"
-              className="block px-3 py-2.5 rounded-lg text-sm font-medium text-[oklch(0.35_0.02_160)] hover:bg-[oklch(0.96_0.005_160)] transition-colors"
-              onClick={() => setMobileOpen(false)}
-            >
-              Why Us
-            </Link>
-            <Link
-              href="/pricing"
-              className="block px-3 py-2.5 rounded-lg text-sm font-medium text-[oklch(0.35_0.02_160)] hover:bg-[oklch(0.96_0.005_160)] transition-colors"
-              onClick={() => setMobileOpen(false)}
-            >
-              Pricing
-            </Link>
-          </div>
-          <div className="px-4 pb-4 pt-2 border-t border-[oklch(0.91_0.005_160)] flex flex-col gap-2">
-            <Link
-              href="/login"
-              className="block text-center px-4 py-2.5 rounded-lg text-sm font-medium text-[oklch(0.35_0.02_160)] border border-[oklch(0.88_0.005_160)] hover:bg-[oklch(0.96_0.005_160)] transition-colors"
-              onClick={() => setMobileOpen(false)}
-            >
-              Sign in
-            </Link>
-            <Link
-              href="/register"
-              className="block text-center bg-[oklch(0.22_0.04_160)] text-white text-sm font-semibold px-4 py-2.5 rounded-lg hover:bg-[oklch(0.28_0.05_160)] transition-colors"
-              onClick={() => setMobileOpen(false)}
-            >
-              Get Started Free
-            </Link>
+        <div className="section-frame pt-3 md:hidden">
+          <div
+            id="mobile-menu"
+            className="surface-panel overflow-hidden rounded-[1.75rem] border border-white/60 px-4 py-4"
+          >
+            <div className="space-y-1">
+              {LINKS.map((link) => (
+                <Link
+                  key={link.href}
+                  href={link.href}
+                  className="block rounded-2xl px-4 py-3 text-sm font-medium text-[oklch(0.3_0.018_225)] transition-colors hover:bg-[oklch(0.94_0.01_205)]"
+                  onClick={() => setMobileOpen(false)}
+                >
+                  {link.label}
+                </Link>
+              ))}
+            </div>
+            <div className="mt-4 grid gap-2 border-t border-[oklch(0.9_0.012_220)] pt-4">
+              <Link
+                href="/login"
+                className="rounded-2xl border border-[oklch(0.88_0.012_220)] px-4 py-3 text-center text-sm font-medium text-[oklch(0.32_0.018_225)]"
+                onClick={() => setMobileOpen(false)}
+              >
+                Sign in
+              </Link>
+              <Link
+                href="/register"
+                className="rounded-2xl bg-[oklch(0.19_0.015_235)] px-4 py-3 text-center text-sm font-semibold text-white"
+                onClick={() => setMobileOpen(false)}
+              >
+                Start with one service
+              </Link>
+            </div>
           </div>
         </div>
       )}
