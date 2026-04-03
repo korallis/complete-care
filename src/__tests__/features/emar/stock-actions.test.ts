@@ -290,6 +290,62 @@ describe('emar stock actions', () => {
           reorderQuantity: 100,
         },
       ],
+      [
+        {
+          personId: '550e8400-e29b-41d4-a716-446655440201',
+          medicationName: 'Paracetamol',
+          scheduledTime: new Date('2026-04-02T20:00:00.000Z'),
+          administeredAt: new Date('2026-04-02T20:20:00.000Z'),
+          status: 'given',
+          reason: null,
+        },
+        {
+          personId: '550e8400-e29b-41d4-a716-446655440202',
+          medicationName: 'Ibuprofen',
+          scheduledTime: new Date('2026-04-02T21:00:00.000Z'),
+          administeredAt: null,
+          status: 'refused',
+          reason: 'Person declined',
+        },
+      ],
+      [
+        {
+          personId: '550e8400-e29b-41d4-a716-446655440201',
+          medicationName: 'Lorazepam',
+          administeredAt: new Date('2026-04-03T01:00:00.000Z'),
+          preDoseAssessment: {
+            symptoms: ['anxiety'],
+            notes: 'Escalating anxiety overnight',
+          },
+          postDoseAssessment: {
+            effectAchieved: 'yes',
+          },
+        },
+      ],
+      [
+        {
+          errorId: 'error-1',
+          type: 'wrong_time',
+          severity: 'moderate',
+          personId: '550e8400-e29b-41d4-a716-446655440201',
+        },
+      ],
+      [
+        {
+          id: 'cd-register-1',
+          medicationName: 'Morphine sulphate',
+          currentBalance: 12,
+        },
+      ],
+      [
+        {
+          registerId: 'cd-register-1',
+          expectedBalance: 12,
+          actualCount: 11,
+          hasDiscrepancy: true,
+          reconciliationDate: new Date('2026-04-03T06:45:00.000Z'),
+        },
+      ],
     );
 
     updateQueue.push(
@@ -420,14 +476,6 @@ describe('emar stock actions', () => {
         shiftType: 'night',
         shiftStartAt: '2026-04-02T19:00:00.000Z',
         shiftEndAt: '2026-04-03T07:00:00.000Z',
-        summary: {
-          administrations: { total: 12, onTime: 10, late: 1, missed: 1 },
-          refusals: [],
-          prnUsage: [],
-          errors: [],
-          cdBalances: [],
-          notes: 'Escalate one missed dose to day shift.',
-        },
         handoverNotes: 'Night lead to brief day staff at 07:00.',
       }),
     ).resolves.toEqual({
@@ -453,6 +501,45 @@ describe('emar stock actions', () => {
       medicationStockId: stockId,
       quantity: 20,
       reorderRequestId: reorderId,
+    });
+    expect(insertValuesCalls[7]).toMatchObject({
+      organisationId,
+      shiftType: 'night',
+      summary: expect.objectContaining({
+        administrations: expect.objectContaining({
+          total: 2,
+          onTime: 1,
+          late: 0,
+          missed: 0,
+        }),
+        refusals: [
+          expect.objectContaining({
+            medicationName: 'Ibuprofen',
+            reason: 'Person declined',
+          }),
+        ],
+        prnUsage: [
+          expect.objectContaining({
+            medicationName: 'Lorazepam',
+            reason: 'Escalating anxiety overnight',
+            effectiveness: 'yes',
+          }),
+        ],
+        errors: [
+          expect.objectContaining({
+            errorId: 'error-1',
+            type: 'wrong_time',
+          }),
+        ],
+        cdBalances: [
+          expect.objectContaining({
+            medicationName: 'Morphine sulphate',
+            expectedBalance: 12,
+            actualBalance: 11,
+            discrepancy: true,
+          }),
+        ],
+      }),
     });
     expect(updateSetCalls[3]).toMatchObject({ currentQuantity: 25 });
     expect(mockAuditLog).toHaveBeenCalled();
