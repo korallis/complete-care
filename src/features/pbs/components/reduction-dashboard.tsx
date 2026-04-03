@@ -1,6 +1,6 @@
 'use client';
 
-import { useState } from 'react';
+import { useEffect, useRef, useState } from 'react';
 import {
   BarChart,
   Bar,
@@ -10,7 +10,6 @@ import {
   YAxis,
   CartesianGrid,
   Tooltip,
-  ResponsiveContainer,
 } from 'recharts';
 import { PERIOD_OPTIONS } from '../schema';
 
@@ -94,6 +93,35 @@ export function ReductionDashboard({
   reductionPlan,
 }: ReductionDashboardProps) {
   const [chartType, setChartType] = useState<'bar' | 'line'>('bar');
+  const [chartWidth, setChartWidth] = useState<number | null>(null);
+  const chartContainerRef = useRef<HTMLDivElement | null>(null);
+
+  useEffect(() => {
+    const node = chartContainerRef.current;
+    if (!node) return;
+
+    const updateWidth = (width: number) => {
+      setChartWidth(width > 0 ? Math.floor(width) : null);
+    };
+
+    updateWidth(node.getBoundingClientRect().width);
+
+    if (typeof ResizeObserver === 'undefined') {
+      return;
+    }
+
+    const observer = new ResizeObserver((entries) => {
+      const entry = entries[0];
+      updateWidth(entry?.contentRect.width ?? node.getBoundingClientRect().width);
+    });
+
+    observer.observe(node);
+
+    return () => {
+      observer.disconnect();
+    };
+  }, []);
+
   const trend = computeTrend(data);
   const tc = trendConfig[trend];
 
@@ -194,62 +222,67 @@ export function ReductionDashboard({
             No data available for the selected period.
           </p>
         ) : (
-          <div className="h-72">
-            <ResponsiveContainer width="100%" height="100%">
-              {chartType === 'bar' ? (
-                <BarChart data={chartData}>
-                  <CartesianGrid strokeDasharray="3 3" stroke="#e2e8f0" />
-                  <XAxis
-                    dataKey="label"
-                    tick={{ fontSize: 11, fill: '#64748b' }}
-                  />
-                  <YAxis
-                    allowDecimals={false}
-                    tick={{ fontSize: 11, fill: '#64748b' }}
-                  />
-                  <Tooltip
-                    contentStyle={{
-                      borderRadius: '8px',
-                      border: '1px solid #e2e8f0',
-                      fontSize: '12px',
-                    }}
-                  />
-                  <Bar
-                    dataKey="count"
-                    name="Practices"
-                    fill="#0e7490"
-                    radius={[4, 4, 0, 0]}
-                  />
-                </BarChart>
-              ) : (
-                <LineChart data={chartData}>
-                  <CartesianGrid strokeDasharray="3 3" stroke="#e2e8f0" />
-                  <XAxis
-                    dataKey="label"
-                    tick={{ fontSize: 11, fill: '#64748b' }}
-                  />
-                  <YAxis
-                    allowDecimals={false}
-                    tick={{ fontSize: 11, fill: '#64748b' }}
-                  />
-                  <Tooltip
-                    contentStyle={{
-                      borderRadius: '8px',
-                      border: '1px solid #e2e8f0',
-                      fontSize: '12px',
-                    }}
-                  />
-                  <Line
-                    type="monotone"
-                    dataKey="count"
-                    stroke="#0e7490"
-                    strokeWidth={2.5}
-                    dot={{ r: 4, fill: '#0e7490' }}
-                    name="Practices"
-                  />
-                </LineChart>
-              )}
-            </ResponsiveContainer>
+          <div ref={chartContainerRef} className="h-72">
+            {chartWidth === null ? (
+              <div
+                data-testid="reduction-chart-placeholder"
+                className="flex h-full items-center justify-center rounded-lg border border-dashed border-slate-200 bg-slate-50 text-sm text-slate-500"
+              >
+                Preparing chart…
+              </div>
+            ) : chartType === 'bar' ? (
+              <BarChart width={chartWidth} height={288} data={chartData}>
+                <CartesianGrid strokeDasharray="3 3" stroke="#e2e8f0" />
+                <XAxis
+                  dataKey="label"
+                  tick={{ fontSize: 11, fill: '#64748b' }}
+                />
+                <YAxis
+                  allowDecimals={false}
+                  tick={{ fontSize: 11, fill: '#64748b' }}
+                />
+                <Tooltip
+                  contentStyle={{
+                    borderRadius: '8px',
+                    border: '1px solid #e2e8f0',
+                    fontSize: '12px',
+                  }}
+                />
+                <Bar
+                  dataKey="count"
+                  name="Practices"
+                  fill="#0e7490"
+                  radius={[4, 4, 0, 0]}
+                />
+              </BarChart>
+            ) : (
+              <LineChart width={chartWidth} height={288} data={chartData}>
+                <CartesianGrid strokeDasharray="3 3" stroke="#e2e8f0" />
+                <XAxis
+                  dataKey="label"
+                  tick={{ fontSize: 11, fill: '#64748b' }}
+                />
+                <YAxis
+                  allowDecimals={false}
+                  tick={{ fontSize: 11, fill: '#64748b' }}
+                />
+                <Tooltip
+                  contentStyle={{
+                    borderRadius: '8px',
+                    border: '1px solid #e2e8f0',
+                    fontSize: '12px',
+                  }}
+                />
+                <Line
+                  type="monotone"
+                  dataKey="count"
+                  stroke="#0e7490"
+                  strokeWidth={2.5}
+                  dot={{ r: 4, fill: '#0e7490' }}
+                  name="Practices"
+                />
+              </LineChart>
+            )}
           </div>
         )}
       </div>
