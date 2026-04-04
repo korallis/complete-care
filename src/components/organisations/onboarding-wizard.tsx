@@ -13,8 +13,6 @@
  */
 
 import { useState, useEffect, useTransition, useId } from 'react';
-import { useRouter } from 'next/navigation';
-import { useSession } from 'next-auth/react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
@@ -134,8 +132,6 @@ interface OnboardingWizardProps {
 // ---------------------------------------------------------------------------
 
 export function OnboardingWizard({ userName }: OnboardingWizardProps) {
-  const router = useRouter();
-  const { update: updateSession } = useSession();
   const [isPending, startTransition] = useTransition();
   const baseId = useId();
 
@@ -281,15 +277,11 @@ export function OnboardingWizard({ userName }: OnboardingWizardProps) {
         return;
       }
 
-      // Switch the session's active org to the newly created one.
-      // Passing activeOrgId triggers the JWT callback to set this as the
-      // active organisation, ensuring the new org's data loads immediately.
-      const newOrgId = result.data?.orgId ?? '';
       const orgSlug = result.data?.orgSlug ?? '';
-      await updateSession({ activeOrgId: newOrgId });
-      // Redirect to the org-scoped dashboard with welcome message
-      router.push(orgSlug ? `/${orgSlug}/dashboard?welcome=true` : '/dashboard?welcome=true');
-      router.refresh();
+      const returnTo = encodeURIComponent('/dashboard?welcome=true');
+      window.location.assign(
+        `/api/orgs/switch?slug=${encodeURIComponent(orgSlug)}&returnTo=${returnTo}`,
+      );
     });
   }
 

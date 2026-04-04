@@ -7,8 +7,6 @@
 
 import { useState, useTransition } from 'react';
 import Link from 'next/link';
-import { useRouter } from 'next/navigation';
-import { useSession } from 'next-auth/react';
 import type { SessionMembership } from '@/types/auth';
 
 interface OrgSwitcherProps {
@@ -22,8 +20,6 @@ export function OrgSwitcher({
   activeOrgId,
   activeOrgName,
 }: OrgSwitcherProps) {
-  const router = useRouter();
-  const { update } = useSession();
   const [isPending, startTransition] = useTransition();
   const [isOpen, setIsOpen] = useState(false);
 
@@ -102,9 +98,10 @@ export function OrgSwitcher({
     }
     setIsOpen(false);
     startTransition(async () => {
-      await update({ activeOrgId: orgId });
-      router.push(`/${orgSlug}/dashboard`);
-      router.refresh();
+      const returnTo = encodeURIComponent(`/${orgSlug}/dashboard`);
+      window.location.assign(
+        `/api/orgs/switch?slug=${encodeURIComponent(orgSlug)}&returnTo=${returnTo}`,
+      );
     });
   }
 

@@ -1,9 +1,7 @@
 'use client';
 
 import { useState, useTransition } from 'react';
-import { useRouter } from 'next/navigation';
 import Link from 'next/link';
-import { useSession } from 'next-auth/react';
 import { Button } from '@/components/ui/button';
 import { acceptInvitation } from '@/features/organisations/actions';
 
@@ -20,8 +18,6 @@ export function AcceptInvitationForm({
   isLoggedIn,
   currentUserEmail,
 }: AcceptInvitationFormProps) {
-  const router = useRouter();
-  const { update: updateSession } = useSession();
   const [isPending, startTransition] = useTransition();
   const [error, setError] = useState<string>('');
 
@@ -48,11 +44,10 @@ export function AcceptInvitationForm({
         return;
       }
 
-      // Refresh session to pick up the new org
-      await updateSession({});
-
-      router.push('/dashboard');
-      router.refresh();
+      const returnTo = encodeURIComponent('/dashboard');
+      window.location.assign(
+        `/api/orgs/switch?slug=${encodeURIComponent(result.data.orgSlug)}&returnTo=${returnTo}`,
+      );
     });
   }
 

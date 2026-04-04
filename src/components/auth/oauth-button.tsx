@@ -6,7 +6,6 @@
  */
 
 import { useState } from 'react';
-import { signIn } from 'next-auth/react';
 import { Loader2 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 
@@ -59,7 +58,9 @@ export function OAuthButton({
   const handleGoogleSignIn = async () => {
     setIsPending(true);
     try {
-      await signIn('google', { callbackUrl });
+      window.location.assign(
+        `/api/auth/signin/google?callbackUrl=${encodeURIComponent(callbackUrl)}`,
+      );
     } catch {
       // Auth.js redirect throws an error internally — safe to swallow
     } finally {

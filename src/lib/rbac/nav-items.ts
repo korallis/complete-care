@@ -140,7 +140,7 @@ export const NAV_ITEMS_BY_ROLE: Record<Role, NavItem[]> = {
     },
     {
       label: 'Compliance',
-      href: '/compliance',
+      href: '/staff/compliance',
       icon: 'shield-check',
       section: 'operations',
     },
@@ -265,7 +265,7 @@ export const NAV_ITEMS_BY_ROLE: Record<Role, NavItem[]> = {
     },
     {
       label: 'Compliance',
-      href: '/compliance',
+      href: '/staff/compliance',
       icon: 'shield-check',
       section: 'operations',
     },
@@ -384,7 +384,7 @@ export const NAV_ITEMS_BY_ROLE: Record<Role, NavItem[]> = {
     },
     {
       label: 'Compliance',
-      href: '/compliance',
+      href: '/staff/compliance',
       icon: 'shield-check',
       section: 'operations',
     },
@@ -459,7 +459,7 @@ export const NAV_ITEMS_BY_ROLE: Record<Role, NavItem[]> = {
     // Operations section
     {
       label: 'Compliance',
-      href: '/compliance',
+      href: '/staff/compliance',
       icon: 'shield-check',
       section: 'operations',
     },

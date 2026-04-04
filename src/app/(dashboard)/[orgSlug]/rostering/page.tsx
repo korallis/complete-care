@@ -183,7 +183,10 @@ export default async function RosteringPage({
                 <Button type="submit">Approve ready entries</Button>
               </form>
               <Button asChild variant="secondary">
-                <Link href={`/${orgSlug}/rostering/payroll?startDate=${startDate}&endDate=${endDate}`}>
+                <Link
+                  href={`/${orgSlug}/rostering/payroll?startDate=${startDate}&endDate=${endDate}`}
+                  prefetch={false}
+                >
                   Export payroll CSV
                 </Link>
               </Button>

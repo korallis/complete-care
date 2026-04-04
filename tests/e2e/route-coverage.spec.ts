@@ -118,6 +118,34 @@ async function collectVisibleControls(page: Page) {
   });
 }
 
+async function collectRouteSnapshot(page: Page) {
+  let lastError: unknown;
+
+  for (let attempt = 0; attempt < 3; attempt += 1) {
+    try {
+      const controls = await collectVisibleControls(page);
+      const title = await page.title().catch(() => '');
+      const bodySnippet = (await page.locator('body').innerText())
+        .slice(0, 600)
+        .replace(/\n+/g, ' | ');
+
+      return {
+        controls,
+        title,
+        bodySnippet,
+      };
+    } catch (error) {
+      lastError = error;
+      await page.waitForLoadState('networkidle', { timeout: 3_000 }).catch(
+        () => undefined,
+      );
+      await page.waitForTimeout(300);
+    }
+  }
+
+  throw lastError;
+}
+
 async function auditRoute(
   page: Page,
   route: string,
@@ -146,27 +174,39 @@ async function auditRoute(
       navigationError = error instanceof Error ? error.message : String(error);
     }
 
-    const controls = navigationError
-      ? {
-          heading: null,
-          buttonCount: 0,
-          linkCount: 0,
-          buttons: [],
-          links: [],
-        }
-      : await collectVisibleControls(page);
+    let controls: Awaited<ReturnType<typeof collectVisibleControls>> = {
+      heading: null,
+      buttonCount: 0,
+      linkCount: 0,
+      buttons: [],
+      links: [],
+    };
+    let title = '';
+    let bodySnippet = navigationError ?? '';
+
+    if (!navigationError) {
+      try {
+        const snapshot = await collectRouteSnapshot(page);
+        controls = snapshot.controls;
+        title = snapshot.title;
+        bodySnippet = snapshot.bodySnippet;
+      } catch (error) {
+        navigationError =
+          error instanceof Error ? error.message : String(error);
+        bodySnippet = navigationError;
+      }
+    }
+
     const result: RouteAuditResult = {
       category,
       route,
       status: response?.status() ?? null,
       finalUrl: page.url(),
-      title: await page.title().catch(() => ''),
+      title,
       ...controls,
       pageErrors,
       consoleErrors,
-      bodySnippet: navigationError
-        ? navigationError
-        : (await page.locator('body').innerText()).slice(0, 600).replace(/\n+/g, ' | '),
+      bodySnippet,
       failureReasons: [],
     };
 
