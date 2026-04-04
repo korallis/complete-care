@@ -16,6 +16,7 @@ const FOOTER_GROUPS = [
     links: [
       { label: 'Domiciliary care', href: '/#domains' },
       { label: 'Supported living', href: '/#domains' },
+      { label: 'Complex care', href: '/#domains' },
       { label: "Children's homes", href: '/#domains' },
       { label: 'Compliance teams', href: '/#evidence' },
     ],
@@ -51,9 +52,9 @@ export function MarketingFooter() {
               </div>
             </Link>
             <p className="mt-6 max-w-sm text-sm leading-7 text-white/68">
-              One operating system for domiciliary care, supported living, and
-              children&apos;s residential homes — designed to help teams stay calm,
-              compliant, and coordinated.
+              One operating system for domiciliary care, supported living,
+              complex care, and children&apos;s residential homes — designed to help
+              teams stay calm, compliant, and coordinated.
             </p>
             <div className="mt-8 flex flex-wrap gap-2">
               <span className="rounded-full border border-white/10 bg-white/6 px-3 py-1.5 text-[0.68rem] uppercase tracking-[0.18em] text-white/60">

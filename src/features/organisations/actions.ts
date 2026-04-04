@@ -62,6 +62,7 @@ const ORG_TYPE_VALUES = [
 const CARE_DOMAIN_VALUES = [
   'domiciliary_care',
   'supported_living',
+  'complex_care',
   'childrens_homes',
   'domiciliary',
   'childrens_residential',
@@ -71,6 +72,7 @@ const CARE_DOMAIN_CANONICAL_MAP = {
   domiciliary: 'domiciliary_care',
   domiciliary_care: 'domiciliary_care',
   supported_living: 'supported_living',
+  complex_care: 'complex_care',
   childrens_residential: 'childrens_homes',
   childrens_homes: 'childrens_homes',
 } as const;

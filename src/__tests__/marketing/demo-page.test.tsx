@@ -202,6 +202,7 @@ describe('DemoBookingForm', () => {
     );
     expect(options).toContain('Domiciliary Care');
     expect(options).toContain('Supported Living');
+    expect(options).toContain('Complex Care');
     expect(options).toContain("Children's Residential Homes");
     expect(options).toContain('Multiple / All Domains');
   });

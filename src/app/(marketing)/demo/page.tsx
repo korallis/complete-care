@@ -8,7 +8,7 @@ export const metadata: Metadata = {
   openGraph: {
     title: 'Book a Demo — Complete Care',
     description:
-      'Book a personalised demo and see how Complete Care unifies domiciliary care, supported living, and children\'s homes management.',
+      'Book a personalised demo and see how Complete Care unifies domiciliary care, supported living, complex care, and children\'s homes management.',
   },
 };
 
@@ -55,7 +55,8 @@ export default function DemoPage() {
           </h1>
           <p className="mt-5 text-base sm:text-lg text-white/70 max-w-xl mx-auto leading-relaxed">
             Get a personalised walkthrough tailored to your care domain — domiciliary,
-            supported living, or children&apos;s homes. No obligation, no sales pressure.
+            supported living, complex care, or children&apos;s homes. No obligation, no sales
+            pressure.
           </p>
         </div>
       </section>

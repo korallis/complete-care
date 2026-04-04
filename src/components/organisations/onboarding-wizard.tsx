@@ -5,7 +5,7 @@
  *
  * Steps:
  * 1. Create organisation (name + auto-generated URL slug)
- * 2. Select care domains (domiciliary_care, supported_living, childrens_homes)
+ * 2. Select care domains (domiciliary_care, supported_living, complex_care, childrens_homes)
  * 3. Invite team members (bulk email + role — optional, skippable)
  *
  * On completion (step 3 submit or skip), calls createOrganisationWithInvites,
@@ -78,6 +78,27 @@ const CARE_DOMAINS = [
         <circle cx="9" cy="7" r="4" />
         <path d="M23 21v-2a4 4 0 0 0-3-3.87" />
         <path d="M16 3.13a4 4 0 0 1 0 7.75" />
+      </svg>
+    ),
+  },
+  {
+    id: 'complex_care',
+    label: 'Complex Care',
+    description: 'Higher-acuity scheduling, competencies, and clinical coordination',
+    icon: (
+      <svg
+        xmlns="http://www.w3.org/2000/svg"
+        viewBox="0 0 24 24"
+        fill="none"
+        stroke="currentColor"
+        strokeWidth="1.75"
+        strokeLinecap="round"
+        strokeLinejoin="round"
+        className="w-5 h-5"
+      >
+        <path d="M12 21s-6.5-4.35-8.5-8.31C1.9 9.58 3.43 6 6.93 6c2.04 0 3.23 1.09 4.07 2.4C11.84 7.09 13.03 6 15.07 6c3.5 0 5.03 3.58 3.43 6.69C18.5 16.65 12 21 12 21Z" />
+        <path d="M10 12h4" />
+        <path d="M12 10v4" />
       </svg>
     ),
   },

@@ -64,6 +64,7 @@ describe('createShiftPatternSchema', () => {
     for (const careDomain of [
       'domiciliary_care',
       'supported_living',
+      'complex_care',
       'childrens_home',
     ]) {
       const result = createShiftPatternSchema.safeParse({

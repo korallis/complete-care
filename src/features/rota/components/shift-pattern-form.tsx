@@ -19,6 +19,7 @@ import { calculateDurationMinutes } from '../lib/wtd-checks';
 const CARE_DOMAINS: { value: CareDomain; label: string }[] = [
   { value: 'domiciliary_care', label: 'Domiciliary Care' },
   { value: 'supported_living', label: 'Supported Living' },
+  { value: 'complex_care', label: 'Complex Care' },
   { value: 'childrens_home', label: "Children's Home" },
 ];
 

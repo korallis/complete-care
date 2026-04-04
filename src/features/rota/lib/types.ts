@@ -6,7 +6,7 @@ import type { ShiftPattern, ShiftAssignment, RotaPeriod } from '@/lib/db/schema/
 
 // --- Enums as union types ---
 
-export type CareDomain = 'domiciliary_care' | 'supported_living' | 'childrens_home';
+export type CareDomain = 'domiciliary_care' | 'supported_living' | 'complex_care' | 'childrens_home';
 
 export type ShiftType = 'standard' | 'sleep_in' | 'waking_night' | 'on_call';
 

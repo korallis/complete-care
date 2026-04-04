@@ -19,6 +19,11 @@ const CARE_DOMAINS = [
     description: 'PBS plans, outcomes tracking',
   },
   {
+    id: 'complex_care',
+    label: 'Complex Care',
+    description: 'Higher-acuity visits, competencies, and clinical oversight',
+  },
+  {
     id: 'childrens_homes',
     label: "Children's Residential",
     description: 'Ofsted compliance, safeguarding',

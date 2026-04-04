@@ -8,6 +8,7 @@ export type CareDomain =
   | 'domiciliary_care'
   | 'domiciliary'
   | 'supported_living'
+  | 'complex_care'
   | 'childrens_homes'
   | 'childrens_residential';
 
