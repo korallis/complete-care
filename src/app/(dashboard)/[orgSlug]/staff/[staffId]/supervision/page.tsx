@@ -15,6 +15,7 @@ import type { ScheduleSupervisionInput } from '@/features/supervisions/schema';
 import { hasPermission } from '@/lib/rbac/permissions';
 import type { Role } from '@/lib/rbac/permissions';
 import { SupervisionList } from '@/components/supervisions/supervision-list';
+import { StaffDetailNav } from '@/components/staff/staff-detail-nav';
 
 interface SupervisionPageProps {
   params: Promise<{ orgSlug: string; staffId: string }>;
@@ -154,6 +155,14 @@ export default async function SupervisionPage({
             {staff.fullName}
           </span>
         </p>
+      </div>
+
+      <div className="mb-6 rounded-2xl border border-[oklch(0.91_0.005_160)] bg-white overflow-hidden">
+        <StaffDetailNav
+          orgSlug={orgSlug}
+          staffId={staffId}
+          activeSection="supervision"
+        />
       </div>
 
       {/* Supervision list */}
