@@ -8,8 +8,9 @@ import type { CareDomain } from '../types';
 
 describe('Domain views', () => {
   describe('DOMAIN_CONFIG', () => {
-    it('has configuration for all three care domains', () => {
+    it('has configuration for all four care domains', () => {
       expect(DOMAIN_CONFIG.domiciliary_care).toBeDefined();
+      expect(DOMAIN_CONFIG.complex_care).toBeDefined();
       expect(DOMAIN_CONFIG.supported_living).toBeDefined();
       expect(DOMAIN_CONFIG.childrens_homes).toBeDefined();
     });
@@ -31,6 +32,16 @@ describe('Domain views', () => {
         expect(view.visitSchedule).toEqual([]);
         expect(view.recentVisitNotes).toEqual([]);
         expect(view.carePlanSummary).toBeNull();
+      }
+    });
+
+    it('builds an empty complex care view', () => {
+      const view = buildEmptyPortalView('complex_care');
+      expect(view.domain).toBe('complex_care');
+      if (view.domain === 'complex_care') {
+        expect(view.clinicalAlerts).toEqual([]);
+        expect(view.staffingContinuity).toEqual([]);
+        expect(view.protocolHighlights).toEqual([]);
       }
     });
 
@@ -59,6 +70,7 @@ describe('Domain views', () => {
   describe('getDomainSectionTitles', () => {
     const domains: CareDomain[] = [
       'domiciliary_care',
+      'complex_care',
       'supported_living',
       'childrens_homes',
     ];
@@ -96,6 +108,15 @@ describe('Domain views', () => {
         'goalsProgress',
         'communityActivities',
         'supportHoursSummary',
+      ]);
+    });
+
+    it('complex care sections match expected keys', () => {
+      const sections = getDomainSectionTitles('complex_care');
+      expect(sections.map((s) => s.key)).toEqual([
+        'clinicalAlerts',
+        'staffingContinuity',
+        'protocolHighlights',
       ]);
     });
 

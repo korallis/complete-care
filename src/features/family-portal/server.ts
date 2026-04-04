@@ -66,6 +66,10 @@ function normaliseCareDomain(domains: string[]): CareDomain {
     return 'childrens_homes';
   }
 
+  if (domains.includes('complex_care')) {
+    return 'complex_care';
+  }
+
   if (
     domains.includes('domiciliary_care') ||
     domains.includes('domiciliary')

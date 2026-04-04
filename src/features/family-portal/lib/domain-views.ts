@@ -5,6 +5,7 @@
 import type {
   CareDomain,
   DomiciliaryPortalView,
+  ComplexCarePortalView,
   SupportedLivingPortalView,
   ChildrensHomesPortalView,
   PortalView,
@@ -19,6 +20,11 @@ export const DOMAIN_CONFIG: Record<
     label: 'Domiciliary Care',
     description: 'Home care visit schedule and notes',
     sections: ['visitSchedule', 'recentVisitNotes', 'carePlanSummary'],
+  },
+  complex_care: {
+    label: 'Complex Care',
+    description: 'Clinical alerts, staffing continuity, and protocol highlights',
+    sections: ['clinicalAlerts', 'staffingContinuity', 'protocolHighlights'],
   },
   supported_living: {
     label: 'Supported Living',
@@ -45,6 +51,14 @@ export function buildEmptyPortalView(domain: CareDomain): PortalView {
         recentVisitNotes: [],
         carePlanSummary: null,
       } satisfies DomiciliaryPortalView;
+
+    case 'complex_care':
+      return {
+        domain: 'complex_care',
+        clinicalAlerts: [],
+        staffingContinuity: [],
+        protocolHighlights: [],
+      } satisfies ComplexCarePortalView;
 
     case 'supported_living':
       return {
@@ -92,6 +106,25 @@ export function getDomainSectionTitles(
           key: 'carePlanSummary',
           title: 'Care Plan Summary',
           description: 'Current care plan objectives and review dates',
+        },
+      ];
+
+    case 'complex_care':
+      return [
+        {
+          key: 'clinicalAlerts',
+          title: 'Clinical Alerts',
+          description: 'Key alerts, escalations, and active clinical watch items',
+        },
+        {
+          key: 'staffingContinuity',
+          title: 'Staffing Continuity',
+          description: 'Named staff coverage and upcoming continuity check-ins',
+        },
+        {
+          key: 'protocolHighlights',
+          title: 'Protocol Highlights',
+          description: 'Important protocols, owners, and latest review dates',
         },
       ];
 

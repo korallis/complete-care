@@ -3,6 +3,7 @@ import { render, screen } from '@testing-library/react';
 import { PortalHeader } from '../components/portal-header';
 import { MessageThread } from '../components/message-thread';
 import { UpdateCard } from '../components/update-card';
+import { DomainView } from '../components/domain-view';
 
 describe('Family Portal components', () => {
   describe('PortalHeader', () => {
@@ -124,6 +125,34 @@ describe('Family Portal components', () => {
       const photoElements = screen.getAllByText('Photo');
       // One for the type badge + two photo placeholders
       expect(photoElements.length).toBe(3);
+    });
+  });
+
+  describe('DomainView', () => {
+    it('renders complex care empty states', () => {
+      render(
+        <DomainView
+          view={{
+            domain: 'complex_care',
+            clinicalAlerts: [],
+            staffingContinuity: [],
+            protocolHighlights: [],
+          }}
+        />,
+      );
+
+      expect(screen.getByText('Clinical Alerts')).toBeInTheDocument();
+      expect(
+        screen.getByText(/No clinical alerts shared with family yet/i),
+      ).toBeInTheDocument();
+      expect(screen.getByText('Staffing Continuity')).toBeInTheDocument();
+      expect(
+        screen.getByText(/No continuity updates available yet/i),
+      ).toBeInTheDocument();
+      expect(screen.getByText('Protocol Highlights')).toBeInTheDocument();
+      expect(
+        screen.getByText(/No protocol highlights shared yet/i),
+      ).toBeInTheDocument();
     });
   });
 });
