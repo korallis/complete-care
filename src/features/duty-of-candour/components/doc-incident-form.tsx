@@ -10,7 +10,7 @@ const SEVERITY_OPTIONS: { value: DocSeverity; label: string }[] = [
   { value: 'prolonged_psychological_harm', label: 'Prolonged Psychological Harm' },
 ];
 
-export function DocIncidentForm({ personId: _personId }: { personId: string }) {
+export function DocIncidentForm({ personId }: { personId: string }) {
   const [saving, setSaving] = useState(false);
   const [saved, setSaved] = useState(false);
 
@@ -25,6 +25,8 @@ export function DocIncidentForm({ personId: _personId }: { personId: string }) {
         setSaving(false);
       }}
     >
+      <input type="hidden" name="personId" value={personId} />
+
       {saved && (
         <div className="rounded-md border border-emerald-200 bg-emerald-50 px-4 py-3 text-sm text-emerald-700">
           Duty of Candour incident draft captured for browser UAT. Server-side
