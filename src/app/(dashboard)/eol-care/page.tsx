@@ -1,5 +1,4 @@
 import type { Metadata } from 'next';
-import Link from 'next/link';
 import { EolCarePlanList } from '@/features/eol-care';
 
 export const metadata: Metadata = {
@@ -17,13 +16,20 @@ export default function EolCarePage() {
             Manage preferred place of death, DNACPR, ReSPECT, ADRT, LPA, and advance care preferences.
           </p>
         </div>
-        <Link
-          href="/eol-care/new"
-          className="inline-flex items-center justify-center rounded-md bg-primary px-4 py-2 text-sm font-medium text-primary-foreground hover:bg-primary/90"
+        <button
+          type="button"
+          disabled
+          aria-disabled="true"
+          className="inline-flex cursor-not-allowed items-center justify-center rounded-md bg-primary/60 px-4 py-2 text-sm font-medium text-primary-foreground opacity-70"
         >
           New Care Plan
-        </Link>
+        </button>
       </div>
+
+      <p className="text-sm text-muted-foreground">
+        End-of-life care plan creation is coming soon. Existing plans will
+        appear here when available.
+      </p>
 
       <EolCarePlanList plans={[]} />
     </div>

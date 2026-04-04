@@ -1,6 +1,4 @@
 import type { Metadata } from 'next';
-import Link from 'next/link';
-
 export const metadata: Metadata = {
   title: 'Reg 45 Quality Reviews',
 };
@@ -15,13 +13,20 @@ export default function Reg45Page() {
             Quality reviews by the Responsible Individual covering Reg 44 findings, care quality, and recommendations.
           </p>
         </div>
-        <Link
-          href="/reg45/new"
-          className="inline-flex items-center justify-center rounded-md bg-primary px-4 py-2 text-sm font-medium text-primary-foreground hover:bg-primary/90"
+        <button
+          type="button"
+          disabled
+          aria-disabled="true"
+          className="inline-flex cursor-not-allowed items-center justify-center rounded-md bg-primary/60 px-4 py-2 text-sm font-medium text-primary-foreground opacity-70"
         >
           New Report
-        </Link>
+        </button>
       </div>
+
+      <p className="text-sm text-muted-foreground">
+        Reg 45 report authoring is coming soon. The current page remains a
+        read-only landing state until that workflow is ready.
+      </p>
 
       {/* Report list placeholder */}
       <div className="flex flex-col items-center justify-center rounded-lg border border-dashed p-12 text-center">

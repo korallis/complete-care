@@ -1,6 +1,4 @@
 import type { Metadata } from 'next';
-import Link from 'next/link';
-
 export const metadata: Metadata = {
   title: 'Duty of Candour',
 };
@@ -15,13 +13,20 @@ export default function DutyOfCandourPage() {
             CQC Regulation 20 — Record and track notifiable safety incidents through the required workflow.
           </p>
         </div>
-        <Link
-          href="/duty-of-candour/new"
-          className="inline-flex items-center justify-center rounded-md bg-primary px-4 py-2 text-sm font-medium text-primary-foreground hover:bg-primary/90"
+        <button
+          type="button"
+          disabled
+          aria-disabled="true"
+          className="inline-flex cursor-not-allowed items-center justify-center rounded-md bg-primary/60 px-4 py-2 text-sm font-medium text-primary-foreground opacity-70"
         >
           Record Incident
-        </Link>
+        </button>
       </div>
+
+      <p className="text-sm text-muted-foreground">
+        Incident creation from this dashboard is coming soon. Existing records
+        can still be reviewed below.
+      </p>
 
       {/* Summary cards */}
       <div className="mb-6 grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-4">
