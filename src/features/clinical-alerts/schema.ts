@@ -8,8 +8,6 @@ import {
   ALERT_TYPES,
   ALERT_SEVERITIES,
   ALERT_STATUSES,
-  ALERT_SOURCES,
-  ESCALATION_LEVELS,
 } from './constants';
 
 // ---------------------------------------------------------------------------

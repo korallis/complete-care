@@ -209,13 +209,15 @@ describe('allergyOverrideSchema', () => {
   });
 
   it('requires matchedAllergen', () => {
-    const { matchedAllergen: _, ...rest } = validOverride;
+    const rest = { ...validOverride };
+    delete rest.matchedAllergen;
     const result = allergyOverrideSchema.safeParse(rest);
     expect(result.success).toBe(false);
   });
 
   it('requires authorisedBy', () => {
-    const { authorisedBy: _, ...rest } = validOverride;
+    const rest = { ...validOverride };
+    delete rest.authorisedBy;
     const result = allergyOverrideSchema.safeParse(rest);
     expect(result.success).toBe(false);
   });

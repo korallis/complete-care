@@ -31,12 +31,13 @@ const methods: { id: VerificationMethod; label: string; icon: typeof MapPin; des
  * Supports GPS, QR code, NFC, and manual override methods.
  */
 export function CheckInForm({
-  visitId: _visitId,
+  visitId,
   clientName,
   clientAddress,
   onCheckIn,
   className,
 }: CheckInFormProps) {
+  void visitId;
   const [selectedMethod, setSelectedMethod] = useState<VerificationMethod>('gps');
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [gpsStatus, setGpsStatus] = useState<'idle' | 'acquiring' | 'ready' | 'error'>('idle');

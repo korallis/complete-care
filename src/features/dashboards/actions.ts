@@ -12,7 +12,6 @@ import {
   persons,
   carePlans,
   incidents,
-  medications,
   dbsChecks,
   trainingRecords,
   trainingCourses,
@@ -592,8 +591,9 @@ export async function getTrendData(
 
 export async function getStaffComplianceDashboard(
   organisationId: string,
-  _range: DateRange,
+  range: DateRange,
 ): Promise<StaffComplianceDashboardData> {
+  void range;
   // Fetch all active staff, their training records, and training courses in parallel
   const [staff, records, courses, dbsResults, supervisionResults] = await Promise.all([
     // Active staff profiles
@@ -734,8 +734,9 @@ function statusPriority(status: string): number {
 
 export async function getCqcDashboard(
   organisationId: string,
-  _range: DateRange,
+  range: DateRange,
 ): Promise<CqcDashboardData> {
+  void range;
   // CQC quality statements are static reference data
   const categories = [
     'Safe',

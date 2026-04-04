@@ -9,7 +9,7 @@
  * All actions are tenant-scoped and RBAC-protected.
  */
 
-import { and, count, desc, eq, sum, sql } from 'drizzle-orm';
+import { and, count, desc, eq, sum } from 'drizzle-orm';
 import { revalidatePath } from 'next/cache';
 import { z } from 'zod';
 import { db } from '@/lib/db';

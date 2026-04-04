@@ -17,7 +17,7 @@ interface VersionEntry {
 }
 
 export function Reg45SignOff({
-  reportId: _reportId,
+  reportId,
   currentStatus,
   versions,
 }: {
@@ -25,6 +25,7 @@ export function Reg45SignOff({
   currentStatus: Reg45Status;
   versions: VersionEntry[];
 }) {
+  void reportId;
   const [notes, setNotes] = useState('');
   const [signing, setSigning] = useState(false);
 

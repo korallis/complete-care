@@ -18,7 +18,7 @@
  * VAL-EDU-008: Data integrity & multi-tenancy
  */
 
-import { and, desc, eq } from 'drizzle-orm';
+import { eq } from 'drizzle-orm';
 import { revalidatePath } from 'next/cache';
 import { db } from '@/lib/db';
 import {

@@ -64,7 +64,8 @@ describe('createDbsCheckSchema', () => {
   });
 
   it('defaults updateServiceSubscribed to false', () => {
-    const { updateServiceSubscribed: _unused, ...withoutSubscribed } = validInput;
+    const withoutSubscribed = { ...validInput };
+    delete withoutSubscribed.updateServiceSubscribed;
     const result = createDbsCheckSchema.safeParse(withoutSubscribed);
     expect(result.success).toBe(true);
     if (result.success) {

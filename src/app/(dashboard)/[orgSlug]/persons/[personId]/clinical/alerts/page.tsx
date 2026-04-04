@@ -8,8 +8,6 @@ import {
   getActiveAlerts,
   getPersonThresholds,
 } from '@/features/clinical-alerts/actions';
-import { hasPermission } from '@/lib/rbac/permissions';
-import type { Role } from '@/lib/rbac/permissions';
 import { ClinicalAlertBanner } from '@/components/clinical-alerts/clinical-alert-banner';
 import { AlertList } from '@/components/clinical-alerts/alert-list';
 import { AlertThresholdSettings } from '@/components/clinical-alerts/alert-threshold-settings';
@@ -74,9 +72,6 @@ export default async function AlertsPage({
       `/api/orgs/switch?slug=${orgSlug}&returnTo=/${orgSlug}/persons/${personId}/clinical/alerts`,
     );
   }
-
-  const role = (session.user.role ?? activeMembership.role ?? 'viewer') as Role;
-  const canManage = hasPermission(role, 'update', 'clinical');
 
   const person = await getPerson(personId);
   if (!person) notFound();

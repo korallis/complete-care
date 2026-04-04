@@ -48,7 +48,6 @@ import type { CustomThresholds, FullEvaluationInput } from './engine';
 import {
   getNextEscalationLevel,
   DEFAULT_ESCALATION_BY_SEVERITY,
-  type AlertType,
   type EscalationLevel,
 } from './constants';
 

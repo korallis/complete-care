@@ -36,6 +36,7 @@ export function RotaPage({
   initialAssignments,
   staff,
 }: RotaPageProps) {
+  void organisationId;
   const [activeTab, setActiveTab] = useState<TabView>('rota');
   const [patterns, setPatterns] = useState<ShiftPattern[]>(initialPatterns);
   const [assignments, setAssignments] =
@@ -175,7 +176,8 @@ export function RotaPage({
   );
 
   const handleOverrideConflict = useCallback(
-    async (assignmentId: string, conflictType: string, _reason: string) => {
+    async (assignmentId: string, conflictType: string, reason: string) => {
+      void reason;
       // Server action: createConflictOverride(...)
       // Then remove the conflict from local state
       setAssignments((prev) =>
@@ -194,14 +196,17 @@ export function RotaPage({
   }, []);
 
   const handleCreatePattern = useCallback(
-    async (_data: ShiftPatternFormData) => {
+    async (data: ShiftPatternFormData) => {
+      void data;
       // Server action: createShiftPattern(organisationId, data)
     },
     [],
   );
 
   const handleUpdatePattern = useCallback(
-    async (_id: string, _data: ShiftPatternFormData) => {
+    async (id: string, data: ShiftPatternFormData) => {
+      void id;
+      void data;
       // Server action: updateShiftPattern(organisationId, id, data)
     },
     [],

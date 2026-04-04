@@ -2,7 +2,7 @@
 
 import { db } from '@/lib/db';
 import { persons, incidents, carePlans, staffProfiles, medications } from '@/lib/db/schema';
-import { eq, and, count, desc, lte, gte, sql } from 'drizzle-orm';
+import { eq, and, desc, lte, gte, sql } from 'drizzle-orm';
 import { requirePermission } from '@/lib/rbac';
 import type { QueryResult, SuggestedQuery } from '../types';
 

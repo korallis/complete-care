@@ -147,7 +147,8 @@ describe('createLacRecordSchema', () => {
   });
 
   it('rejects missing personId', () => {
-    const { personId, ...rest } = validInput;
+    const rest = { ...validInput };
+    delete rest.personId;
     const result = createLacRecordSchema.safeParse(rest);
     expect(result.success).toBe(false);
   });
@@ -287,13 +288,15 @@ describe('createPlacementPlanSchema', () => {
   });
 
   it('rejects missing personId', () => {
-    const { personId, ...rest } = validInput;
+    const rest = { ...validInput };
+    delete rest.personId;
     const result = createPlacementPlanSchema.safeParse(rest);
     expect(result.success).toBe(false);
   });
 
   it('rejects missing lacRecordId', () => {
-    const { lacRecordId, ...rest } = validInput;
+    const rest = { ...validInput };
+    delete rest.lacRecordId;
     const result = createPlacementPlanSchema.safeParse(rest);
     expect(result.success).toBe(false);
   });
@@ -382,7 +385,8 @@ describe('createStatusChangeSchema', () => {
   });
 
   it('validates without optional reason', () => {
-    const { reason, ...rest } = validInput;
+    const rest = { ...validInput };
+    delete rest.reason;
     const result = createStatusChangeSchema.safeParse(rest);
     expect(result.success).toBe(true);
   });
@@ -404,7 +408,8 @@ describe('createStatusChangeSchema', () => {
   });
 
   it('rejects missing lacRecordId', () => {
-    const { lacRecordId, ...rest } = validInput;
+    const rest = { ...validInput };
+    delete rest.lacRecordId;
     const result = createStatusChangeSchema.safeParse(rest);
     expect(result.success).toBe(false);
   });

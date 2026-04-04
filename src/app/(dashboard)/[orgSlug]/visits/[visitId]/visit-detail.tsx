@@ -67,7 +67,8 @@ function formatDateTime(date: Date): string {
  * Visit detail view — shows visit info, check events timeline,
  * and verification data.
  */
-export function VisitDetail({ orgSlug, visitId: _visitId }: VisitDetailProps) {
+export function VisitDetail({ orgSlug, visitId }: VisitDetailProps) {
+  void visitId;
   // In production, fetch visit and check events using server actions
   const visit = DEMO_VISIT;
   const checkEvents = DEMO_CHECK_EVENTS;

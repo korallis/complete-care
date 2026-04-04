@@ -66,16 +66,6 @@ const mockRevokedInvitation: OrgInvitation = {
   inviterName: 'Alice Owner',
 };
 
-const mockExpiredInvitation: OrgInvitation = {
-  id: 'inv-expired-1',
-  email: 'expired@example.com',
-  role: 'viewer' as Role,
-  status: 'pending',
-  expiresAt: pastDate,
-  createdAt: new Date('2024-01-01'),
-  inviterName: 'Alice Owner',
-};
-
 // ---------------------------------------------------------------------------
 // Tests
 // ---------------------------------------------------------------------------

@@ -2,7 +2,7 @@
 
 import { db } from '@/lib/db';
 import { customReports, persons, incidents, staffProfiles } from '@/lib/db/schema';
-import { eq, and, desc, sql } from 'drizzle-orm';
+import { eq, and, desc } from 'drizzle-orm';
 import { requirePermission } from '@/lib/rbac';
 import { auditLog } from '@/lib/audit';
 import { revalidatePath } from 'next/cache';
@@ -163,7 +163,8 @@ export async function executeReport(reportId: string) {
 // Export — generate CSV from report results
 // ---------------------------------------------------------------------------
 
-export async function exportReport(reportId: string, _format: 'csv' | 'pdf') {
+export async function exportReport(reportId: string, format: 'csv' | 'pdf') {
+  void format;
   const result = await executeReport(reportId);
   if (!result.success) return { success: false, error: result.error, data: '' };
 

@@ -73,8 +73,9 @@ export function calculateRestBetweenShifts(
  */
 export function validateWtdCompliance(
   shifts: ShiftTiming[],
-  _weekStartDate: string,
+  weekStartDate: string,
 ): Conflict[] {
+  void weekStartDate;
   const conflicts: Conflict[] = [];
 
   // Sort by date then start time

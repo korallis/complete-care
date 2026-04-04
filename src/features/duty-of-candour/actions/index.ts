@@ -74,6 +74,11 @@ const apologySchema = z.object({
   apologyContent: z.string().min(1),
 });
 
+type VerbalNotificationInput = z.infer<typeof verbalNotificationSchema>;
+type WrittenFollowUpInput = z.infer<typeof writtenFollowUpSchema>;
+type InvestigationInput = z.infer<typeof investigationSchema>;
+type ApologyInput = z.infer<typeof apologySchema>;
+
 // ---------------------------------------------------------------------------
 // List / Get
 // ---------------------------------------------------------------------------
@@ -202,9 +207,10 @@ export async function createDocIncident(
 
 export async function recordVerbalNotification(
   id: string,
-  input: z.infer<typeof verbalNotificationSchema>,
+  input: VerbalNotificationInput,
 ): Promise<ActionResult<typeof dutyOfCandourIncidents.$inferSelect>> {
   try {
+    const parsed = verbalNotificationSchema.parse(input);
     const { orgId, userId } = await requirePermission('update', 'incidents');
 
     const [existing] = await db
@@ -226,7 +232,7 @@ export async function recordVerbalNotification(
         verbalNotificationGiven: true,
         verbalNotificationDate: new Date(),
         verbalNotificationBy: userId,
-        verbalNotificationNotes: input.verbalNotificationNotes ?? null,
+        verbalNotificationNotes: parsed.verbalNotificationNotes ?? null,
         status: 'verbal_given',
         updatedAt: new Date(),
       })
@@ -254,9 +260,10 @@ export async function recordVerbalNotification(
 
 export async function recordWrittenFollowUp(
   id: string,
-  input: z.infer<typeof writtenFollowUpSchema>,
+  input: WrittenFollowUpInput,
 ): Promise<ActionResult<typeof dutyOfCandourIncidents.$inferSelect>> {
   try {
+    const parsed = writtenFollowUpSchema.parse(input);
     const { orgId, userId } = await requirePermission('update', 'incidents');
 
     const [existing] = await db
@@ -274,7 +281,7 @@ export async function recordWrittenFollowUp(
         writtenFollowUpSent: true,
         writtenFollowUpDate: new Date(),
         writtenFollowUpBy: userId,
-        writtenFollowUpContent: input.writtenFollowUpContent,
+        writtenFollowUpContent: parsed.writtenFollowUpContent,
         status: 'written_sent',
         updatedAt: new Date(),
       })
@@ -344,9 +351,10 @@ export async function startInvestigation(
 
 export async function completeInvestigation(
   id: string,
-  input: z.infer<typeof investigationSchema>,
+  input: InvestigationInput,
 ): Promise<ActionResult<typeof dutyOfCandourIncidents.$inferSelect>> {
   try {
+    const parsed = investigationSchema.parse(input);
     const { orgId, userId } = await requirePermission('update', 'incidents');
 
     const [existing] = await db
@@ -361,7 +369,7 @@ export async function completeInvestigation(
     const [updated] = await db
       .update(dutyOfCandourIncidents)
       .set({
-        investigationFindings: input.investigationFindings ?? null,
+        investigationFindings: parsed.investigationFindings ?? null,
         investigationCompletedDate: new Date(),
         updatedAt: new Date(),
       })
@@ -389,9 +397,10 @@ export async function completeInvestigation(
 
 export async function recordApology(
   id: string,
-  input: z.infer<typeof apologySchema>,
+  input: ApologyInput,
 ): Promise<ActionResult<typeof dutyOfCandourIncidents.$inferSelect>> {
   try {
+    const parsed = apologySchema.parse(input);
     const { orgId, userId } = await requirePermission('update', 'incidents');
 
     const [existing] = await db
@@ -408,8 +417,8 @@ export async function recordApology(
       .set({
         apologyGiven: true,
         apologyDate: new Date(),
-        apologyMethod: input.apologyMethod,
-        apologyContent: input.apologyContent,
+        apologyMethod: parsed.apologyMethod,
+        apologyContent: parsed.apologyContent,
         status: 'closed',
         updatedAt: new Date(),
       })

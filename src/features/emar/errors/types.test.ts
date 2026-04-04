@@ -203,7 +203,8 @@ describe('recordHomelyRemedyAdministrationSchema', () => {
   });
 
   it('should reject missing reason', () => {
-    const { reason: _reason, ...noReason } = validAdmin;
+    const noReason = { ...validAdmin };
+    delete noReason.reason;
     const result = recordHomelyRemedyAdministrationSchema.safeParse(noReason);
     expect(result.success).toBe(false);
   });

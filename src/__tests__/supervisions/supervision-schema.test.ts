@@ -72,7 +72,8 @@ describe('scheduleSupervisionSchema', () => {
   });
 
   it('defaults type to supervision', () => {
-    const { type: _unused, ...withoutType } = validInput;
+    const withoutType = { ...validInput };
+    delete withoutType.type;
     const result = scheduleSupervisionSchema.safeParse(withoutType);
     expect(result.success).toBe(true);
     if (result.success) {
@@ -81,7 +82,8 @@ describe('scheduleSupervisionSchema', () => {
   });
 
   it('defaults frequency to monthly', () => {
-    const { frequency: _unused, ...withoutFreq } = validInput;
+    const withoutFreq = { ...validInput };
+    delete withoutFreq.frequency;
     const result = scheduleSupervisionSchema.safeParse(withoutFreq);
     expect(result.success).toBe(true);
     if (result.success) {

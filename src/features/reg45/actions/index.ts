@@ -57,6 +57,8 @@ const updateReg45ReportSchema = z.object({
   recommendations: z.string().optional(),
 });
 
+type UpdateReg45ReportInput = z.infer<typeof updateReg45ReportSchema>;
+
 // ---------------------------------------------------------------------------
 // List / Get
 // ---------------------------------------------------------------------------
@@ -186,9 +188,10 @@ export async function createReg45Report(
 
 export async function updateReg45Report(
   id: string,
-  input: z.infer<typeof updateReg45ReportSchema>,
+  input: UpdateReg45ReportInput,
 ): Promise<ActionResult<typeof reg45Reports.$inferSelect>> {
   try {
+    const parsed = updateReg45ReportSchema.parse(input);
     const { orgId, userId } = await requirePermission('update', 'reports');
 
     const [existing] = await db
@@ -210,12 +213,12 @@ export async function updateReg45Report(
       version: newVersion,
       updatedAt: new Date(),
     };
-    if (input.reg44FindingsSummary !== undefined) updates.reg44FindingsSummary = input.reg44FindingsSummary ?? null;
-    if (input.actionsTaken !== undefined) updates.actionsTaken = input.actionsTaken ?? null;
-    if (input.qualityOfCareAssessment !== undefined) updates.qualityOfCareAssessment = input.qualityOfCareAssessment ?? null;
-    if (input.staffDevelopment !== undefined) updates.staffDevelopment = input.staffDevelopment ?? null;
-    if (input.childrensProgress !== undefined) updates.childrensProgress = input.childrensProgress ?? null;
-    if (input.recommendations !== undefined) updates.recommendations = input.recommendations ?? null;
+    if (parsed.reg44FindingsSummary !== undefined) updates.reg44FindingsSummary = parsed.reg44FindingsSummary ?? null;
+    if (parsed.actionsTaken !== undefined) updates.actionsTaken = parsed.actionsTaken ?? null;
+    if (parsed.qualityOfCareAssessment !== undefined) updates.qualityOfCareAssessment = parsed.qualityOfCareAssessment ?? null;
+    if (parsed.staffDevelopment !== undefined) updates.staffDevelopment = parsed.staffDevelopment ?? null;
+    if (parsed.childrensProgress !== undefined) updates.childrensProgress = parsed.childrensProgress ?? null;
+    if (parsed.recommendations !== undefined) updates.recommendations = parsed.recommendations ?? null;
 
     const [updated] = await db
       .update(reg45Reports)

@@ -147,7 +147,8 @@ interface EvvDashboardProps {
   orgSlug: string;
 }
 
-export function EvvDashboard({ orgSlug: _orgSlug }: EvvDashboardProps) {
+export function EvvDashboard({ orgSlug }: EvvDashboardProps) {
+  void orgSlug;
   const [viewMode, setViewMode] = useState<ViewMode>('list');
 
   // In production, replace with real data from server actions

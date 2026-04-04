@@ -88,7 +88,8 @@ export function RotaView({
 
   // Handle drag and drop
   const handleDrop = useCallback(
-    (staffId: string, _date: string) => {
+    (staffId: string, date: string) => {
+      void date;
       return (e: React.DragEvent) => {
         e.preventDefault();
         const visitId = e.dataTransfer.getData('text/plain');

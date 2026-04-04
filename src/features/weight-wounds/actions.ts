@@ -15,7 +15,6 @@ import {
 import { eq, and, desc, gte } from 'drizzle-orm';
 import type { ActionResult } from '@/types';
 import { requirePermission } from '@/lib/rbac';
-import { assertBelongsToOrg } from '@/lib/tenant';
 import { auditLog } from '@/lib/audit';
 import {
   weightScheduleSchema,
