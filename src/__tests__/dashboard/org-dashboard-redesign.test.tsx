@@ -1,6 +1,14 @@
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 import { renderToStaticMarkup } from 'react-dom/server';
 
+const mockDb = {
+  select: vi.fn(() => ({
+    from: vi.fn(() => ({
+      where: vi.fn().mockResolvedValue([{ count: 0 }]),
+    })),
+  })),
+};
+
 const mockAuth = vi.fn();
 const mockRedirect = vi.fn();
 const mockNotFound = vi.fn();
@@ -9,6 +17,29 @@ const notFoundSignal = new Error('notFound');
 
 vi.mock('@/auth', () => ({
   auth: mockAuth,
+}));
+
+vi.mock('@/lib/db', () => ({
+  db: mockDb,
+}));
+
+vi.mock('@/lib/db/schema', () => ({
+  persons: {
+    organisationId: 'persons.organisationId',
+    deletedAt: 'persons.deletedAt',
+  },
+  staffProfiles: {
+    organisationId: 'staffProfiles.organisationId',
+    deletedAt: 'staffProfiles.deletedAt',
+  },
+  carePlans: {
+    organisationId: 'carePlans.organisationId',
+    deletedAt: 'carePlans.deletedAt',
+  },
+  clinicalAlerts: {
+    organisationId: 'clinicalAlerts.organisationId',
+    status: 'clinicalAlerts.status',
+  },
 }));
 
 vi.mock('next/navigation', () => ({
@@ -37,6 +68,7 @@ vi.mock('@/components/dashboard/welcome-banner', () => ({
 describe('OrgDashboardPage redesign', () => {
   beforeEach(() => {
     vi.clearAllMocks();
+    mockDb.select.mockClear();
 
     mockAuth.mockResolvedValue({
       user: {
