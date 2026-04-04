@@ -8,7 +8,7 @@
  * - Status badge colour coding
  */
 
-import { describe, it, expect, vi } from 'vitest';
+import { describe, it, expect, vi, beforeEach, afterEach } from 'vitest';
 import { render, screen } from '@testing-library/react';
 
 // Mock dependencies
@@ -41,6 +41,7 @@ vi.mock('@/lib/rbac', () => ({
 
 import { MedicationStatusBadge, AdministrationStatusBadge } from '@/components/emar/medication-status-badge';
 import { MedicationList } from '@/components/emar/medication-list';
+import { PrintMarChart } from '@/components/emar/print-mar-chart';
 import type { MedicationListItem } from '@/features/emar/actions';
 
 // ---------------------------------------------------------------------------
@@ -250,5 +251,30 @@ describe('MedicationList', () => {
     const link = screen.getByLabelText('View medication: Paracetamol');
     expect(link).toBeTruthy();
     expect(link.getAttribute('href')).toBe('/test-org/persons/person-1/emar/medications/med-1');
+  });
+});
+
+describe('PrintMarChart', () => {
+  beforeEach(() => {
+    vi.useFakeTimers();
+    vi.setSystemTime(new Date('2027-02-01T12:00:00.000Z'));
+  });
+
+  afterEach(() => {
+    vi.useRealTimers();
+  });
+
+  it('renders the server-provided printed timestamp', () => {
+    render(
+      <PrintMarChart
+        data={{ date: '2026-04-04', medications: [] }}
+        personName="Amelia Hart"
+        printedAt="2026-01-15T09:30:00.000Z"
+      />,
+    );
+
+    expect(screen.getByText(/Printed:/)).toBeTruthy();
+    expect(screen.getByText(/15\/01\/2026, 09:30:00/)).toBeTruthy();
+    expect(screen.queryByText(/01\/02\/2027/)).toBeNull();
   });
 });

@@ -70,6 +70,7 @@ export default async function EmarPage({ params, searchParams }: EmarPageProps) 
 
   // Default to today
   const date = dateParam ?? new Date().toISOString().slice(0, 10);
+  const printedAt = new Date().toISOString();
   const [data, staffMembers] = await Promise.all([
     getMarChart({ personId, date }),
     listMedicationStaffMembers(),
@@ -191,7 +192,11 @@ export default async function EmarPage({ params, searchParams }: EmarPageProps) 
       />
 
       {/* Print view */}
-      <PrintMarChart data={data} personName={person.fullName} />
+      <PrintMarChart
+        data={data}
+        personName={person.fullName}
+        printedAt={printedAt}
+      />
     </div>
   );
 }

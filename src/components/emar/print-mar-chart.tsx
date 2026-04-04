@@ -26,6 +26,7 @@ import type { MedicationAdministration } from '@/lib/db/schema/medications';
 type PrintMarChartProps = {
   data: MarChartData;
   personName: string;
+  printedAt: string;
 };
 
 // ---------------------------------------------------------------------------
@@ -52,7 +53,11 @@ export function PrintButton() {
 // Print view
 // ---------------------------------------------------------------------------
 
-export function PrintMarChart({ data, personName }: PrintMarChartProps) {
+export function PrintMarChart({
+  data,
+  personName,
+  printedAt,
+}: PrintMarChartProps) {
   const allTimeSlots = new Set<string>();
   const activeMeds = data.medications.filter(
     (m) => m.status === 'active' || m.administrations.length > 0,
@@ -93,7 +98,8 @@ export function PrintMarChart({ data, personName }: PrintMarChartProps) {
             <strong>Date:</strong> {formatDate(data.date)}
           </div>
           <div>
-            <strong>Printed:</strong> {new Date().toLocaleString('en-GB')}
+            <strong>Printed:</strong>{' '}
+            {new Date(printedAt).toLocaleString('en-GB')}
           </div>
         </div>
       </div>
