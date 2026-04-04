@@ -17,6 +17,7 @@ import { eq } from 'drizzle-orm';
 import { db } from '@/lib/db';
 import { users, emailVerificationTokens } from '@/lib/db/schema';
 import { isTokenExpired } from '@/lib/auth/validation';
+import { buildPostVerificationLoginPath, normalizeCallbackUrl } from '@/lib/auth/callback-url';
 
 const APP_URL = process.env.NEXT_PUBLIC_APP_URL ?? 'http://localhost:3200';
 
@@ -26,6 +27,9 @@ const APP_URL = process.env.NEXT_PUBLIC_APP_URL ?? 'http://localhost:3200';
  */
 export async function GET(request: NextRequest) {
   const token = request.nextUrl.searchParams.get('token');
+  const callbackUrl = normalizeCallbackUrl(
+    request.nextUrl.searchParams.get('callbackUrl'),
+  );
 
   if (!token) {
     return NextResponse.redirect(
@@ -36,13 +40,10 @@ export async function GET(request: NextRequest) {
   const result = await verifyEmailToken(token);
 
   if (result.success) {
-    // After email verification the user has no org yet, so send them to
-    // login with a callback to /onboarding (and a success message).
+    // After email verification, send users back through sign-in and preserve
+    // any safe post-auth callback path from the original registration flow.
     return NextResponse.redirect(
-      new URL(
-        '/login?message=email_verified&callbackUrl=%2Fonboarding',
-        APP_URL,
-      ),
+      new URL(buildPostVerificationLoginPath(callbackUrl), APP_URL),
     );
   }
 

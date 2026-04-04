@@ -143,4 +143,48 @@ describe('RegisterForm — successful registration redirects to /verify-email', 
     // Should not render an "Account created" heading (no success screen)
     expect(screen.queryByText('Account created!')).not.toBeInTheDocument();
   });
+
+  it('preserves a safe callbackUrl through registration', async () => {
+    (global.fetch as ReturnType<typeof vi.fn>).mockResolvedValueOnce({
+      ok: true,
+      json: async () => ({
+        message: 'Account created.',
+        userId: 'new-user-id',
+      }),
+    });
+
+    render(<RegisterForm callbackUrl="/invitations/accept?token=test-token" />);
+
+    fireEvent.change(screen.getByLabelText(/full name/i), {
+      target: { value: 'Jane Smith' },
+    });
+    fireEvent.change(screen.getByLabelText(/email address/i), {
+      target: { value: 'jane@example.com' },
+    });
+    fireEvent.change(screen.getByLabelText(/^password$/i), {
+      target: { value: 'SecurePass123!' },
+    });
+    fireEvent.change(screen.getByLabelText('Confirm password'), {
+      target: { value: 'SecurePass123!' },
+    });
+
+    fireEvent.click(screen.getByRole('checkbox'));
+    fireEvent.click(screen.getByRole('button', { name: /create account/i }));
+
+    await waitFor(() => {
+      expect(mockPush).toHaveBeenCalledWith(
+        '/verify-email?callbackUrl=%2Finvitations%2Faccept%3Ftoken%3Dtest-token',
+      );
+    });
+
+    expect(global.fetch).toHaveBeenCalledWith(
+      '/api/auth/register',
+      expect.objectContaining({
+        method: 'POST',
+        body: expect.stringContaining(
+          '"callbackUrl":"/invitations/accept?token=test-token"',
+        ),
+      }),
+    );
+  });
 });

@@ -7,13 +7,19 @@ export const metadata: Metadata = {
   description: 'Create your Complete Care account to get started',
 };
 
-export default function RegisterPage() {
+type RegisterPageProps = {
+  searchParams: Promise<{ callbackUrl?: string }>;
+};
+
+export default async function RegisterPage({ searchParams }: RegisterPageProps) {
+  const { callbackUrl } = await searchParams;
+
   return (
     <AuthCard
       title="Create your account"
       description="Join Complete Care — the UK's care management platform"
     >
-      <RegisterForm />
+      <RegisterForm callbackUrl={callbackUrl} />
     </AuthCard>
   );
 }

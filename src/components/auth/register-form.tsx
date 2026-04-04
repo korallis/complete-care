@@ -12,14 +12,20 @@ import { Label } from '@/components/ui/label';
 import { Alert, AlertDescription } from '@/components/ui/alert';
 import { Separator } from '@/components/ui/separator';
 import { registrationSchema, type RegistrationInput } from '@/lib/auth/validation';
+import { buildVerifyEmailPath, normalizeCallbackUrl } from '@/lib/auth/callback-url';
 import { PasswordStrengthIndicator } from './password-strength';
 import { OAuthButton } from './oauth-button';
 
-export function RegisterForm() {
+type RegisterFormProps = {
+  callbackUrl?: string;
+};
+
+export function RegisterForm({ callbackUrl }: RegisterFormProps) {
   const router = useRouter();
   const [showPassword, setShowPassword] = useState(false);
   const [showConfirmPassword, setShowConfirmPassword] = useState(false);
   const [serverError, setServerError] = useState<string | null>(null);
+  const safeCallbackUrl = normalizeCallbackUrl(callbackUrl);
 
   const {
     register,
@@ -36,10 +42,14 @@ export function RegisterForm() {
   const onSubmit = async (data: RegistrationInput) => {
     setServerError(null);
 
+    const payload = safeCallbackUrl
+      ? { ...data, callbackUrl: safeCallbackUrl }
+      : data;
+
     const response = await fetch('/api/auth/register', {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify(data),
+      body: JSON.stringify(payload),
     });
 
     const json = await response.json();
@@ -58,7 +68,7 @@ export function RegisterForm() {
 
     // Registration successful — prompt the user to verify their email
     // before trying to access authenticated onboarding/dashboard flows.
-    router.push('/verify-email');
+    router.push(buildVerifyEmailPath(safeCallbackUrl));
   };
 
   return (
@@ -66,7 +76,7 @@ export function RegisterForm() {
       {/* Google OAuth */}
       <OAuthButton
         label="Continue with Google"
-        callbackUrl="/dashboard"
+        callbackUrl={safeCallbackUrl ?? '/dashboard'}
       />
 
       {/* Divider */}

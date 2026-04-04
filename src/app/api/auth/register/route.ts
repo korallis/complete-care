@@ -20,6 +20,7 @@ import {
   generateToken,
   emailVerificationTokenExpiry,
 } from '@/lib/auth/validation';
+import { normalizeCallbackUrl } from '@/lib/auth/callback-url';
 import { sendVerificationEmail } from '@/lib/email';
 
 export async function POST(request: NextRequest) {
@@ -50,6 +51,11 @@ export async function POST(request: NextRequest) {
 
   const { email, name, password } = parsed.data;
   const normalizedEmail = email.toLowerCase().trim();
+  const callbackUrl = normalizeCallbackUrl(
+    typeof (body as { callbackUrl?: unknown })?.callbackUrl === 'string'
+      ? (body as { callbackUrl: string }).callbackUrl
+      : undefined,
+  );
 
   // Check for duplicate email
   const [existingUser] = await db
@@ -102,7 +108,7 @@ export async function POST(request: NextRequest) {
   });
 
   // Send verification email (non-blocking — don't fail registration if email fails)
-  sendVerificationEmail(newUser.email, token).catch((err) => {
+  sendVerificationEmail(newUser.email, token, callbackUrl).catch((err) => {
     console.error('[auth/register] Failed to send verification email:', err);
   });
 
