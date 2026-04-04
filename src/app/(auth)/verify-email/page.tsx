@@ -2,6 +2,7 @@ import type { Metadata } from 'next';
 import Link from 'next/link';
 import { Mail, AlertCircle, CheckCircle2, RefreshCw } from 'lucide-react';
 import { AuthCard } from '@/components/auth/auth-card';
+import { normalizeCallbackUrl } from '@/lib/auth/callback-url';
 
 export const metadata: Metadata = {
   title: 'Verify Email',
@@ -9,7 +10,7 @@ export const metadata: Metadata = {
 };
 
 type VerifyEmailPageProps = {
-  searchParams: Promise<{ token?: string; error?: string }>;
+  searchParams: Promise<{ token?: string; error?: string; callbackUrl?: string }>;
 };
 
 export default async function VerifyEmailPage({
@@ -17,6 +18,7 @@ export default async function VerifyEmailPage({
 }: VerifyEmailPageProps) {
   const params = await searchParams;
   const { token, error } = params;
+  const callbackUrl = normalizeCallbackUrl(params.callbackUrl);
 
   // If a token is present in the URL, the GET /api/auth/verify-email handler
   // would have already redirected. This page renders the waiting state.
@@ -59,6 +61,10 @@ export default async function VerifyEmailPage({
   }
 
   if (token) {
+    const refreshTarget = callbackUrl
+      ? `/api/auth/verify-email?token=${encodeURIComponent(token)}&callbackUrl=${encodeURIComponent(callbackUrl)}`
+      : `/api/auth/verify-email?token=${encodeURIComponent(token)}`;
+
     // Token present but not yet processed — redirect to API handler
     return (
       <AuthCard title="Verifying your email">
@@ -69,7 +75,7 @@ export default async function VerifyEmailPage({
           <p className="text-sm text-muted-foreground">
             Verifying your email address…
           </p>
-          <meta httpEquiv="refresh" content={`0;url=/api/auth/verify-email?token=${encodeURIComponent(token)}`} />
+          <meta httpEquiv="refresh" content={`0;url=${refreshTarget}`} />
         </div>
       </AuthCard>
     );

@@ -1,3 +1,5 @@
+import { normalizeCallbackUrl } from '@/lib/auth/callback-url';
+
 /**
  * Email sending utility.
  * In development (no SMTP configured): logs email content to console.
@@ -60,8 +62,15 @@ export async function sendEmail(payload: EmailPayload): Promise<void> {
 export async function sendVerificationEmail(
   email: string,
   token: string,
+  callbackUrl?: string,
 ): Promise<void> {
-  const verifyUrl = `${APP_URL}/verify-email?token=${token}`;
+  const verifyUrl = new URL('/verify-email', APP_URL);
+  verifyUrl.searchParams.set('token', token);
+
+  const safeCallbackUrl = normalizeCallbackUrl(callbackUrl);
+  if (safeCallbackUrl) {
+    verifyUrl.searchParams.set('callbackUrl', safeCallbackUrl);
+  }
 
   await sendEmail({
     to: email,
@@ -76,10 +85,10 @@ export async function sendVerificationEmail(
           </a>
         </p>
         <p style="color: #666; font-size: 14px;">This link expires in 24 hours. If you didn't create an account, you can safely ignore this email.</p>
-        <p style="color: #999; font-size: 12px;">Or copy and paste this URL: ${verifyUrl}</p>
+        <p style="color: #999; font-size: 12px;">Or copy and paste this URL: ${verifyUrl.toString()}</p>
       </div>
     `,
-    text: `Verify your email address\n\nThanks for signing up to ${APP_NAME}.\n\nClick here to verify your email:\n${verifyUrl}\n\nThis link expires in 24 hours.`,
+    text: `Verify your email address\n\nThanks for signing up to ${APP_NAME}.\n\nClick here to verify your email:\n${verifyUrl.toString()}\n\nThis link expires in 24 hours.`,
   });
 }
 
