@@ -19,6 +19,8 @@ import {
   lacStatusChanges,
   organisations,
   users,
+  childrensRegister,
+  persons,
 } from '@/lib/db/schema';
 import { requirePermission, UnauthorizedError } from '@/lib/rbac';
 import { assertBelongsToOrg } from '@/lib/tenant';
@@ -27,6 +29,7 @@ import type { ActionResult } from '@/types';
 import type { LacRecord } from '@/lib/db/schema/lac';
 import type { PlacementPlan } from '@/lib/db/schema/lac';
 import type { LacStatusChange } from '@/lib/db/schema/lac';
+import type { EmergencyContact } from '@/lib/db/schema/persons';
 import {
   createLacRecordSchema,
   updateLacRecordSchema,
@@ -62,6 +65,86 @@ async function getOrgSlug(orgId: string): Promise<string | null> {
     .where(eq(organisations.id, orgId))
     .limit(1);
   return org?.slug ?? null;
+}
+
+async function syncRegisterEntryFromLacRecord(
+  orgId: string,
+  lacRecord: Pick<
+    LacRecord,
+    | 'personId'
+    | 'admissionDate'
+    | 'legalStatus'
+    | 'placingAuthority'
+    | 'socialWorkerName'
+    | 'socialWorkerEmail'
+    | 'socialWorkerPhone'
+    | 'iroName'
+  >,
+) {
+  const [person] = await db
+    .select({ emergencyContacts: persons.emergencyContacts })
+    .from(persons)
+    .where(eq(persons.id, lacRecord.personId))
+    .limit(1);
+
+  const emergencyContact = [...((person?.emergencyContacts ?? []) as EmergencyContact[])]
+    .sort((a, b) => a.priority - b.priority)[0];
+
+  const payload = {
+    organisationId: orgId,
+    personId: lacRecord.personId,
+    admissionDate: lacRecord.admissionDate,
+    legalStatus: lacRecord.legalStatus,
+    placingAuthority: lacRecord.placingAuthority,
+    socialWorkerName: lacRecord.socialWorkerName ?? null,
+    socialWorkerEmail: lacRecord.socialWorkerEmail ?? null,
+    socialWorkerPhone: lacRecord.socialWorkerPhone ?? null,
+    iroName: lacRecord.iroName ?? null,
+    emergencyContact: emergencyContact
+      ? {
+          name: emergencyContact.name,
+          relationship: emergencyContact.relationship,
+          phone: emergencyContact.phone,
+          email: emergencyContact.email ?? null,
+        }
+      : {
+          name: 'Not recorded',
+          relationship: 'Not recorded',
+          phone: 'Not recorded',
+          email: null,
+        },
+  };
+
+  const [existing] = await db
+    .select()
+    .from(childrensRegister)
+    .where(
+      and(
+        eq(childrensRegister.organisationId, orgId),
+        eq(childrensRegister.personId, lacRecord.personId),
+      ),
+    )
+    .limit(1);
+
+  if (!existing) {
+    await db.insert(childrensRegister).values(payload);
+    return;
+  }
+
+  await db
+    .update(childrensRegister)
+    .set({
+      admissionDate: payload.admissionDate,
+      legalStatus: payload.legalStatus,
+      placingAuthority: payload.placingAuthority,
+      socialWorkerName: payload.socialWorkerName,
+      socialWorkerEmail: payload.socialWorkerEmail,
+      socialWorkerPhone: payload.socialWorkerPhone,
+      iroName: payload.iroName,
+      emergencyContact: payload.emergencyContact,
+      updatedAt: new Date(),
+    })
+    .where(eq(childrensRegister.id, existing.id));
 }
 
 // ---------------------------------------------------------------------------
@@ -140,6 +223,8 @@ export async function createLacRecord(
       organisationId: orgId,
     });
 
+    await syncRegisterEntryFromLacRecord(orgId, record);
+
     const slug = await getOrgSlug(orgId);
     if (slug) {
       revalidatePath(`/${slug}/persons/${parsed.personId}/lac`);
@@ -200,6 +285,8 @@ export async function updateLacRecord(
       { before: existing, after: updated },
       { userId, organisationId: orgId },
     );
+
+    await syncRegisterEntryFromLacRecord(orgId, updated);
 
     const slug = await getOrgSlug(orgId);
     if (slug) {

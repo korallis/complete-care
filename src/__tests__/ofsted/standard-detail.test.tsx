@@ -1,7 +1,8 @@
 import { describe, expect, it, vi } from 'vitest';
 import { fireEvent, render, screen } from '@testing-library/react';
 import { StandardDetail } from '@/components/ofsted/standard-detail';
-import type { OfstedEvidence, OfstedStandard } from '@/lib/db/schema/ofsted';
+import type { OfstedStandard } from '@/lib/db/schema/ofsted';
+import type { OfstedEvidenceWithReviewer } from '@/features/ofsted/actions';
 import { QUALITY_STANDARDS } from '@/features/ofsted/standards';
 
 const mockStandard: OfstedStandard = {
@@ -14,7 +15,7 @@ const mockStandard: OfstedStandard = {
   updatedAt: new Date('2026-04-01T08:00:00.000Z'),
 };
 
-const mockEvidence: OfstedEvidence[] = [
+const mockEvidence: OfstedEvidenceWithReviewer[] = [
   {
     id: '30509b97-0c86-4f83-b5f7-b3c67ba26911',
     organisationId: mockStandard.organisationId,
@@ -25,6 +26,7 @@ const mockEvidence: OfstedEvidence[] = [
     description: 'Placement plan objective references quality of care actions.',
     status: 'evidenced',
     reviewedById: 'a8e93520-44d0-4968-80f1-30f25367fb41',
+    reviewedByName: 'Alex Reviewer',
     reviewedAt: new Date('2026-04-01T09:00:00.000Z'),
     createdAt: new Date('2026-04-01T09:00:00.000Z'),
     updatedAt: new Date('2026-04-01T09:00:00.000Z'),
@@ -66,5 +68,20 @@ describe('StandardDetail', () => {
 
     fireEvent.click(screen.getAllByText('Add Evidence')[0]);
     expect(onAddEvidence).toHaveBeenCalled();
+  });
+
+  it('renders reviewed metadata for linked evidence', () => {
+    render(
+      <StandardDetail
+        standard={mockStandard}
+        template={QUALITY_STANDARDS[0]}
+        evidence={mockEvidence}
+        canManage={false}
+        onAddEvidence={() => {}}
+      />,
+    );
+
+    expect(screen.getByText(/Reviewed 1 Apr 2026 by/i)).toBeDefined();
+    expect(screen.getByText('Alex Reviewer')).toBeDefined();
   });
 });

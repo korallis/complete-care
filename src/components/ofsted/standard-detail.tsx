@@ -5,7 +5,7 @@
  * and linked evidence. Allows managers to add/edit evidence.
  */
 
-import type { OfstedStandard, OfstedEvidence } from '@/lib/db/schema/ofsted';
+import type { OfstedStandard } from '@/lib/db/schema/ofsted';
 import type { QualityStandardTemplate, SubRequirement } from '@/features/ofsted/standards';
 import {
   EVIDENCE_STATUS_LABELS,
@@ -15,6 +15,7 @@ import {
   computeComplianceScore,
 } from '@/features/ofsted/constants';
 import type { EvidenceStatus, EvidenceTypeValue } from '@/features/ofsted/constants';
+import type { OfstedEvidenceWithReviewer } from '@/features/ofsted/actions';
 
 // ---------------------------------------------------------------------------
 // Sub-components
@@ -37,7 +38,7 @@ function SubRequirementRow({
   onAddEvidence,
 }: {
   subReq: SubRequirement;
-  evidence: OfstedEvidence | undefined;
+  evidence: OfstedEvidenceWithReviewer | undefined;
   canManage: boolean;
   onAddEvidence: (subReqId: string) => void;
 }) {
@@ -60,6 +61,20 @@ function SubRequirementRow({
               Evidence type:{' '}
               {EVIDENCE_TYPE_LABELS[evidence.evidenceType as EvidenceTypeValue] ??
                 evidence.evidenceType}
+            </p>
+            <p className="text-xs text-[oklch(0.55_0_0)]">
+              Reviewed{' '}
+              {evidence.reviewedAt
+                ? new Date(evidence.reviewedAt).toLocaleDateString('en-GB', {
+                    day: 'numeric',
+                    month: 'short',
+                    year: 'numeric',
+                  })
+                : 'date not recorded'}
+              {' '}by{' '}
+              <span className="font-medium text-[oklch(0.35_0.04_160)]">
+                {evidence.reviewedByName ?? 'Unknown reviewer'}
+              </span>
             </p>
           </div>
         )}
@@ -87,7 +102,7 @@ function SubRequirementRow({
 interface StandardDetailProps {
   standard: OfstedStandard;
   template: QualityStandardTemplate;
-  evidence: OfstedEvidence[];
+  evidence: OfstedEvidenceWithReviewer[];
   canManage: boolean;
   onAddEvidence: (subRequirementId: string) => void;
 }

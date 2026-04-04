@@ -10,6 +10,11 @@ import {
   approveCarePlan,
   returnCarePlanToDraft,
 } from '@/features/care-plans/actions';
+import {
+  getStandardsWithCounts,
+  listLinkedStandardsForRecord,
+  syncRecordStandardLinks,
+} from '@/features/ofsted/actions';
 import { hasPermission } from '@/lib/rbac/permissions';
 import { CarePlanDetail } from '@/components/care-plans/care-plan-detail';
 import type { Role } from '@/lib/rbac/permissions';
@@ -67,16 +72,24 @@ export default async function CarePlanDetailPage({
   const role = (session.user.role ?? activeMembership.role ?? 'viewer') as Role;
   const canEdit = hasPermission(role, 'update', 'care_plans');
   const canApprove = hasPermission(role, 'approve', 'care_plans');
+  const canReadOfsted = hasPermission(role, 'read', 'ofsted');
+  const canManageOfsted = hasPermission(role, 'manage', 'ofsted');
 
-  const [person, carePlan] = await Promise.all([
+  const [person, carePlan, standardOptions, linkedStandards] = await Promise.all([
     getPerson(personId),
     getCarePlan(carePlanId),
+    canReadOfsted ? getStandardsWithCounts() : Promise.resolve([]),
+    canReadOfsted
+      ? listLinkedStandardsForRecord('care_plan', carePlanId)
+      : Promise.resolve([]),
   ]);
 
   if (!person || !carePlan) notFound();
 
+  const resolvedCarePlan = carePlan;
+
   // If a specific version is requested, show that version's content
-  let displayPlan = carePlan;
+  let displayPlan = resolvedCarePlan;
   let isHistoricalVersion = false;
 
   if (versionParam) {
@@ -116,6 +129,20 @@ export default async function CarePlanDetailPage({
   async function handleReturnToDraft() {
     'use server';
     const result = await returnCarePlanToDraft(carePlanId);
+    return result.success
+      ? { success: true }
+      : { success: false, error: result.error };
+  }
+
+  async function handleSaveLinkedStandards(standardIds: string[]) {
+    'use server';
+    const result = await syncRecordStandardLinks({
+      evidenceType: 'care_plan',
+      evidenceId: carePlanId,
+      recordTitle: `care plan "${resolvedCarePlan.title}"`,
+      standardIds,
+    });
+
     return result.success
       ? { success: true }
       : { success: false, error: result.error };
@@ -193,9 +220,17 @@ export default async function CarePlanDetailPage({
         personName={person.fullName}
         canEdit={canEdit && !isHistoricalVersion}
         canApprove={canApprove && !isHistoricalVersion}
+        canManageOfsted={canManageOfsted && !isHistoricalVersion}
+        qualityStandards={standardOptions.map((row) => ({
+          id: row.id,
+          name: row.standardName,
+          regulationNumber: row.regulationNumber,
+        }))}
+        linkedStandards={linkedStandards}
         onSubmitForReview={handleSubmitForReview}
         onApprove={handleApprove}
         onReturnToDraft={handleReturnToDraft}
+        onSaveLinkedStandards={handleSaveLinkedStandards}
       />
     </div>
   );

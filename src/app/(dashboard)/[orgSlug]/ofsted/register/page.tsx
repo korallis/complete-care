@@ -4,7 +4,10 @@ import Link from 'next/link';
 import { auth } from '@/auth';
 import { hasPermission } from '@/lib/rbac/permissions';
 import type { Role } from '@/lib/rbac/permissions';
-import { listRegisterEntries } from '@/features/ofsted/actions';
+import {
+  ensureRegisterEntriesForOrganisation,
+  listRegisterEntries,
+} from '@/features/ofsted/actions';
 import { ChildrensRegister } from '@/components/ofsted/childrens-register';
 import { db } from '@/lib/db';
 import { persons } from '@/lib/db/schema';
@@ -52,6 +55,10 @@ export default async function RegisterPage({ params }: RegisterPageProps) {
 
   if (!canRead) {
     notFound();
+  }
+
+  if (canManage) {
+    await ensureRegisterEntriesForOrganisation();
   }
 
   const entries = await listRegisterEntries();

@@ -10,7 +10,7 @@
  * All actions are tenant-scoped and RBAC-protected.
  */
 
-import { and, eq, desc } from 'drizzle-orm';
+import { and, eq, desc, inArray } from 'drizzle-orm';
 import { revalidatePath } from 'next/cache';
 import { db } from '@/lib/db';
 import {
@@ -18,6 +18,9 @@ import {
   ofstedEvidence,
   childrensRegister,
   statementOfPurpose,
+  lacRecords,
+  persons,
+  users,
 } from '@/lib/db/schema';
 import { requirePermission } from '@/lib/rbac';
 import { assertBelongsToOrg } from '@/lib/tenant';
@@ -81,6 +84,17 @@ export type ComplianceGap = {
   subRequirementId: string;
   subRequirementText: string;
   status: EvidenceStatus;
+};
+
+export type OfstedEvidenceWithReviewer = OfstedEvidence & {
+  reviewedByName: string | null;
+};
+
+export type LinkedStandardSummary = {
+  standardId: string;
+  standardName: string;
+  regulationNumber: number;
+  evidenceId: string;
 };
 
 // ---------------------------------------------------------------------------
@@ -401,12 +415,27 @@ export async function deleteEvidence(
  */
 export async function listEvidenceForStandard(
   standardId: string,
-): Promise<OfstedEvidence[]> {
+): Promise<OfstedEvidenceWithReviewer[]> {
   const { orgId } = await requirePermission('read', 'ofsted');
 
-  return db
-    .select()
+  const rows = await db
+    .select({
+      id: ofstedEvidence.id,
+      organisationId: ofstedEvidence.organisationId,
+      standardId: ofstedEvidence.standardId,
+      subRequirementId: ofstedEvidence.subRequirementId,
+      evidenceType: ofstedEvidence.evidenceType,
+      evidenceId: ofstedEvidence.evidenceId,
+      description: ofstedEvidence.description,
+      status: ofstedEvidence.status,
+      reviewedById: ofstedEvidence.reviewedById,
+      reviewedAt: ofstedEvidence.reviewedAt,
+      createdAt: ofstedEvidence.createdAt,
+      updatedAt: ofstedEvidence.updatedAt,
+      reviewedByName: users.name,
+    })
     .from(ofstedEvidence)
+    .leftJoin(users, eq(users.id, ofstedEvidence.reviewedById))
     .where(
       and(
         eq(ofstedEvidence.organisationId, orgId),
@@ -414,6 +443,137 @@ export async function listEvidenceForStandard(
       ),
     )
     .orderBy(ofstedEvidence.subRequirementId);
+
+  return rows.map((row) => ({
+    ...row,
+    reviewedByName: row.reviewedByName ?? null,
+  }));
+}
+
+export async function listLinkedStandardsForRecord(
+  evidenceType: 'care_plan' | 'note' | 'incident' | 'training' | 'document',
+  evidenceId: string,
+): Promise<LinkedStandardSummary[]> {
+  const { orgId } = await requirePermission('read', 'ofsted');
+
+  const rows = await db
+    .select({
+      standardId: ofstedStandards.id,
+      standardName: ofstedStandards.standardName,
+      regulationNumber: ofstedStandards.regulationNumber,
+      evidenceId: ofstedEvidence.id,
+    })
+    .from(ofstedEvidence)
+    .innerJoin(ofstedStandards, eq(ofstedStandards.id, ofstedEvidence.standardId))
+    .where(
+      and(
+        eq(ofstedEvidence.organisationId, orgId),
+        eq(ofstedEvidence.evidenceType, evidenceType),
+        eq(ofstedEvidence.evidenceId, evidenceId),
+      ),
+    )
+    .orderBy(ofstedStandards.regulationNumber);
+
+  const seen = new Set<string>();
+  return rows.filter((row) => {
+    if (seen.has(row.standardId)) return false;
+    seen.add(row.standardId);
+    return true;
+  });
+}
+
+export async function syncRecordStandardLinks(input: {
+  evidenceType: 'care_plan' | 'note' | 'incident' | 'training' | 'document';
+  evidenceId: string;
+  recordTitle: string;
+  standardIds: string[];
+}): Promise<ActionResult<{ linked: number }>> {
+  try {
+    const { orgId, userId } = await requirePermission('manage', 'ofsted');
+    const uniqueStandardIds = [...new Set(input.standardIds)];
+
+    const existing = await db
+      .select()
+      .from(ofstedEvidence)
+      .where(
+        and(
+          eq(ofstedEvidence.organisationId, orgId),
+          eq(ofstedEvidence.evidenceType, input.evidenceType),
+          eq(ofstedEvidence.evidenceId, input.evidenceId),
+        ),
+      );
+
+    const standards = uniqueStandardIds.length
+      ? await db
+          .select()
+          .from(ofstedStandards)
+          .where(
+            and(
+              eq(ofstedStandards.organisationId, orgId),
+              inArray(ofstedStandards.id, uniqueStandardIds),
+            ),
+          )
+      : [];
+
+    const validStandardIds = new Set(standards.map((row) => row.id));
+    const existingByStandard = new Map(existing.map((row) => [row.standardId, row]));
+
+    for (const row of existing) {
+      if (!validStandardIds.has(row.standardId)) {
+        await db.delete(ofstedEvidence).where(eq(ofstedEvidence.id, row.id));
+        await auditLog('delete', 'ofsted_evidence', row.id, undefined, {
+          userId,
+          organisationId: orgId,
+        });
+      }
+    }
+
+    for (const standard of standards) {
+      if (existingByStandard.has(standard.id)) continue;
+
+      const template = QUALITY_STANDARDS.find(
+        (entry) => entry.regulationNumber === standard.regulationNumber,
+      );
+      const subRequirement =
+        template?.subRequirements.find((entry) =>
+          entry.suggestedEvidenceTypes.includes(input.evidenceType),
+        ) ?? template?.subRequirements[0];
+
+      if (!subRequirement) continue;
+
+      const [created] = await db
+        .insert(ofstedEvidence)
+        .values({
+          organisationId: orgId,
+          standardId: standard.id,
+          subRequirementId: subRequirement.id,
+          evidenceType: input.evidenceType,
+          evidenceId: input.evidenceId,
+          description: `Linked from ${input.recordTitle}`,
+          status: 'evidenced',
+          reviewedById: userId,
+          reviewedAt: new Date(),
+        })
+        .returning();
+
+      await auditLog('create', 'ofsted_evidence', created.id, undefined, {
+        userId,
+        organisationId: orgId,
+      });
+    }
+
+    revalidatePath('/', 'layout');
+
+    return { success: true, data: { linked: standards.length } };
+  } catch (error) {
+    return {
+      success: false,
+      error:
+        error instanceof Error
+          ? error.message
+          : 'Failed to update linked standards',
+    };
+  }
 }
 
 // ---------------------------------------------------------------------------
@@ -492,6 +652,88 @@ export async function listRegisterEntries() {
     .from(childrensRegister)
     .where(eq(childrensRegister.organisationId, orgId))
     .orderBy(desc(childrensRegister.admissionDate));
+}
+
+export async function ensureRegisterEntriesForOrganisation(): Promise<
+  ActionResult<{ created: number }>
+> {
+  try {
+    const { orgId, userId } = await requirePermission('manage', 'ofsted');
+
+    const existing = await db
+      .select({ personId: childrensRegister.personId })
+      .from(childrensRegister)
+      .where(eq(childrensRegister.organisationId, orgId));
+
+    const existingPersonIds = new Set(existing.map((row) => row.personId));
+
+    const lacRows = await db
+      .select({
+        personId: lacRecords.personId,
+        admissionDate: lacRecords.admissionDate,
+        legalStatus: lacRecords.legalStatus,
+        placingAuthority: lacRecords.placingAuthority,
+        socialWorkerName: lacRecords.socialWorkerName,
+        socialWorkerEmail: lacRecords.socialWorkerEmail,
+        socialWorkerPhone: lacRecords.socialWorkerPhone,
+        iroName: lacRecords.iroName,
+        emergencyContacts: persons.emergencyContacts,
+      })
+      .from(lacRecords)
+      .innerJoin(persons, eq(persons.id, lacRecords.personId))
+      .where(eq(lacRecords.organisationId, orgId));
+
+    const toCreate = lacRows
+      .filter((row) => !existingPersonIds.has(row.personId))
+      .map((row) => {
+        const emergencyContact = [...(row.emergencyContacts ?? [])]
+          .sort((a, b) => a.priority - b.priority)[0];
+
+        return {
+          organisationId: orgId,
+          personId: row.personId,
+          admissionDate: row.admissionDate,
+          legalStatus: row.legalStatus,
+          placingAuthority: row.placingAuthority,
+          socialWorkerName: row.socialWorkerName ?? null,
+          socialWorkerEmail: row.socialWorkerEmail ?? null,
+          socialWorkerPhone: row.socialWorkerPhone ?? null,
+          iroName: row.iroName ?? null,
+          emergencyContact: emergencyContact
+            ? {
+                name: emergencyContact.name,
+                relationship: emergencyContact.relationship,
+                phone: emergencyContact.phone,
+                email: emergencyContact.email ?? null,
+              }
+            : {
+                name: 'Not recorded',
+                relationship: 'Not recorded',
+                phone: 'Not recorded',
+                email: null,
+              },
+        };
+      });
+
+    if (toCreate.length > 0) {
+      await db.insert(childrensRegister).values(toCreate);
+      await auditLog('create', 'childrens_register', orgId, undefined, {
+        userId,
+        organisationId: orgId,
+      });
+      revalidatePath('/', 'layout');
+    }
+
+    return { success: true, data: { created: toCreate.length } };
+  } catch (error) {
+    return {
+      success: false,
+      error:
+        error instanceof Error
+          ? error.message
+          : 'Failed to ensure register coverage',
+    };
+  }
 }
 
 /**

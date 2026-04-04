@@ -3,13 +3,14 @@
 import { useMemo, useState } from 'react';
 import { EvidenceLinkForm } from '@/components/ofsted/evidence-link-form';
 import { StandardDetail } from '@/components/ofsted/standard-detail';
+import type { OfstedEvidenceWithReviewer } from '@/features/ofsted/actions';
 import type { QualityStandardTemplate } from '@/features/ofsted/standards';
-import type { OfstedEvidence, OfstedStandard } from '@/lib/db/schema/ofsted';
+import type { OfstedStandard } from '@/lib/db/schema/ofsted';
 
 interface StandardDetailClientProps {
   standard: OfstedStandard;
   template: QualityStandardTemplate;
-  initialEvidence: OfstedEvidence[];
+  initialEvidence: OfstedEvidenceWithReviewer[];
   canManage: boolean;
 }
 
@@ -19,7 +20,7 @@ export function StandardDetailClient({
   initialEvidence,
   canManage,
 }: StandardDetailClientProps) {
-  const [evidence, setEvidence] = useState(initialEvidence);
+  const [evidence, setEvidence] = useState<OfstedEvidenceWithReviewer[]>(initialEvidence);
   const [editingSubRequirementId, setEditingSubRequirementId] = useState<
     string | null
   >(null);

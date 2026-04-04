@@ -11,7 +11,6 @@ import Link from 'next/link';
 import type { ComplianceDashboardData } from '@/features/ofsted/actions';
 import {
   scoreToRag,
-  scoreToLabel,
 } from '@/features/ofsted/constants';
 
 // ---------------------------------------------------------------------------
@@ -30,6 +29,22 @@ function ScoreBadge({ score }: { score: number }) {
       className={`inline-flex items-center rounded-full border px-2.5 py-0.5 text-xs font-medium ${colours[rag]}`}
     >
       {score}%
+    </span>
+  );
+}
+
+function ComplianceLabel({ score }: { score: number }) {
+  const rag = scoreToRag(score);
+  const label =
+    rag === 'green'
+      ? 'Compliant'
+      : rag === 'amber'
+        ? 'Partially Compliant'
+        : 'Non-compliant';
+
+  return (
+    <span className="text-xs font-medium text-[oklch(0.5_0_0)]">
+      {label}
     </span>
   );
 }
@@ -102,7 +117,7 @@ export function OfstedDashboard({ data, orgSlug }: OfstedDashboardProps) {
             {overallScore}%
           </p>
           <p className="text-sm text-[oklch(0.55_0_0)] mt-0.5">
-            {scoreToLabel(overallScore)}
+            <ComplianceLabel score={overallScore} />
           </p>
           <ProgressBar score={overallScore} />
         </div>
@@ -141,6 +156,10 @@ export function OfstedDashboard({ data, orgSlug }: OfstedDashboardProps) {
 
             <div className="mt-4">
               <ProgressBar score={standard.score} />
+            </div>
+
+            <div className="mt-2">
+              <ComplianceLabel score={standard.score} />
             </div>
 
             <div className="mt-3 flex items-center gap-4 text-xs text-[oklch(0.55_0_0)]">

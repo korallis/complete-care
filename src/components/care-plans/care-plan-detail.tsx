@@ -10,6 +10,7 @@ import Link from 'next/link';
 import { useRouter } from 'next/navigation';
 import { toast } from 'sonner';
 import { CarePlanStatusBadge, ReviewStatusBadge } from './care-plan-status-badge';
+import { CarePlanOfstedLinker } from './care-plan-ofsted-linker';
 import type { CarePlan, CarePlanSection } from '@/lib/db/schema/care-plans';
 import { REVIEW_FREQUENCY_LABELS } from '@/features/care-plans/utils';
 
@@ -213,9 +214,13 @@ type CarePlanDetailProps = {
   personName: string;
   canEdit: boolean;
   canApprove: boolean;
+  canManageOfsted: boolean;
+  qualityStandards: Array<{ id: string; name: string; regulationNumber: number }>;
+  linkedStandards: Array<{ standardId: string; standardName: string; regulationNumber: number }>;
   onSubmitForReview: () => Promise<{ success: boolean; error?: string }>;
   onApprove: () => Promise<{ success: boolean; error?: string }>;
   onReturnToDraft: () => Promise<{ success: boolean; error?: string }>;
+  onSaveLinkedStandards: (standardIds: string[]) => Promise<{ success: boolean; error?: string }>;
 };
 
 export function CarePlanDetail({
@@ -225,9 +230,13 @@ export function CarePlanDetail({
   personName,
   canEdit,
   canApprove,
+  canManageOfsted,
+  qualityStandards,
+  linkedStandards,
   onSubmitForReview,
   onApprove,
   onReturnToDraft,
+  onSaveLinkedStandards,
 }: CarePlanDetailProps) {
   const sections = (carePlan.sections ?? []) as CarePlanSection[];
 
@@ -321,6 +330,15 @@ export function CarePlanDetail({
         onApprove={onApprove}
         onReturnToDraft={onReturnToDraft}
       />
+
+      {(canManageOfsted || linkedStandards.length > 0) && (
+        <CarePlanOfstedLinker
+          canManage={canManageOfsted}
+          standards={qualityStandards}
+          linkedStandards={linkedStandards}
+          onSave={onSaveLinkedStandards}
+        />
+      )}
 
       {/* Sections */}
       <div className="space-y-4">
