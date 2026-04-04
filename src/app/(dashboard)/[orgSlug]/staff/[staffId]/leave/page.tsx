@@ -15,6 +15,7 @@ import type { Role } from '@/lib/rbac/permissions';
 import { LeaveRequestForm } from '@/components/leave/leave-request-form';
 import { LeaveRequestList } from '@/components/leave/leave-request-list';
 import { LeaveBalanceCard } from '@/components/leave/leave-balance-card';
+import { StaffDetailNav } from '@/components/staff/staff-detail-nav';
 
 interface StaffLeavePageProps {
   params: Promise<{ orgSlug: string; staffId: string }>;
@@ -144,6 +145,14 @@ export default async function StaffLeavePage({ params }: StaffLeavePageProps) {
             {staff.fullName}
           </span>
         </p>
+      </div>
+
+      <div className="mb-6 rounded-2xl border border-[oklch(0.91_0.005_160)] bg-white overflow-hidden">
+        <StaffDetailNav
+          orgSlug={orgSlug}
+          staffId={staffId}
+          activeSection="leave"
+        />
       </div>
 
       {/* Two-column layout: Balance + Request form | Leave list */}

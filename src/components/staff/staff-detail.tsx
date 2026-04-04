@@ -2,20 +2,19 @@
 
 /**
  * StaffDetail — client component for the staff detail page.
- * Handles tab navigation and status management actions.
+ * Handles staff overview and status management actions.
  */
 
 import { useState, useTransition } from 'react';
 import Link from 'next/link';
 import { useRouter } from 'next/navigation';
 import { StaffStatusBadge, StaffContractBadge } from './staff-status-badge';
+import { StaffDetailNav } from './staff-detail-nav';
 import { CONTRACT_TYPE_LABELS, STATUS_LABELS } from '@/features/staff/schema';
 import type { StaffStatus, StaffContractType } from '@/features/staff/schema';
 import { getValidNextStatuses } from '@/features/staff/schema';
 import type { StaffProfile } from '@/lib/db/schema/staff-profiles';
 import type { EmploymentHistoryEntry } from '@/lib/db/schema/staff-profiles';
-
-type Tab = 'overview' | 'dbs' | 'training' | 'supervision';
 
 type StaffDetailProps = {
   staff: StaffProfile;
@@ -27,13 +26,6 @@ type StaffDetailProps = {
     reason?: string,
   ) => Promise<{ success: boolean; error?: string }>;
 };
-
-const TABS: { id: Tab; label: string; comingSoon?: boolean }[] = [
-  { id: 'overview', label: 'Overview' },
-  { id: 'dbs', label: 'DBS Checks', comingSoon: true },
-  { id: 'training', label: 'Training', comingSoon: true },
-  { id: 'supervision', label: 'Supervision', comingSoon: true },
-];
 
 function InfoRow({
   label,
@@ -176,35 +168,6 @@ function OverviewTab({ staff }: { staff: StaffProfile }) {
   );
 }
 
-function ComingSoonTab({ label }: { label: string }) {
-  return (
-    <div className="rounded-xl border border-dashed border-[oklch(0.88_0.005_160)] bg-[oklch(0.985_0.003_160)] p-12 text-center">
-      <div className="mx-auto mb-3 flex h-10 w-10 items-center justify-center rounded-full bg-[oklch(0.94_0.015_160)]">
-        <svg
-          xmlns="http://www.w3.org/2000/svg"
-          viewBox="0 0 24 24"
-          fill="none"
-          stroke="currentColor"
-          strokeWidth="1.5"
-          strokeLinecap="round"
-          strokeLinejoin="round"
-          className="h-5 w-5 text-[oklch(0.45_0.07_160)]"
-          aria-hidden="true"
-        >
-          <circle cx="12" cy="12" r="10" />
-          <polyline points="12 6 12 12 16 14" />
-        </svg>
-      </div>
-      <p className="text-sm font-medium text-[oklch(0.22_0.04_160)] mb-1">
-        {label}
-      </p>
-      <p className="text-sm text-[oklch(0.55_0_0)]">
-        This feature is coming soon. It will be available in a future update.
-      </p>
-    </div>
-  );
-}
-
 export function StaffDetail({
   staff,
   orgSlug,
@@ -212,7 +175,6 @@ export function StaffDetail({
   canUpdateStatus,
   onUpdateStatus,
 }: StaffDetailProps) {
-  const [activeTab, setActiveTab] = useState<Tab>('overview');
   const [isPending, startTransition] = useTransition();
   const [statusError, setStatusError] = useState<string | null>(null);
   const router = useRouter();
@@ -331,53 +293,14 @@ export function StaffDetail({
           </div>
         </div>
 
-        {/* Tabs */}
-        <div
-          className="border-t border-[oklch(0.91_0.005_160)] px-6 overflow-x-auto"
-          role="tablist"
-          aria-label="Staff profile sections"
-        >
-          <div className="flex gap-0 -mb-px">
-            {TABS.map((tab) => (
-              <button
-                key={tab.id}
-                type="button"
-                role="tab"
-                aria-selected={activeTab === tab.id}
-                aria-controls={`tabpanel-${tab.id}`}
-                id={`tab-${tab.id}`}
-                onClick={() => setActiveTab(tab.id)}
-                className={`flex-shrink-0 border-b-2 px-4 py-3 text-sm font-medium transition-colors focus:outline-none focus:ring-2 focus:ring-inset focus:ring-[oklch(0.35_0.06_160)] ${
-                  activeTab === tab.id
-                    ? 'border-[oklch(0.35_0.06_160)] text-[oklch(0.25_0.08_160)]'
-                    : 'border-transparent text-[oklch(0.55_0_0)] hover:text-[oklch(0.35_0.04_160)] hover:border-[oklch(0.85_0.01_160)]'
-                }`}
-              >
-                {tab.label}
-                {tab.comingSoon && (
-                  <span className="ml-1.5 rounded bg-[oklch(0.94_0.01_160)] px-1.5 py-0.5 text-[10px] font-medium text-[oklch(0.5_0.02_160)]">
-                    Soon
-                  </span>
-                )}
-              </button>
-            ))}
-          </div>
-        </div>
+        <StaffDetailNav
+          orgSlug={orgSlug}
+          staffId={staff.id}
+          activeSection="overview"
+        />
       </div>
 
-      {/* Tab content */}
-      <div
-        id={`tabpanel-${activeTab}`}
-        role="tabpanel"
-        aria-labelledby={`tab-${activeTab}`}
-      >
-        {activeTab === 'overview' && <OverviewTab staff={staff} />}
-        {activeTab === 'dbs' && <ComingSoonTab label="DBS Checks" />}
-        {activeTab === 'training' && <ComingSoonTab label="Training Records" />}
-        {activeTab === 'supervision' && (
-          <ComingSoonTab label="Supervision Sessions" />
-        )}
-      </div>
+      <OverviewTab staff={staff} />
     </div>
   );
 }
