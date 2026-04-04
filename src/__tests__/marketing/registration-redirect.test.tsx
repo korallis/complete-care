@@ -1,9 +1,9 @@
 /**
- * Tests for RegisterForm — redirect to /onboarding after successful registration.
+ * Tests for RegisterForm — redirect to /verify-email after successful registration.
  *
  * Validates:
  * - After successful registration API response (201), the user is redirected
- *   to /onboarding
+ *   to /verify-email
  * - Error cases still show inline error messages
  */
 
@@ -24,13 +24,13 @@ vi.mock('next/navigation', () => ({
 // Tests
 // ---------------------------------------------------------------------------
 
-describe('RegisterForm — successful registration redirects to /onboarding', () => {
+describe('RegisterForm — successful registration redirects to /verify-email', () => {
   beforeEach(() => {
     mockPush.mockClear();
     global.fetch = vi.fn();
   });
 
-  it('redirects to /onboarding after successful registration', async () => {
+  it('redirects to /verify-email after successful registration', async () => {
     (global.fetch as ReturnType<typeof vi.fn>).mockResolvedValueOnce({
       ok: true,
       json: async () => ({
@@ -64,7 +64,7 @@ describe('RegisterForm — successful registration redirects to /onboarding', ()
     fireEvent.click(submitButton);
 
     await waitFor(() => {
-      expect(mockPush).toHaveBeenCalledWith('/onboarding');
+      expect(mockPush).toHaveBeenCalledWith('/verify-email');
     });
   });
 
@@ -137,7 +137,7 @@ describe('RegisterForm — successful registration redirects to /onboarding', ()
     fireEvent.click(submitButton);
 
     await waitFor(() => {
-      expect(mockPush).toHaveBeenCalledWith('/onboarding');
+      expect(mockPush).toHaveBeenCalledWith('/verify-email');
     });
 
     // Should not render an "Account created" heading (no success screen)
