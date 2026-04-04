@@ -3,11 +3,8 @@ import Link from 'next/link';
 import { notFound, redirect } from 'next/navigation';
 import { Suspense } from 'react';
 import { auth } from '@/auth';
-import {
-  CqcDashboard,
-  buildDateRange,
-  getCqcDashboard,
-} from '@/features/dashboards';
+import { CqcDashboard } from '@/features/dashboards/components/cqc-dashboard';
+import { buildDateRange, getCqcDashboard } from '@/features/dashboards/actions';
 import { hasPermission } from '@/lib/rbac/permissions';
 import type { Role } from '@/lib/rbac/permissions';
 

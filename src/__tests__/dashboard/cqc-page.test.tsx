@@ -33,18 +33,25 @@ vi.mock('next/link', () => ({
   ),
 }));
 
-vi.mock('@/features/dashboards', async () => {
-  const actual = await vi.importActual<typeof import('@/features/dashboards')>(
-    '@/features/dashboards',
-  );
+vi.mock('@/features/dashboards/components/cqc-dashboard', () => ({
+  CqcDashboard: ({
+    data,
+  }: {
+    data: { overallCoverage: { coveragePercent: number } };
+  }) => (
+    <div data-testid="cqc-dashboard">
+      Coverage {data.overallCoverage.coveragePercent}%
+    </div>
+  ),
+}));
+
+vi.mock('@/features/dashboards/actions', async () => {
+  const actual = await vi.importActual<
+    typeof import('@/features/dashboards/actions')
+  >('@/features/dashboards/actions');
 
   return {
     ...actual,
-    CqcDashboard: ({ data }: { data: { overallCoverage: { coveragePercent: number } } }) => (
-      <div data-testid="cqc-dashboard">
-        Coverage {data.overallCoverage.coveragePercent}%
-      </div>
-    ),
     getCqcDashboard: mockGetCqcDashboard,
   };
 });
