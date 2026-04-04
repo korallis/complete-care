@@ -1,10 +1,12 @@
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 import { renderToStaticMarkup } from 'react-dom/server';
 
-const mockAuth = vi.fn();
-const mockGetCqcDashboard = vi.fn();
-const mockRedirect = vi.fn();
-const mockNotFound = vi.fn();
+const { mockAuth, mockGetCqcDashboard, mockRedirect, mockNotFound } = vi.hoisted(() => ({
+  mockAuth: vi.fn(),
+  mockGetCqcDashboard: vi.fn(),
+  mockRedirect: vi.fn(),
+  mockNotFound: vi.fn(),
+}));
 const redirectSignal = new Error('redirect');
 const notFoundSignal = new Error('notFound');
 
@@ -45,16 +47,9 @@ vi.mock('@/features/dashboards/components/cqc-dashboard', () => ({
   ),
 }));
 
-vi.mock('@/features/dashboards/actions', async () => {
-  const actual = await vi.importActual<
-    typeof import('@/features/dashboards/actions')
-  >('@/features/dashboards/actions');
-
-  return {
-    ...actual,
-    getCqcDashboard: mockGetCqcDashboard,
-  };
-});
+vi.mock('@/features/dashboards/actions', () => ({
+  getCqcDashboard: mockGetCqcDashboard,
+}));
 
 describe('CqcPage', () => {
   beforeEach(() => {

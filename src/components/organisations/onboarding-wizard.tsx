@@ -13,6 +13,7 @@
  */
 
 import { useState, useEffect, useTransition, useId } from 'react';
+import { useRouter } from 'next/navigation';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
@@ -153,6 +154,7 @@ interface OnboardingWizardProps {
 // ---------------------------------------------------------------------------
 
 export function OnboardingWizard({ userName }: OnboardingWizardProps) {
+  const router = useRouter();
   const [isPending, startTransition] = useTransition();
   const baseId = useId();
 
@@ -298,11 +300,12 @@ export function OnboardingWizard({ userName }: OnboardingWizardProps) {
         return;
       }
 
-      const orgSlug = result.data?.orgSlug ?? '';
-      const returnTo = encodeURIComponent('/dashboard?welcome=true');
-      window.location.assign(
-        `/api/orgs/switch?slug=${encodeURIComponent(orgSlug)}&returnTo=${returnTo}`,
-      );
+      const orgSlug = result.data?.orgSlug?.trim();
+      const targetPath = orgSlug
+        ? `/${encodeURIComponent(orgSlug)}/dashboard?welcome=true`
+        : '/dashboard?welcome=true';
+
+      router.push(targetPath);
     });
   }
 

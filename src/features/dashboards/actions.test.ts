@@ -29,7 +29,6 @@ const { mockDb, selectQueue } = vi.hoisted(() => {
 vi.mock('@/lib/db', () => ({ db: mockDb }));
 
 import {
-  buildDateRange,
   getChildrensDashboard,
   getCqcDashboard,
   getDomiciliaryDashboard,
@@ -38,6 +37,7 @@ import {
   getSupportedLivingDashboard,
   getTrendData,
 } from './actions';
+import { buildDateRange } from './date-range';
 
 const ORG_ID = '550e8400-e29b-41d4-a716-446655440000';
 

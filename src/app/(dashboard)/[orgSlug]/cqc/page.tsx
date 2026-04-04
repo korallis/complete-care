@@ -4,7 +4,8 @@ import { notFound, redirect } from 'next/navigation';
 import { Suspense } from 'react';
 import { auth } from '@/auth';
 import { CqcDashboard } from '@/features/dashboards/components/cqc-dashboard';
-import { buildDateRange, getCqcDashboard } from '@/features/dashboards/actions';
+import { getCqcDashboard } from '@/features/dashboards/actions';
+import { buildDateRange } from '@/features/dashboards/date-range';
 import { hasPermission } from '@/lib/rbac/permissions';
 import type { Role } from '@/lib/rbac/permissions';
 

@@ -7,8 +7,8 @@ import { DomiciliaryWidget, SupportedLivingWidget, ChildrensWidget } from './dom
 import { StaffComplianceDashboard } from './staff-compliance-dashboard';
 import { CqcDashboard } from './cqc-dashboard';
 import { DateRangePicker } from './date-range-picker';
+import { buildDateRange } from '../date-range';
 import {
-  buildDateRange,
   getOperationalDashboard,
   getDomiciliaryDashboard,
   getSupportedLivingDashboard,
