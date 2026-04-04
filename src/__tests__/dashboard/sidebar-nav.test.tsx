@@ -90,6 +90,11 @@ describe('SidebarNav', () => {
       expect(screen.getByRole('link', { name: /billing/i })).toBeInTheDocument();
     });
 
+    it('renders the CQC workspace link for operational roles', () => {
+      renderSidebarNav('manager');
+      expect(screen.getByRole('link', { name: /^cqc$/i })).toBeInTheDocument();
+    });
+
     it('does not render Billing link for admin', () => {
       renderSidebarNav('admin');
       expect(screen.queryByRole('link', { name: /billing/i })).not.toBeInTheDocument();
@@ -105,6 +110,7 @@ describe('SidebarNav', () => {
       expect(screen.getByRole('link', { name: /my persons/i })).toBeInTheDocument();
       expect(screen.queryByRole('link', { name: /^staff$/i })).not.toBeInTheDocument();
       expect(screen.queryByRole('link', { name: /compliance/i })).not.toBeInTheDocument();
+      expect(screen.queryByRole('link', { name: /^cqc$/i })).not.toBeInTheDocument();
     });
 
     it('renders read-only items for viewer role', () => {

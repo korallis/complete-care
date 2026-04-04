@@ -145,6 +145,12 @@ export const NAV_ITEMS_BY_ROLE: Record<Role, NavItem[]> = {
       section: 'operations',
     },
     {
+      label: 'CQC',
+      href: '/cqc',
+      icon: 'clipboard-check',
+      section: 'operations',
+    },
+    {
       label: 'Ofsted',
       href: '/ofsted',
       icon: 'award',
@@ -270,6 +276,12 @@ export const NAV_ITEMS_BY_ROLE: Record<Role, NavItem[]> = {
       section: 'operations',
     },
     {
+      label: 'CQC',
+      href: '/cqc',
+      icon: 'clipboard-check',
+      section: 'operations',
+    },
+    {
       label: 'Ofsted',
       href: '/ofsted',
       icon: 'award',
@@ -389,6 +401,12 @@ export const NAV_ITEMS_BY_ROLE: Record<Role, NavItem[]> = {
       section: 'operations',
     },
     {
+      label: 'CQC',
+      href: '/cqc',
+      icon: 'clipboard-check',
+      section: 'operations',
+    },
+    {
       label: 'Ofsted',
       href: '/ofsted',
       icon: 'award',
@@ -461,6 +479,12 @@ export const NAV_ITEMS_BY_ROLE: Record<Role, NavItem[]> = {
       label: 'Compliance',
       href: '/staff/compliance',
       icon: 'shield-check',
+      section: 'operations',
+    },
+    {
+      label: 'CQC',
+      href: '/cqc',
+      icon: 'clipboard-check',
       section: 'operations',
     },
     {

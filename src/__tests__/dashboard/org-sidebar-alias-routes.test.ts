@@ -19,6 +19,15 @@ describe('org sidebar alias routes', () => {
     ).toBe('/staff/compliance');
   });
 
+  it('exposes the CQC workspace as an org-scoped navigation route', () => {
+    expect(
+      NAV_ITEMS_BY_ROLE.owner.find((item) => item.label === 'CQC')?.href,
+    ).toBe('/cqc');
+    expect(
+      NAV_ITEMS_BY_ROLE.manager.find((item) => item.label === 'CQC')?.href,
+    ).toBe('/cqc');
+  });
+
   it('redirects org reports route to custom reports', async () => {
     const { default: ReportsAliasPage } = await import(
       '@/app/(dashboard)/[orgSlug]/reports/page'
