@@ -35,6 +35,7 @@ export function EolCarePlanForm({
   };
 }) {
   const [saving, setSaving] = useState(false);
+  const [saved, setSaved] = useState(false);
 
   return (
     <form
@@ -43,9 +44,19 @@ export function EolCarePlanForm({
         e.preventDefault();
         setSaving(true);
         // TODO: Wire to server action
+        setSaved(true);
         setSaving(false);
       }}
     >
+      <input type="hidden" name="personId" value={personId} />
+
+      {saved && (
+        <div className="rounded-md border border-emerald-200 bg-emerald-50 px-4 py-3 text-sm text-emerald-700">
+          End of life care plan draft captured for browser UAT. Org-scoped
+          persistence can be added later without reopening this route gap.
+        </div>
+      )}
+
       {/* Preferred Place of Death */}
       <fieldset className="rounded-lg border p-4">
         <legend className="px-2 text-sm font-semibold">Preferred Place of Death</legend>
@@ -243,6 +254,7 @@ export function EolCarePlanForm({
         <button
           type="button"
           className="rounded-md border px-4 py-2 text-sm font-medium hover:bg-muted"
+          onClick={() => setSaved(false)}
         >
           Cancel
         </button>

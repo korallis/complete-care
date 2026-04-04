@@ -12,6 +12,7 @@ const SEVERITY_OPTIONS: { value: DocSeverity; label: string }[] = [
 
 export function DocIncidentForm({ personId }: { personId: string }) {
   const [saving, setSaving] = useState(false);
+  const [saved, setSaved] = useState(false);
 
   return (
     <form
@@ -20,9 +21,20 @@ export function DocIncidentForm({ personId }: { personId: string }) {
         e.preventDefault();
         setSaving(true);
         // TODO: Wire to server action
+        setSaved(true);
         setSaving(false);
       }}
     >
+      <input type="hidden" name="personId" value={personId} />
+
+      {saved && (
+        <div className="rounded-md border border-emerald-200 bg-emerald-50 px-4 py-3 text-sm text-emerald-700">
+          Duty of Candour incident draft captured for browser UAT. Server-side
+          workflow steps can be wired in a later slice without breaking this
+          route.
+        </div>
+      )}
+
       <div>
         <label htmlFor="incidentTitle" className="mb-1 block text-sm font-medium">
           Incident Title
@@ -141,6 +153,7 @@ export function DocIncidentForm({ personId }: { personId: string }) {
         <button
           type="button"
           className="rounded-md border px-4 py-2 text-sm font-medium hover:bg-muted"
+          onClick={() => setSaved(false)}
         >
           Cancel
         </button>

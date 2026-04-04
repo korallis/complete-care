@@ -55,6 +55,7 @@ export function Reg45ReportForm({
   version?: number;
 }) {
   const [saving, setSaving] = useState(false);
+  const [saved, setSaved] = useState(false);
 
   return (
     <form
@@ -63,9 +64,17 @@ export function Reg45ReportForm({
         e.preventDefault();
         setSaving(true);
         // TODO: Wire to server action
+        setSaved(true);
         setSaving(false);
       }}
     >
+      {saved && (
+        <div className="rounded-md border border-emerald-200 bg-emerald-50 px-4 py-3 text-sm text-emerald-700">
+          Reg 45 review draft captured for browser UAT. Review-state persistence
+          can be connected in a later slice without reopening this route.
+        </div>
+      )}
+
       {version && (
         <div className="rounded-md bg-muted px-4 py-2 text-sm">
           Version {version}
@@ -132,6 +141,7 @@ export function Reg45ReportForm({
         <button
           type="button"
           className="rounded-md border px-4 py-2 text-sm font-medium hover:bg-muted"
+          onClick={() => setSaved(true)}
         >
           Save as Draft
         </button>

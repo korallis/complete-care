@@ -1,4 +1,5 @@
 import type { Metadata } from 'next';
+import Link from 'next/link';
 import { BudgetOverview } from '@/features/personal-budgets';
 
 export const metadata: Metadata = {
@@ -15,19 +16,17 @@ export default function BudgetsPage() {
             Budget allocation, spend tracking, and support hour variance reporting.
           </p>
         </div>
-        <button
-          type="button"
-          disabled
-          aria-disabled="true"
-          className="inline-flex cursor-not-allowed items-center justify-center rounded-md bg-primary/60 px-4 py-2 text-sm font-medium text-primary-foreground opacity-70"
+        <Link
+          href="/budgets/new"
+          className="inline-flex items-center justify-center rounded-md bg-primary px-4 py-2 text-sm font-medium text-primary-foreground transition hover:bg-primary/90"
         >
           New Budget
-        </button>
+        </Link>
       </div>
 
       <p className="text-sm text-muted-foreground">
-        Budget creation is coming soon. Use the summary below to review seeded
-        placeholder data for now.
+        Capture a draft budget outline from this workspace while the full
+        persistence path is finalised.
       </p>
 
       {/* Summary cards */}

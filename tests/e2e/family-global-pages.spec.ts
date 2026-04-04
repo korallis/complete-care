@@ -2,7 +2,7 @@ import { expect, test } from '@playwright/test';
 import { login } from './support/session';
 
 test.describe('family and global page coverage', () => {
-  test('global placeholder actions do not expose dead-end creation links', async ({
+  test('global dashboards link into the available draft-authoring routes', async ({
     page,
   }) => {
     await login(page);
@@ -11,32 +11,37 @@ test.describe('family and global page coverage', () => {
       {
         route: '/budgets',
         action: 'New Budget',
-        note: /Budget creation is coming soon/i,
+        destination: '/budgets/new',
+        heading: /Start a new budget outline/i,
       },
       {
         route: '/duty-of-candour',
         action: 'Record Incident',
-        note: /Incident creation from this dashboard is coming soon/i,
+        destination: '/duty-of-candour/new',
+        heading: /Record a duty of candour incident/i,
       },
       {
         route: '/eol-care',
         action: 'New Care Plan',
-        note: /End-of-life care plan creation is coming soon/i,
+        destination: '/eol-care/new',
+        heading: /Create an end of life care plan/i,
       },
       {
         route: '/reg45',
         action: 'New Report',
-        note: /Reg 45 report authoring is coming soon/i,
+        destination: '/reg45/new',
+        heading: /Start a Reg 45 quality review/i,
       },
     ] as const;
 
     for (const check of checks) {
       await page.goto(check.route, { waitUntil: 'domcontentloaded' });
       await expect(page).toHaveURL(check.route);
+      await page.getByRole('link', { name: check.action }).click();
+      await expect(page).toHaveURL(check.destination);
       await expect(
-        page.getByRole('button', { name: check.action }),
-      ).toBeDisabled();
-      await expect(page.getByText(check.note)).toBeVisible();
+        page.getByRole('heading', { name: check.heading }),
+      ).toBeVisible();
     }
   });
 
