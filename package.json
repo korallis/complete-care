@@ -6,7 +6,7 @@
     "dev": "next dev --port 3200",
     "build": "next build",
     "start": "next start --port 3200",
-    "typecheck": "tsc --noEmit",
+    "typecheck": "next typegen && tsc --noEmit",
     "lint": "next lint",
     "test": "vitest run",
     "db:generate": "drizzle-kit generate",
