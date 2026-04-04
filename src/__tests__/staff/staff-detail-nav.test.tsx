@@ -25,13 +25,17 @@ vi.mock('next/link', () => ({
   ),
 }));
 
-const sampleStaff = {
+const sampleStaff: StaffProfile = {
   id: 'staff-123',
+  organisationId: 'org-123',
+  userId: null,
   fullName: 'Jane Doe',
+  firstName: 'Jane',
+  lastName: 'Doe',
   status: 'active',
   contractType: 'full_time',
   jobTitle: 'Senior Carer',
-  weeklyHours: 37.5,
+  weeklyHours: '37.5',
   startDate: '2024-01-10',
   endDate: null,
   niNumber: 'AB123456C',
@@ -41,7 +45,10 @@ const sampleStaff = {
   emergencyContactPhone: '07999999999',
   emergencyContactRelation: 'Brother',
   employmentHistory: [],
-} as const satisfies Partial<StaffProfile>;
+  createdAt: new Date('2024-01-10T00:00:00Z'),
+  updatedAt: new Date('2024-01-10T00:00:00Z'),
+  deletedAt: null,
+};
 
 describe('StaffDetailNav', () => {
   it('renders real links for each staff workspace section', () => {
@@ -98,7 +105,7 @@ describe('StaffDetail', () => {
   it('uses the shared navigation instead of coming-soon tabs', () => {
     render(
       <StaffDetail
-        staff={sampleStaff as StaffProfile}
+        staff={sampleStaff}
         orgSlug="acme"
         canEdit={false}
         canUpdateStatus={false}
