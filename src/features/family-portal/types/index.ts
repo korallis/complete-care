@@ -6,6 +6,7 @@ import { z } from 'zod';
 // --- Care domains ---
 export const CARE_DOMAINS = [
   'domiciliary_care',
+  'complex_care',
   'supported_living',
   'childrens_homes',
 ] as const;
@@ -115,6 +116,14 @@ export interface SupportedLivingPortalView {
   supportHoursSummary: SupportHoursSummary;
 }
 
+/** Complex care portal view data */
+export interface ComplexCarePortalView {
+  domain: 'complex_care';
+  clinicalAlerts: ClinicalAlert[];
+  staffingContinuity: StaffingContinuityEntry[];
+  protocolHighlights: ProtocolHighlight[];
+}
+
 /** Children's homes portal view data */
 export interface ChildrensHomesPortalView {
   domain: 'childrens_homes';
@@ -125,6 +134,7 @@ export interface ChildrensHomesPortalView {
 
 export type PortalView =
   | DomiciliaryPortalView
+  | ComplexCarePortalView
   | SupportedLivingPortalView
   | ChildrensHomesPortalView;
 
@@ -176,6 +186,32 @@ export interface SupportHoursSummary {
   weeklyUsed: number;
   periodStart: string;
   periodEnd: string;
+}
+
+export interface ClinicalAlert {
+  id: string;
+  title: string;
+  severity: 'low' | 'medium' | 'high';
+  status: 'active' | 'watching' | 'resolved';
+  updatedAt: string;
+  summary: string;
+}
+
+export interface StaffingContinuityEntry {
+  id: string;
+  staffName: string;
+  role: string;
+  continuityStatus: 'stable' | 'watch' | 'urgent';
+  nextCheckIn: string;
+  notes: string;
+}
+
+export interface ProtocolHighlight {
+  id: string;
+  title: string;
+  owner: string;
+  lastReviewed: string;
+  summary: string;
 }
 
 export interface KeyWorkerSession {

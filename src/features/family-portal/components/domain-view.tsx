@@ -3,6 +3,7 @@
 import type { PortalView } from '../types';
 import { getDomainSectionTitles } from '../lib/domain-views';
 import { DomiciliaryCareView } from './views/domiciliary-care-view';
+import { ComplexCareView } from './views/complex-care-view';
 import { SupportedLivingView } from './views/supported-living-view';
 import { ChildrensHomesView } from './views/childrens-homes-view';
 
@@ -21,6 +22,9 @@ export function DomainView({ view }: DomainViewProps) {
       <div className="grid gap-4">
         {view.domain === 'domiciliary_care' && (
           <DomiciliaryCareView view={view} sections={sections} />
+        )}
+        {view.domain === 'complex_care' && (
+          <ComplexCareView view={view} sections={sections} />
         )}
         {view.domain === 'supported_living' && (
           <SupportedLivingView view={view} sections={sections} />
