@@ -11,6 +11,7 @@ import type { ShiftPatternFormData } from '../lib/validation';
 const DOMAIN_LABELS: Record<string, string> = {
   domiciliary_care: 'Domiciliary',
   supported_living: 'Supported Living',
+  complex_care: 'Complex Care',
   childrens_home: "Children's",
 };
 

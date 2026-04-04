@@ -18,7 +18,7 @@ export const organisations = pgTable('organisations', {
    * Values: independent_provider | care_group | nhs_statutory | local_authority | charity_nfp | other
    */
   orgType: text('org_type'),
-  /** Which care domains are active for this org (domiciliary_care | supported_living | childrens_homes) */
+  /** Which care domains are active for this org (domiciliary_care | supported_living | complex_care | childrens_homes) */
   domains: text('domains').array().notNull().default([]),
 
   // --- Stripe billing fields ---

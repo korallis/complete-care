@@ -9,7 +9,7 @@ export default function manifest(): MetadataRoute.Manifest {
     name: 'Complete Care',
     short_name: 'CompleteCare',
     description:
-      "UK care management platform for domiciliary care, supported living, and children's residential homes.",
+      "UK care management platform for domiciliary care, supported living, complex care, and children's residential homes.",
     start_url: '/',
     display: 'standalone',
     background_color: '#ffffff',

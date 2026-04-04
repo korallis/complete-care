@@ -29,6 +29,7 @@ const DOMAIN_OPTIONS = [
   { value: '', label: 'Select care domain(s)' },
   { value: 'domiciliary', label: 'Domiciliary Care' },
   { value: 'supported_living', label: 'Supported Living' },
+  { value: 'complex_care', label: 'Complex Care' },
   { value: 'childrens_residential', label: "Children's Residential Homes" },
   { value: 'multiple', label: 'Multiple / All Domains' },
 ];

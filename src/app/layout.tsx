@@ -24,7 +24,7 @@ export const metadata: Metadata = {
     template: '%s | Complete Care',
   },
   description:
-    'UK care management platform for domiciliary care, supported living, and children\'s residential homes.',
+    'UK care management platform for domiciliary care, supported living, complex care, and children\'s residential homes.',
   metadataBase: new URL(
     process.env.NEXT_PUBLIC_APP_URL ?? 'http://localhost:3200',
   ),

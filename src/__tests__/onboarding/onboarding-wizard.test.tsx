@@ -196,6 +196,12 @@ describe('OnboardingWizard', () => {
       ).toBeInTheDocument();
     });
 
+    it('shows Complex Care option', () => {
+      expect(
+        screen.getByRole('checkbox', { name: /complex care/i }),
+      ).toBeInTheDocument();
+    });
+
     it("shows Children's Residential Homes option", () => {
       expect(
         screen.getByRole('checkbox', { name: /children's residential/i }),

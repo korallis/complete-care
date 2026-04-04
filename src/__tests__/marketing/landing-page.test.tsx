@@ -124,7 +124,7 @@ describe('MarketingFooter', () => {
     );
   });
 
-  it('keeps all three care-domain anchors in the footer', () => {
+  it('keeps all four care-domain anchors in the footer', () => {
     render(<MarketingFooter />);
 
     expect(screen.getByRole('link', { name: /domiciliary care/i })).toHaveAttribute(
@@ -132,6 +132,10 @@ describe('MarketingFooter', () => {
       '/#domains',
     );
     expect(screen.getByRole('link', { name: /supported living/i })).toHaveAttribute(
+      'href',
+      '/#domains',
+    );
+    expect(screen.getByRole('link', { name: /complex care/i })).toHaveAttribute(
       'href',
       '/#domains',
     );
@@ -175,7 +179,7 @@ describe('HomePage redesign', () => {
     expect(
       screen.getByRole('heading', {
         level: 2,
-        name: /three care domains, one shared operating language/i,
+        name: /four care domains, one shared operating language/i,
       }),
     ).toBeInTheDocument();
     expect(
@@ -192,11 +196,12 @@ describe('HomePage redesign', () => {
     ).toBeInTheDocument();
   });
 
-  it('covers all three care domains and the closing CTA block', () => {
+  it('covers all four care domains and the closing CTA block', () => {
     render(<HomePage />);
 
     expect(screen.getByText('Domiciliary care')).toBeInTheDocument();
     expect(screen.getAllByText('Supported living').length).toBeGreaterThan(0);
+    expect(screen.getByText('Complex care')).toBeInTheDocument();
     expect(screen.getByText("Children's homes")).toBeInTheDocument();
     expect(screen.getByRole('link', { name: /create your workspace/i })).toHaveAttribute(
       'href',

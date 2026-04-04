@@ -27,7 +27,7 @@ export const rotaPatternConfigSchema = z
 
 export const shiftPatternSchema = z.object({
   name: z.string().min(1, 'Shift pattern name is required').max(100),
-  careDomain: z.enum(['domiciliary_care', 'supported_living', 'childrens_home'], {
+  careDomain: z.enum(['domiciliary_care', 'supported_living', 'complex_care', 'childrens_home'], {
     required_error: 'Care domain is required',
   }),
   shiftType: z.enum(['standard', 'sleep_in', 'waking_night', 'on_call']).default('standard'),

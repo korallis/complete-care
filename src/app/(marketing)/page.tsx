@@ -21,11 +21,11 @@ const APP_URL = process.env.NEXT_PUBLIC_APP_URL ?? 'https://completecare.co.uk';
 export const metadata: Metadata = {
   title: 'Complete Care — Care operations, without the patchwork',
   description:
-    'A distinctive UK care platform for domiciliary care, supported living, and children\'s homes — built to keep teams coordinated, compliant, and easier to brief.',
+    'A distinctive UK care platform for domiciliary care, supported living, complex care, and children\'s homes — built to keep teams coordinated, compliant, and easier to brief.',
   openGraph: {
     title: 'Complete Care — Care operations, without the patchwork',
     description:
-      'One platform for domiciliary care, supported living, and children\'s residential homes with native operational and compliance depth.',
+      'One platform for domiciliary care, supported living, complex care, and children\'s residential homes with native operational and compliance depth.',
     type: 'website',
     url: APP_URL,
     images: [
@@ -67,6 +67,14 @@ const DOMAIN_STORIES = [
     signals: ['Property and tenancy context', 'Goals and progress view', 'Support-hour variance'],
   },
   {
+    icon: HeartPulse,
+    title: 'Complex care',
+    strap: 'Higher-acuity coordination, continuity, and clinically aware operations.',
+    body:
+      'Plan complex packages with the staffing signal, protocol detail, and oversight rhythm that higher-acuity services need without splitting scheduling from clinical context.',
+    signals: ['Competency-aware allocation', 'Critical visit continuity', 'Commissioner and protocol visibility'],
+  },
+  {
     icon: Users,
     title: "Children's homes",
     strap: 'A system that respects safeguarding seriousness and Ofsted reality.',
@@ -99,7 +107,7 @@ const WORKFLOW_BANDS = [
 
 const PROOF_NOTES = [
   'One product language across public, operational, and compliance surfaces',
-  'Purpose-built for three UK care contexts instead of one generic module set',
+  'Purpose-built for four UK care contexts instead of one generic module set',
   'Shaped for calm handover, scanability, and high-trust first impressions',
   'Designed to support inspection confidence without turning the UI into a policy binder',
 ] as const;
@@ -130,7 +138,7 @@ function MetricRail() {
   return (
     <div className="grid gap-px overflow-hidden rounded-[1.5rem] border border-white/10 bg-white/10 md:grid-cols-4">
       {[
-        ['3', 'care domains'],
+        ['4', 'care domains'],
         ['2', 'regulatory lenses'],
         ['1', 'operating system'],
         ['0', 'need for patchwork tools'],
@@ -244,9 +252,10 @@ export default function HomePage() {
                 A calmer system for care teams who carry serious work.
               </h1>
               <p className="mt-6 max-w-lg text-base leading-8 text-white/72 sm:text-lg">
-                Complete Care brings domiciliary care, supported living, and children&apos;s
-                residential workflows into one modern operating surface — so handover,
-                compliance, and daily decisions feel connected instead of improvised.
+                Complete Care brings domiciliary care, supported living, complex care,
+                and children&apos;s residential workflows into one modern operating surface —
+                so handover, compliance, and daily decisions feel connected instead of
+                improvised.
               </p>
               <div className="mt-8 flex flex-col gap-3 sm:flex-row">
                 <Link
@@ -280,7 +289,7 @@ export default function HomePage() {
           <div>
             <span className="eyebrow">where it has to work</span>
             <h2 className="font-display mt-5 text-3xl font-semibold tracking-[-0.05em] text-[oklch(0.17_0.016_232)] sm:text-4xl">
-              Three care domains, one shared operating language.
+              Four care domains, one shared operating language.
             </h2>
             <p className="mt-5 max-w-md text-base leading-8 text-[oklch(0.45_0.018_225)]">
               The platform should feel unified without flattening the reality of different care settings. Each workflow keeps its own nuance, but the experience stays coherent.
@@ -448,7 +457,7 @@ export default function HomePage() {
                 Replace the patchwork with a system your team can actually brief in one breath.
               </h2>
               <p className="mt-5 max-w-2xl text-base leading-8 text-white/68">
-                Start with one service, grow into all three, and keep the interface coherent as your operation gets more complex — not more chaotic.
+                Start with one service, grow into all four, and keep the interface coherent as your operation gets more complex — not more chaotic.
               </p>
             </div>
             <div className="flex flex-col gap-3 sm:flex-row lg:flex-col">

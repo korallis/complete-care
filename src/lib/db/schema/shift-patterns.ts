@@ -29,7 +29,7 @@ export const shiftPatterns = pgTable(
       .references(() => organisations.id, { onDelete: 'cascade' }),
     /** Human-readable name: "Early Morning Run", "Day Shift 12hr", "Night Sleep-In" */
     name: text('name').notNull(),
-    /** Care domain: domiciliary_care | supported_living | childrens_home */
+    /** Care domain: domiciliary_care | supported_living | complex_care | childrens_home */
     careDomain: text('care_domain').notNull(),
     /** Pattern type: standard | sleep_in | waking_night | on_call */
     shiftType: text('shift_type').notNull().default('standard'),
