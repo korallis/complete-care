@@ -56,8 +56,9 @@ export function RegisterForm() {
       return;
     }
 
-    // Registration successful — redirect to onboarding flow
-    router.push('/onboarding');
+    // Registration successful — prompt the user to verify their email
+    // before trying to access authenticated onboarding/dashboard flows.
+    router.push('/verify-email');
   };
 
   return (
