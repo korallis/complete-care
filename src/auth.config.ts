@@ -15,6 +15,13 @@ const publicRoutes = [
   '/demo',
 ];
 
+/** Public route prefixes that include dynamic/query-based entry flows */
+const publicRoutePrefixes = [
+  '/verify-email',
+  '/invitations/accept',
+  '/invite',
+];
+
 /** Auth routes — redirect to dashboard if already logged in */
 const authRoutes = [
   '/login',
@@ -79,8 +86,13 @@ export const authConfig = {
         return true;
       }
 
-      // Always allow public routes
-      if (publicRoutes.includes(pathname)) return true;
+      // Always allow public routes and invite/verification entry flows
+      if (
+        publicRoutes.includes(pathname) ||
+        publicRoutePrefixes.some((route) => pathname.startsWith(route))
+      ) {
+        return true;
+      }
 
       // Auth routes — redirect to dashboard if already logged in
       if (authRoutes.some((route) => pathname.startsWith(route))) {
@@ -90,13 +102,8 @@ export const authConfig = {
         return true;
       }
 
-      // Allow verify-email page for logged-in unverified users
-      if (pathname.startsWith('/verify-email')) {
-        return true;
-      }
-
       // Authenticated-only routes — require login but don't redirect back if already logged in
-      // (e.g., /onboarding, /invitations/accept, /new-organisation)
+      // (e.g., /onboarding, /invitations, /new-organisation)
       if (
         authenticatedOnlyRoutes.some((route) => pathname.startsWith(route))
       ) {
@@ -124,7 +131,10 @@ export const authConfig = {
       }
 
       // Redirect unverified users to email verification prompt
-      if (!isEmailVerified && !pathname.startsWith('/verify-email')) {
+      if (
+        !isEmailVerified &&
+        !publicRoutePrefixes.some((route) => pathname.startsWith(route))
+      ) {
         return Response.redirect(new URL('/verify-email', nextUrl));
       }
 
