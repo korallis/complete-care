@@ -423,7 +423,7 @@ describe('OnboardingWizard', () => {
           expect.objectContaining({
             name: 'Sunrise Care',
             slug: 'sunrise-care',
-            domains: expect.arrayContaining(['domiciliary']),
+            domains: expect.arrayContaining(['domiciliary_care']),
           }),
         );
       });
