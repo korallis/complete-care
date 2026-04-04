@@ -49,6 +49,9 @@ export function DashboardTabs({ orgSlug, personId }: DashboardTabsProps) {
     if (tab.id === 'overview') {
       return pathname === basePath;
     }
+    if (tab.id === 'clinical') {
+      return pathname.startsWith(`${basePath}/clinical`);
+    }
     return pathname.startsWith(tab.href);
   }
 
