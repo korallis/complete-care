@@ -1,6 +1,9 @@
-import 'dotenv/config';
+import { config as loadEnv } from 'dotenv';
 import { neon } from '@neondatabase/serverless';
 import { orgSlug } from './config';
+
+loadEnv({ path: '.env.local', override: false });
+loadEnv({ override: false });
 
 export type SeedTargets = {
   orgId: string;
@@ -37,10 +40,10 @@ export async function getSeedTargets(): Promise<SeedTargets> {
   `;
 
   const [property] = await sql`
-    select id, name
+    select id
     from properties
     where organisation_id = ${org.id}
-    order by name asc nulls last, id asc
+    order by created_at desc nulls last, id asc
     limit 1
   `;
 
@@ -77,7 +80,7 @@ export async function getSeedTargets(): Promise<SeedTargets> {
         from incidents
         where organisation_id = ${org.id}
           and person_id = ${person.id}
-        order by occurred_at desc nulls last, created_at desc nulls last, id asc
+        order by date_time desc nulls last, created_at desc nulls last, id asc
         limit 1
       `
     : [];
